@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import Base, engine
-from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, User, WorkoutProgram  # noqa: F401
-from .routers import auth, exercises, goals, notifications, participations, performances, programs, sessions, statistics, users
+from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WorkoutProgram  # noqa: F401
+from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.include_router(statistics.router)
 app.include_router(goals.router)
 app.include_router(programs.router)
 app.include_router(notifications.router)
+app.include_router(journal.router)
 
 
 @app.get("/health", tags=["health"])
