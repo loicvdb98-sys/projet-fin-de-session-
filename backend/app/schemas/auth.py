@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 
 
 class Token(BaseModel):
@@ -13,3 +14,6 @@ class TokenRefresh(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=12, max_length=128)
+    new_password: str = Field(min_length=12, max_length=128)

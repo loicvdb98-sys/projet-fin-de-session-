@@ -12,7 +12,8 @@ from ..database import get_db
 from ..models.refresh_token import RefreshToken
 from ..models.user import User
 from ..rate_limit import login_rate_limit
-from ..schemas.auth import LogoutRequest, Token, TokenRefresh
+from ..schemas.auth import LogoutRequest, PasswordChange, Token, TokenRefresh
+from ..dependencies import get_current_user
 from ..schemas.user import UserCreate, UserRead
 from ..security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from ..config import get_settings
@@ -91,3 +92,13 @@ def logout(data: LogoutRequest, db: Session = Depends(get_db)):
         stored.revoked_at = datetime.now(timezone.utc)
         db.commit()
         logger.info("Refresh token révoqué pour l'utilisateur %s", stored.user_id)
+
+
+@router.post("/change-password", status_code=204)
+def change_password(data: PasswordChange, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Mot de passe actuel incorrect")
+    if data.current_password == data.new_password:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Le nouveau mot de passe doit être différent")
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
