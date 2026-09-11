@@ -12,6 +12,7 @@ import { catchError, of, shareReplay } from 'rxjs';
 import { UserService } from '../services/user.service';
 import { Statistics, StatisticsService } from '../services/statistics.service';
 import { ThemeService } from '../services/theme.service';
+import { AuthService } from '../services/auth.service';
 @Component({ standalone: true, template: `
 <section class="page profile-page">
   @if (user$ | async; as user) {
@@ -60,6 +61,12 @@ import { ThemeService } from '../services/theme.service';
         <mat-card class="security-card">
           <div class="card-heading"><div><p class="eyebrow">SÉCURITÉ</p><h2>Compte et sécurité</h2></div><span aria-hidden="true">🔒</span></div>
           <p class="text-secondary">Votre session est protégée par une authentification JWT. Déconnectez-vous toujours après avoir utilisé un appareil partagé.</p>
+          <form class="profile-form" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+            <mat-form-field appearance="outline"><mat-label>Mot de passe actuel</mat-label><input matInput type="password" formControlName="current_password"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Nouveau mot de passe</mat-label><input matInput type="password" formControlName="new_password"><mat-hint>Minimum 12 caractères.</mat-hint></mat-form-field>
+            <button mat-stroked-button type="submit" [disabled]="passwordForm.invalid">Modifier le mot de passe</button>
+            @if (passwordMessage) { <span class="success-message inline-message">{{ passwordMessage }}</span> }
+          </form>
           <button mat-stroked-button routerLink="/login">Se connecter avec un autre compte</button>
         </mat-card>
       </div>
@@ -70,13 +77,16 @@ import { ThemeService } from '../services/theme.service';
 </section>` , imports: [AsyncPipe, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule, MatDividerModule, RouterLink] })
 export class ProfileComponent {
   private readonly service = inject(UserService); private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
   private readonly statistics = inject(StatisticsService);
   readonly user$ = this.service.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly stats$ = this.statistics.mine().pipe(catchError(() => of<Statistics | null>(null)), shareReplay({ bufferSize: 1, refCount: true }));
   readonly form = this.fb.nonNullable.group({ full_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]] });
+  readonly passwordForm = this.fb.nonNullable.group({ current_password: ['', [Validators.required, Validators.minLength(12)]], new_password: ['', [Validators.required, Validators.minLength(12)]] });
   saving = false;
   message = '';
+  passwordMessage = '';
   constructor() { this.user$.subscribe(user => this.form.patchValue({ full_name: user.full_name })); }
   initials(name: string): string { return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join(''); }
   roleLabel(role: string): string { return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif'; }
@@ -86,6 +96,14 @@ export class ProfileComponent {
     this.service.update(id, this.form.getRawValue()).subscribe({
       next: () => { this.saving = false; this.message = 'Profil mis à jour.'; },
       error: () => { this.saving = false; this.message = 'La mise à jour a échoué. Réessayez.'; }
+    });
+  }
+  changePassword(): void {
+    if (this.passwordForm.invalid) return;
+    const { current_password, new_password } = this.passwordForm.getRawValue();
+    this.auth.changePassword(current_password, new_password).subscribe({
+      next: () => { this.passwordForm.reset(); this.passwordMessage = 'Mot de passe modifié avec succès.'; },
+      error: (error) => { this.passwordMessage = error?.error?.detail || 'Impossible de modifier le mot de passe.'; }
     });
   }
 }

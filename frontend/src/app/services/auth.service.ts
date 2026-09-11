@@ -30,6 +30,10 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/auth/register`, data);
   }
 
+  changePassword(current_password: string, new_password: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/auth/change-password`, { current_password, new_password });
+  }
+
   logout(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
