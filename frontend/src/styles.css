@@ -72,6 +72,19 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .preference-row strong, .preference-row small { display: block; }
 .preference-row small { color: var(--text-secondary); margin-top: .2rem; }
 .security-card { border-left: 4px solid var(--accent-secondary); }
+.goals-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.goal-form { display: grid; gap: .7rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.teal-button { background: var(--accent-secondary) !important; color: #fff !important; }
+.goal-list { margin-top: 1rem; }
+.goal-row { padding: 1rem 0; border-bottom: 1px solid var(--border-default); }
+.goal-row:last-child { border-bottom: 0; }
+.goal-row-heading { display: flex; justify-content: space-between; align-items: center; }
+.goal-progress { height: .55rem; margin: .7rem 0 .35rem; border-radius: 999px; background: var(--bg-surface-alt); overflow: hidden; }
+.goal-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); }
+.goal-row small, .record-row small { color: var(--text-secondary); display: block; margin-top: .25rem; }
+.record-row { display: flex; justify-content: space-between; align-items: center; padding: .85rem 0; border-bottom: 1px solid var(--border-default); }
+.record-row:last-child { border-bottom: 0; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }
@@ -156,5 +169,6 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
 @media (max-width: 800px) { .workout-session-fields, .exercise-row { grid-template-columns: 1fr 1fr; } .exercise-row .exercise-number { display: none; } .timer-card { flex-wrap: wrap; gap: 1rem; } .timer-value { margin-left: 0; } }
 @media (max-width: 800px) { .workout-layout { grid-template-columns: 1fr; } }
 @media (max-width: 800px) { .profile-layout { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .goals-layout { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .profile-stats { grid-template-columns: repeat(2, 1fr); } .form-actions { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 600px) { .app-header { padding: 0 .5rem; } nav a { display: none; } .page-heading, .builder-heading { flex-direction: column; } .builder-actions, .timer-actions { justify-content: flex-start; flex-wrap: wrap; } .teal-outline { margin-right: 0; } }
