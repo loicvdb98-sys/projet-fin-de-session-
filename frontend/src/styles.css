@@ -89,6 +89,18 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .program-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
 .program-card h2 { margin: .2rem 0 .8rem; }
 .program-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid var(--border-default); padding-top: .75rem; }
+.notification-list { display: grid; gap: .75rem; }
+.notification-card { display: flex; flex-direction: row; gap: 1rem; align-items: flex-start; border-left: 4px solid transparent; }
+.notification-card.unread { border-left-color: var(--accent-secondary); background: linear-gradient(90deg, rgb(0 170 159 / 8%), var(--bg-surface)); }
+.notification-icon { display: grid; place-items: center; flex: 0 0 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--color-info-500); color: #fff; font-weight: 900; }
+.notification-icon.success { background: var(--color-success-500); }
+.notification-icon.warning { background: var(--color-warning-500); }
+.notification-icon.danger { background: var(--accent-primary); }
+.notification-body { flex: 1; min-width: 0; }
+.notification-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.notification-heading h2 { margin: 0; font-size: 1rem; }
+.notification-heading small { color: var(--text-secondary); white-space: nowrap; }
+.notification-body p { margin: .35rem 0; color: var(--text-secondary); }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }
