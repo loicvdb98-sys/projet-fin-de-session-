@@ -8,6 +8,7 @@ import { ParticipationsComponent } from './pages/participations.component';
 import { PerformancesComponent } from './pages/performances.component';
 import { WorkoutCreateComponent } from './pages/workout-create.component';
 import { GoalsComponent } from './pages/goals.component';
+import { ProgramsComponent } from './pages/programs.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'performances', component: PerformancesComponent },
   { path: 'profile', component: ProfileComponent },
   { path: 'goals', component: GoalsComponent },
+  { path: 'programs', component: ProgramsComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

@@ -85,6 +85,10 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .goal-row small, .record-row small { color: var(--text-secondary); display: block; margin-top: .25rem; }
 .record-row { display: flex; justify-content: space-between; align-items: center; padding: .85rem 0; border-bottom: 1px solid var(--border-default); }
 .record-row:last-child { border-bottom: 0; }
+.program-form { display: grid; gap: .75rem; }
+.program-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.program-card h2 { margin: .2rem 0 .8rem; }
+.program-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid var(--border-default); padding-top: .75rem; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }
