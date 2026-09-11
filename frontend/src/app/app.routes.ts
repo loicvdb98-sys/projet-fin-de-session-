@@ -10,6 +10,7 @@ import { WorkoutCreateComponent } from './pages/workout-create.component';
 import { GoalsComponent } from './pages/goals.component';
 import { ProgramsComponent } from './pages/programs.component';
 import { NotificationsComponent } from './pages/notifications.component';
+import { AthletesComponent } from './pages/athletes.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: 'goals', component: GoalsComponent },
   { path: 'programs', component: ProgramsComponent },
   { path: 'notifications', component: NotificationsComponent },
+  { path: 'athletes', component: AthletesComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

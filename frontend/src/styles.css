@@ -101,6 +101,12 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .notification-heading h2 { margin: 0; font-size: 1rem; }
 .notification-heading small { color: var(--text-secondary); white-space: nowrap; }
 .notification-body p { margin: .35rem 0; color: var(--text-secondary); }
+.athlete-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.athlete-card { display: grid; grid-template-columns: auto 1fr; gap: .9rem; align-items: center; }
+.athlete-card h2 { margin: 0; font-size: 1.05rem; }
+.athlete-card p { margin: .2rem 0 .45rem; overflow-wrap: anywhere; }
+.athlete-card a { grid-column: 1 / -1; color: var(--accent-secondary) !important; border-color: var(--accent-secondary) !important; }
+.small-avatar { width: 3rem; height: 3rem; border-radius: .9rem; margin: 0; font-size: 1rem; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }

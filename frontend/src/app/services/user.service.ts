@@ -8,6 +8,7 @@ export class UserService {
   private readonly api = 'http://localhost:8001/users';
   constructor(private readonly http: HttpClient) {}
   me(): Observable<User> { return this.http.get<User>(`${this.api}/me`); }
+  athletes(): Observable<User[]> { return this.http.get<User[]>(`${this.api}/athletes`); }
   update(id: number, data: Partial<Pick<User, 'full_name' | 'role' | 'is_active'>>): Observable<User> {
     return this.http.patch<User>(`${this.api}/${id}`, data);
   }
