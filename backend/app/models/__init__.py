@@ -4,8 +4,9 @@ from .performance import Performance
 from .goal import Goal
 from .record import PersonalRecord
 from .program import WorkoutProgram
+from .notification import Notification
 from .refresh_token import RefreshToken
 from .session import Session
 from .user import User
 
-__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram"]
+__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification"]
