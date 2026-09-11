@@ -20,6 +20,11 @@ def list_users(db: Session = Depends(get_db)):
     return db.scalars(select(User).order_by(User.id)).all()
 
 
+@router.get("/athletes", response_model=list[UserRead], dependencies=[Depends(require_roles("coach", "admin"))])
+def list_athletes(db: Session = Depends(get_db)):
+    return db.scalars(select(User).where(User.role == "sportif", User.is_active.is_(True)).order_by(User.full_name)).all()
+
+
 @router.patch("/{user_id}", response_model=UserRead)
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     if current.role != "admin" and current.id != user_id:
