@@ -28,6 +28,7 @@ import { ThemeService } from './services/theme.service';
           <a mat-button routerLink="/programs">Programmes</a>
           <a mat-button routerLink="/notifications">Alertes</a>
           <a mat-button routerLink="/athletes">Sportifs</a>
+          <a mat-button routerLink="/journal">Journal</a>
           <a mat-button routerLink="/profile">Profil</a>
         }
         @if (auth.isAuthenticated()) {

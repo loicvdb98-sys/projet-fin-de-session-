@@ -11,6 +11,7 @@ import { GoalsComponent } from './pages/goals.component';
 import { ProgramsComponent } from './pages/programs.component';
 import { NotificationsComponent } from './pages/notifications.component';
 import { AthletesComponent } from './pages/athletes.component';
+import { JournalComponent } from './pages/journal.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'programs', component: ProgramsComponent },
   { path: 'notifications', component: NotificationsComponent },
   { path: 'athletes', component: AthletesComponent },
+  { path: 'journal', component: JournalComponent },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

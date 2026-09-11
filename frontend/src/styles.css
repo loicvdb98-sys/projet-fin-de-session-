@@ -107,6 +107,19 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .athlete-card p { margin: .2rem 0 .45rem; overflow-wrap: anywhere; }
 .athlete-card a { grid-column: 1 / -1; color: var(--accent-secondary) !important; border-color: var(--accent-secondary) !important; }
 .small-avatar { width: 3rem; height: 3rem; border-radius: .9rem; margin: 0; font-size: 1rem; }
+.journal-create-card { max-width: 850px; }
+.journal-form { display: grid; gap: .75rem; }
+.journal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.journal-list { margin-top: 1rem; }
+.journal-entry { padding: 1rem 0; border-bottom: 1px solid var(--border-default); }
+.journal-entry:last-child { border-bottom: 0; }
+.journal-entry-top, .journal-metrics { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.journal-entry time { color: var(--text-secondary); font-size: .8rem; }
+.journal-metrics { justify-content: flex-start; margin: .75rem 0; color: var(--text-secondary); }
+.journal-metrics strong { color: var(--text-primary); }
+.journal-entry p { margin: .5rem 0 0; }
+.pain-note { color: var(--color-warning-500); }
+.coach-note { padding: .7rem; background: rgb(0 170 159 / 10%); border-radius: .5rem; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }
@@ -192,5 +205,6 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
 @media (max-width: 800px) { .workout-layout { grid-template-columns: 1fr; } }
 @media (max-width: 800px) { .profile-layout { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .goals-layout { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .journal-grid { grid-template-columns: 1fr; } .journal-entry-top { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 520px) { .profile-stats { grid-template-columns: repeat(2, 1fr); } .form-actions { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 600px) { .app-header { padding: 0 .5rem; } nav a { display: none; } .page-heading, .builder-heading { flex-direction: column; } .builder-actions, .timer-actions { justify-content: flex-start; flex-wrap: wrap; } .teal-outline { margin-right: 0; } }
