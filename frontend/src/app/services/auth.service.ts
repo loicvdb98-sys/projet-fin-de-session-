@@ -2,13 +2,14 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface LoginResponse { access_token: string; refresh_token: string; token_type: string; }
 export interface RegisterRequest { email: string; full_name: string; password: string; role: 'sportif' | 'coach'; }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8001';
+  private readonly apiUrl = API_URL;
   readonly isAuthenticated = signal(Boolean(localStorage.getItem('access_token')));
 
   constructor(private readonly http: HttpClient, private readonly router: Router) {}

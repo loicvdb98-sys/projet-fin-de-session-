@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { SessionService, Exercise } from '../services/session.service';
 import { UserService } from '../services/user.service';
 import { ParticipationService } from '../services/participation.service';
+import { forkJoin } from 'rxjs';
 
 type ExerciseForm = {
   name: FormControl<string>;
@@ -46,6 +47,7 @@ type ExerciseForm = {
               }
             </div>
             <div class="builder-actions">
+              @if (createError) { <p class="error" role="alert">{{ createError }}</p> }
               <button mat-stroked-button type="button" class="teal-outline" (click)="addExercise()">+ Ajouter un exercice</button>
               <button mat-flat-button class="primary-action" type="submit" [disabled]="form.invalid || exercises.length === 0">Créer la séance</button>
             </div>
@@ -82,6 +84,7 @@ export class SessionsComponent implements OnDestroy {
     exercises: this.fb.array<FormGroup<ExerciseForm>>([])
   });
   canManage = false;
+  createError = '';
   exercises = this.form.controls.exercises;
   selectedExercises: Exercise[] = [];
   timerExercise?: Exercise;
@@ -100,19 +103,21 @@ export class SessionsComponent implements OnDestroy {
   }
   removeExercise(index: number): void { this.exercises.removeAt(index); }
   create(): void {
+    if (this.form.invalid || !this.exercises.length) return;
+    this.createError = '';
     this.users.me().subscribe(user => this.service.create({
       title: this.form.controls.title.value || '',
       starts_at: this.form.controls.starts_at.value || '',
       duration_minutes: this.form.controls.duration_minutes.value || 60,
       capacity: this.form.controls.capacity.value || 20,
       coach_id: user.id, description: 'Séance de musculation'
-    }).subscribe(session => {
+    }).subscribe({ next: session => {
       const items = this.exercises.getRawValue();
-      items.forEach(exercise => this.service.addExercise(session.id, { ...exercise, name: exercise.name || '', sets: exercise.sets || 1, repetitions: exercise.repetitions || undefined, rest_seconds: exercise.rest_seconds || 0 }).subscribe());
-      this.form.reset({ title: '', starts_at: '', duration_minutes: 60, capacity: 20 });
-      this.exercises.clear();
-      location.reload();
-    }));
+      forkJoin(items.map(exercise => this.service.addExercise(session.id, { ...exercise, name: exercise.name || '', sets: exercise.sets || 1, repetitions: exercise.repetitions || undefined, rest_seconds: exercise.rest_seconds || 0 }))).subscribe({
+        next: () => { this.form.reset({ title: '', starts_at: '', duration_minutes: 60, capacity: 20 }); this.exercises.clear(); location.reload(); },
+        error: () => { this.createError = 'La séance a été créée, mais au moins un exercice n’a pas pu être enregistré.'; }
+      });
+    }, error: () => { this.createError = 'Impossible de créer la séance. Vérifiez vos droits et les informations saisies.'; } }));
   }
   register(session_id: number): void { this.users.me().subscribe(user => this.participation.create(user.id, session_id).subscribe(() => alert('Inscription confirmée.'))); }
   loadExercises(sessionId: number): void { this.service.exercises(sessionId).subscribe(exercises => this.selectedExercises = exercises); }

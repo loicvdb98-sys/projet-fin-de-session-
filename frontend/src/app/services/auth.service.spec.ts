@@ -21,7 +21,7 @@ describe('AuthService', () => {
 
   it('stores tokens after a successful login', () => {
     service.login('athlete@example.com', 'Password2026!').subscribe();
-    const request = http.expectOne('http://localhost:8001/auth/login');
+    const request = http.expectOne('http://localhost:8000/auth/login');
 
     request.flush({ access_token: 'access', refresh_token: 'refresh', token_type: 'bearer' });
 
@@ -32,7 +32,7 @@ describe('AuthService', () => {
 
   it('sends password changes to the protected endpoint', () => {
     service.changePassword('OldPassword2026!', 'NewPassword2026!').subscribe();
-    const request = http.expectOne('http://localhost:8001/auth/change-password');
+    const request = http.expectOne('http://localhost:8000/auth/change-password');
 
     expect(request.request.body).toEqual({
       current_password: 'OldPassword2026!',

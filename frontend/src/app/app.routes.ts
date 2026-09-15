@@ -12,21 +12,22 @@ import { ProgramsComponent } from './pages/programs.component';
 import { NotificationsComponent } from './pages/notifications.component';
 import { AthletesComponent } from './pages/athletes.component';
 import { JournalComponent } from './pages/journal.component';
+import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'sessions', component: SessionsComponent },
-  { path: 'workouts/new', component: WorkoutCreateComponent },
+  { path: 'workouts/new', component: WorkoutCreateComponent, canActivate: [authGuard] },
   { path: 'calendar', component: CalendarComponent },
-  { path: 'participations', component: ParticipationsComponent },
-  { path: 'performances', component: PerformancesComponent },
-  { path: 'profile', component: ProfileComponent },
-  { path: 'goals', component: GoalsComponent },
-  { path: 'programs', component: ProgramsComponent },
-  { path: 'notifications', component: NotificationsComponent },
-  { path: 'athletes', component: AthletesComponent },
-  { path: 'journal', component: JournalComponent },
+  { path: 'participations', component: ParticipationsComponent, canActivate: [authGuard] },
+  { path: 'performances', component: PerformancesComponent, canActivate: [authGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'goals', component: GoalsComponent, canActivate: [authGuard] },
+  { path: 'programs', component: ProgramsComponent, canActivate: [authGuard] },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [authGuard] },
+  { path: 'athletes', component: AthletesComponent, canActivate: [authGuard] },
+  { path: 'journal', component: JournalComponent, canActivate: [authGuard] },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

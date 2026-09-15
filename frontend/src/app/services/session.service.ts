@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface SportSession {
   id: number; title: string; starts_at: string; coach_id: number;
@@ -14,7 +15,7 @@ export interface Exercise {
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
-  private readonly apiUrl = 'http://localhost:8001/sessions';
+  private readonly apiUrl = `${API_URL}/sessions`;
   constructor(private readonly http: HttpClient) {}
   list(): Observable<SportSession[]> { return this.http.get<SportSession[]>(this.apiUrl); }
   create(data: Omit<SportSession, 'id'>): Observable<SportSession> { return this.http.post<SportSession>(`${this.apiUrl}/`, data); }

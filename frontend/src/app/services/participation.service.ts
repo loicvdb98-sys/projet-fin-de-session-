@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 export interface Participation { id: number; user_id: number; session_id: number; status: string; }
 @Injectable({ providedIn: 'root' })
 export class ParticipationService {
-  private readonly api = 'http://localhost:8001/participations';
+  private readonly api = `${API_URL}/participations`;
   constructor(private readonly http: HttpClient) {}
   list(): Observable<Participation[]> { return this.http.get<Participation[]>(`${this.api}/`); }
   create(user_id: number, session_id: number): Observable<Participation> { return this.http.post<Participation>(`${this.api}/`, { user_id, session_id }); }

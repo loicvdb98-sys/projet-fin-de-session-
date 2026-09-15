@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface AppNotification {
   id: number; user_id: number; title: string; message: string; kind: string;
@@ -9,7 +10,7 @@ export interface AppNotification {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private readonly api = 'http://localhost:8001/notifications';
+  private readonly api = `${API_URL}/notifications`;
   constructor(private readonly http: HttpClient) {}
   list(): Observable<AppNotification[]> { return this.http.get<AppNotification[]>(this.api); }
   markRead(id: number): Observable<AppNotification> { return this.http.patch<AppNotification>(`${this.api}/${id}/read`, {}); }

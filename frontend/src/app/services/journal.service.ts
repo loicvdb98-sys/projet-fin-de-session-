@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface TrainingJournal {
   id: number; user_id: number; session_id: number; notes?: string; fatigue: number;
@@ -9,7 +10,7 @@ export interface TrainingJournal {
 
 @Injectable({ providedIn: 'root' })
 export class JournalService {
-  private readonly api = 'http://localhost:8001/journal';
+  private readonly api = `${API_URL}/journal`;
   constructor(private readonly http: HttpClient) {}
   list(): Observable<TrainingJournal[]> { return this.http.get<TrainingJournal[]>(this.api); }
   create(data: Omit<TrainingJournal, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Observable<TrainingJournal> {

@@ -100,7 +100,7 @@ export class LoginComponent {
       next: () => void this.router.navigate(['/dashboard']),
       error: (response: { status: number }) => {
         this.error = response.status === 0
-          ? 'Le serveur est indisponible. Démarrez l’API FastAPI sur le port 8001.'
+          ? 'Le serveur est indisponible. Démarrez l’API FastAPI sur le port 8000.'
           : 'Email ou mot de passe incorrect.';
       }
     });

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface Goal {
   id: number; user_id: number; title: string; metric: string; target_value: number;
@@ -13,7 +14,7 @@ export interface PersonalRecord {
 
 @Injectable({ providedIn: 'root' })
 export class GoalService {
-  private readonly api = 'http://localhost:8001';
+  private readonly api = API_URL;
   constructor(private readonly http: HttpClient) {}
   goals(): Observable<Goal[]> { return this.http.get<Goal[]>(`${this.api}/goals`); }
   createGoal(data: Omit<Goal, 'id' | 'user_id'>): Observable<Goal> { return this.http.post<Goal>(`${this.api}/goals`, data); }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface WorkoutProgram {
   id: number; user_id: number; name: string; description?: string; weeks: number;
@@ -9,7 +10,7 @@ export interface WorkoutProgram {
 
 @Injectable({ providedIn: 'root' })
 export class ProgramService {
-  private readonly api = 'http://localhost:8001/programs';
+  private readonly api = `${API_URL}/programs`;
   constructor(private readonly http: HttpClient) {}
   list(): Observable<WorkoutProgram[]> { return this.http.get<WorkoutProgram[]>(this.api); }
   create(data: Omit<WorkoutProgram, 'id' | 'user_id' | 'created_at'>): Observable<WorkoutProgram> { return this.http.post<WorkoutProgram>(this.api, data); }

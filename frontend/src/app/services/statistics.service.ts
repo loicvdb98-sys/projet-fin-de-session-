@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export interface Statistics {
   total_sessions: number;
@@ -13,7 +14,7 @@ export interface Statistics {
 
 @Injectable({ providedIn: 'root' })
 export class StatisticsService {
-  private readonly api = 'http://localhost:8001/statistics';
+  private readonly api = `${API_URL}/statistics`;
   constructor(private readonly http: HttpClient) {}
   mine(): Observable<Statistics> { return this.http.get<Statistics>(`${this.api}/me`); }
 }

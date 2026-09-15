@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -33,6 +33,11 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
     session = db.get(SportSession, data.session_id)
     if is_past(session.starts_at):
         raise HTTPException(409, "Impossible de s'inscrire à une séance passée")
+    registrations = db.scalar(
+        select(func.count(Participation.id)).where(Participation.session_id == data.session_id)
+    ) or 0
+    if registrations >= session.capacity:
+        raise HTTPException(409, "Cette séance est complète")
     if db.scalar(select(Participation).where(Participation.user_id == data.user_id, Participation.session_id == data.session_id)):
         raise HTTPException(409, "Participation déjà existante")
     item = Participation(**data.model_dump())
