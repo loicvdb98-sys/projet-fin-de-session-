@@ -3,6 +3,7 @@ import { AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StatisticsService } from '../services/statistics.service';
 import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
@@ -31,7 +32,11 @@ const COACH_MODULES: DashboardModule[] = [
     <section class="page home-page">
       @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Données locales temporaires affichées pour la présentation.</span></div> }
       <div class="home-hero">
-        <div><p class="eyebrow">VOTRE ESPACE SPORTIF</p><h1>Bonjour</h1><p class="text-secondary">Choisissez un module pour continuer votre entraînement.</p></div>
+        <div>
+          <p class="eyebrow">VOTRE ESPACE SPORTIF</p>
+          @if (user$ | async; as user) { <h1>Bonjour {{ firstName(user.full_name) }}</h1> } @else { <h1>Bonjour</h1> }
+          <p class="text-secondary">Choisissez un module pour continuer votre entraînement.</p>
+        </div>
         <span class="status-badge success"><span aria-hidden="true">●</span> Actif</span>
       </div>
 
@@ -76,8 +81,13 @@ export class DashboardComponent {
   private readonly auth = inject(AuthService);
   readonly demoMode = DEMO_MODE;
   readonly stats$ = inject(StatisticsService).mine();
+  readonly user$ = inject(UserService).me();
 
   get modules(): DashboardModule[] {
     return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
+  }
+
+  firstName(fullName: string): string {
+    return fullName.split(' ')[0] || fullName;
   }
 }
