@@ -1,9 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { StatisticsService } from '../services/statistics.service';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
+import { SessionService } from '../services/session.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
@@ -39,6 +41,27 @@ const COACH_MODULES: DashboardModule[] = [
         </div>
         <span class="status-badge success"><span aria-hidden="true">●</span> Actif</span>
       </div>
+
+      @if (nextSession$ | async; as next) {
+        <a class="next-session-card" routerLink="/sessions">
+          <span class="next-session-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>
+            </svg>
+          </span>
+          <span class="next-session-body">
+            <span class="eyebrow">PROCHAINE SÉANCE</span>
+            <strong>{{ next.title }}</strong>
+            <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min</span>
+          </span>
+          <span class="next-session-cta">Voir →</span>
+        </a>
+      } @else {
+        <div class="next-session-card empty">
+          <span class="text-secondary">Aucune séance à venir pour le moment.</span>
+          <a routerLink="/sessions" class="next-session-cta">Voir les séances →</a>
+        </div>
+      }
 
       <div class="module-grid home-modules">
         @for (module of modules; track module.link) {
@@ -82,6 +105,11 @@ export class DashboardComponent {
   readonly demoMode = DEMO_MODE;
   readonly stats$ = inject(StatisticsService).mine();
   readonly user$ = inject(UserService).me();
+  readonly nextSession$ = inject(SessionService).list().pipe(
+    map((sessions) => sessions
+      .filter((session) => new Date(session.starts_at) > new Date())
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0])
+  );
 
   get modules(): DashboardModule[] {
     return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
@@ -89,5 +117,10 @@ export class DashboardComponent {
 
   firstName(fullName: string): string {
     return fullName.split(' ')[0] || fullName;
+  }
+
+  formatSessionDate(iso: string): string {
+    const formatted = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 }
