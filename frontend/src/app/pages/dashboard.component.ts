@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { map, shareReplay } from 'rxjs';
+import { combineLatest, map, shareReplay } from 'rxjs';
 import { StatisticsService } from '../services/statistics.service';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { SessionService } from '../services/session.service';
 import { PerformanceService } from '../services/performance.service';
 import { NotificationService } from '../services/notification.service';
+import { GoalService } from '../services/goal.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
@@ -48,7 +49,7 @@ const COACH_MODULES: DashboardModule[] = [
         <div>
           <p class="eyebrow">VOTRE ESPACE SPORTIF</p>
           @if (user$ | async; as user) { <h1>Bonjour {{ firstName(user.full_name) }}</h1> } @else { <h1>Bonjour</h1> }
-          <p class="text-secondary">Choisissez un module pour continuer votre entraînement.</p>
+          <p class="text-secondary">{{ (tagline$ | async) || 'Choisissez un module pour continuer votre entraînement.' }}</p>
         </div>
         <span class="status-badge success"><span aria-hidden="true">●</span> Actif</span>
       </div>
@@ -143,6 +144,10 @@ export class DashboardComponent {
   readonly unreadCount$ = inject(NotificationService).list().pipe(
     map((notifications) => notifications.filter((notification) => !notification.is_read).length)
   );
+  private readonly goals$ = inject(GoalService).goals();
+  readonly tagline$ = combineLatest([this.stats$, this.goals$]).pipe(
+    map(([stats, goals]) => this.computeTagline(stats.upcoming_sessions, goals))
+  );
 
   private readonly sessions$ = inject(SessionService).list().pipe(
     map((sessions) => sessions
@@ -183,5 +188,26 @@ export class DashboardComponent {
   sparkBars(items: { score: number }[]): number[] {
     const recent = items.slice(-6);
     return recent.map((item) => Math.max(8, Math.min(100, item.score)));
+  }
+
+  private computeTagline(upcomingSessions: number, goals: { title: string; due_date?: string }[]): string {
+    const now = new Date();
+    const nearestGoal = goals
+      .filter((goal) => goal.due_date && new Date(goal.due_date) >= now)
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())[0];
+
+    if (nearestGoal) {
+      const days = Math.ceil((new Date(nearestGoal.due_date!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (days <= 7) {
+        const when = days === 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`;
+        return `Objectif « ${nearestGoal.title} » ${when} !`;
+      }
+    }
+
+    if (upcomingSessions > 0) {
+      return `${upcomingSessions} séance${upcomingSessions > 1 ? 's' : ''} à venir, continue comme ça !`;
+    }
+
+    return 'Choisissez un module pour continuer votre entraînement.';
   }
 }
