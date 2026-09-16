@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { SessionService } from '../services/session.service';
 import { PerformanceService } from '../services/performance.service';
+import { NotificationService } from '../services/notification.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
@@ -103,6 +104,9 @@ const COACH_MODULES: DashboardModule[] = [
                   @if (module.key === 'performances' && (stats$ | async); as stats) {
                     <span class="module-badge">{{ stats.total_performances }} enregistrées</span>
                   }
+                  @if (module.key === 'notifications' && (unreadCount$ | async); as count) {
+                    <span class="module-badge">{{ count }} non lue{{ count > 1 ? 's' : '' }}</span>
+                  }
                 </span>
                 <span class="text-secondary">{{ module.description }}</span>
 
@@ -136,6 +140,9 @@ export class DashboardComponent {
   readonly stats$ = inject(StatisticsService).mine();
   readonly user$ = inject(UserService).me();
   readonly performances$ = inject(PerformanceService).list();
+  readonly unreadCount$ = inject(NotificationService).list().pipe(
+    map((notifications) => notifications.filter((notification) => !notification.is_read).length)
+  );
 
   private readonly sessions$ = inject(SessionService).list().pipe(
     map((sessions) => sessions
