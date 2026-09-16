@@ -1,16 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { map, shareReplay } from 'rxjs';
 import { StatisticsService } from '../services/statistics.service';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { SessionService } from '../services/session.service';
+import { PerformanceService } from '../services/performance.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 type SectionKey = 'today' | 'progress' | 'organize' | 'coaching';
-interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; section: SectionKey; }
+interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; section: SectionKey; size?: 'lg'; }
 interface ModuleSection { key: SectionKey; eyebrow: string; title: string; items: DashboardModule[]; }
 
 const SECTION_INFO: Record<SectionKey, { eyebrow: string; title: string }> = {
@@ -21,10 +22,10 @@ const SECTION_INFO: Record<SectionKey, { eyebrow: string; title: string }> = {
 };
 
 const MODULES: DashboardModule[] = [
-  { key: 'sessions', title: 'Séances', description: 'Consultez et gérez vos séances d’entraînement.', link: '/sessions', color: 'secondary', section: 'today' },
+  { key: 'sessions', title: 'Séances', description: 'Consultez et gérez vos séances d’entraînement.', link: '/sessions', color: 'secondary', section: 'today', size: 'lg' },
   { key: 'calendar', title: 'Calendrier', description: 'Visualisez votre planning à venir.', link: '/calendar', color: 'info', section: 'today' },
   { key: 'participations', title: 'Participations', description: 'Suivez vos inscriptions aux séances.', link: '/participations', color: 'success', section: 'today' },
-  { key: 'performances', title: 'Performances', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary', section: 'progress' },
+  { key: 'performances', title: 'Performances', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary', section: 'progress', size: 'lg' },
   { key: 'goals', title: 'Objectifs', description: 'Définissez vos cibles et records personnels.', link: '/goals', color: 'warning', section: 'progress' },
   { key: 'programs', title: 'Programmes', description: 'Suivez vos programmes d’entraînement.', link: '/programs', color: 'secondary', section: 'organize' },
   { key: 'journal', title: 'Journal', description: 'Consignez vos ressentis après chaque séance.', link: '/journal', color: 'info', section: 'organize' },
@@ -76,7 +77,7 @@ const COACH_MODULES: DashboardModule[] = [
         <div class="module-heading"><p class="eyebrow">{{ section.eyebrow }}</p><h2>{{ section.title }}</h2></div>
         <div class="module-grid home-modules">
           @for (module of section.items; track module.link) {
-            <a class="module-card" [class]="'c-' + module.color" [routerLink]="module.link">
+            <a class="module-card" [class]="'c-' + module.color + (module.size === 'lg' ? ' size-lg' : '')" [routerLink]="module.link">
               <span class="module-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   @switch (module.key) {
@@ -104,6 +105,23 @@ const COACH_MODULES: DashboardModule[] = [
                   }
                 </span>
                 <span class="text-secondary">{{ module.description }}</span>
+
+                @if (module.key === 'sessions' && (upcomingSessions$ | async); as upcoming) {
+                  @if (upcoming.length) {
+                    <span class="module-preview-list">
+                      @for (session of upcoming; track session.id) {
+                        <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }}</span></span>
+                      }
+                    </span>
+                  }
+                }
+                @if (module.key === 'performances' && (performances$ | async); as perfs) {
+                  @if (perfs.length) {
+                    <span class="module-sparkline" aria-hidden="true">
+                      @for (bar of sparkBars(perfs); track $index) { <span [style.height.%]="bar"></span> }
+                    </span>
+                  }
+                }
               </span>
             </a>
           }
@@ -117,11 +135,16 @@ export class DashboardComponent {
   readonly demoMode = DEMO_MODE;
   readonly stats$ = inject(StatisticsService).mine();
   readonly user$ = inject(UserService).me();
-  readonly nextSession$ = inject(SessionService).list().pipe(
+  readonly performances$ = inject(PerformanceService).list();
+
+  private readonly sessions$ = inject(SessionService).list().pipe(
     map((sessions) => sessions
       .filter((session) => new Date(session.starts_at) > new Date())
-      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0])
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
+  readonly nextSession$ = this.sessions$.pipe(map((sessions) => sessions[0]));
+  readonly upcomingSessions$ = this.sessions$.pipe(map((sessions) => sessions.slice(0, 3)));
 
   get modules(): DashboardModule[] {
     return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
@@ -144,5 +167,14 @@ export class DashboardComponent {
   formatSessionDate(iso: string): string {
     const formatted = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  shortSessionDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  sparkBars(items: { score: number }[]): number[] {
+    const recent = items.slice(-6);
+    return recent.map((item) => Math.max(8, Math.min(100, item.score)));
   }
 }
