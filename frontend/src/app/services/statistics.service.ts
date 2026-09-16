@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { API_URL } from '../api.config';
+import { DEMO_MODE, DEMO_STATISTICS } from '../demo-data';
 
 export interface Statistics {
   total_sessions: number;
@@ -16,5 +17,5 @@ export interface Statistics {
 export class StatisticsService {
   private readonly api = `${API_URL}/statistics`;
   constructor(private readonly http: HttpClient) {}
-  mine(): Observable<Statistics> { return this.http.get<Statistics>(`${this.api}/me`); }
+  mine(): Observable<Statistics> { return DEMO_MODE ? of(DEMO_STATISTICS) : this.http.get<Statistics>(`${this.api}/me`); }
 }

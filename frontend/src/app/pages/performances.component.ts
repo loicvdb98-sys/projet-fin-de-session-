@@ -3,6 +3,7 @@ import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Performance, PerformanceService } from '../services/performance.service';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { DEMO_MODE } from '../demo-data';
 
 Chart.register(...registerables);
 
@@ -11,6 +12,7 @@ Chart.register(...registerables);
   imports: [AsyncPipe, DatePipe, DecimalPipe, MatCardModule],
   template: `
     <section class="page">
+      @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Historique et graphique alimentés par des données locales temporaires.</span></div> }
       <div class="page-heading">
         <div><p class="eyebrow">PROGRESSION</p><h1>Performances</h1><p class="text-secondary">Analysez vos résultats au fil des séances.</p></div>
       </div>
@@ -36,6 +38,7 @@ Chart.register(...registerables);
 export class PerformancesComponent implements AfterViewInit, OnDestroy {
   @ViewChild('performanceChart') chartCanvas?: ElementRef<HTMLCanvasElement>;
   readonly performances$ = inject(PerformanceService).list();
+  readonly demoMode = DEMO_MODE;
   private chart?: Chart;
 
   ngAfterViewInit(): void {

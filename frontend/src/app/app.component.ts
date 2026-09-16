@@ -17,7 +17,7 @@ import { ThemeService } from './services/theme.service';
       <nav>
         <a mat-button routerLink="/dashboard">Tableau de bord</a>
         <a mat-button routerLink="/sessions">Séances</a>
-        @if (auth.isAuthenticated()) {
+        @if (auth.isAuthenticated() && auth.isCoachOrAdmin()) {
           <a mat-button routerLink="/workouts/new">Créer</a>
         }
         <a mat-button routerLink="/calendar">Calendrier</a>
@@ -27,7 +27,7 @@ import { ThemeService } from './services/theme.service';
           <a mat-button routerLink="/goals">Objectifs</a>
           <a mat-button routerLink="/programs">Programmes</a>
           <a mat-button routerLink="/notifications">Alertes</a>
-          <a mat-button routerLink="/athletes">Sportifs</a>
+          @if (auth.isCoachOrAdmin()) { <a mat-button routerLink="/athletes">Sportifs</a> }
           <a mat-button routerLink="/journal">Journal</a>
           <a mat-button routerLink="/profile">Profil</a>
         }

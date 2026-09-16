@@ -6,12 +6,14 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Goal, GoalService, PersonalRecord } from '../services/goal.service';
+import { DEMO_MODE } from '../demo-data';
 
 @Component({
   standalone: true,
   imports: [AsyncPipe, DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page goals-page">
+      @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Objectifs et records locaux, faciles à désactiver après l'oral.</span></div> }
       <div class="page-heading"><div><p class="eyebrow">PROGRESSION</p><h1>Objectifs et records</h1><p class="text-secondary">Transformez vos ambitions en étapes mesurables.</p></div></div>
       <div class="goals-layout">
         <mat-card><p class="eyebrow">NOUVEL OBJECTIF</p><h2>Définir une cible</h2>
@@ -48,6 +50,7 @@ export class GoalsComponent {
   private readonly fb = inject(FormBuilder);
   readonly goals$ = this.service.goals();
   readonly records$ = this.service.records();
+  readonly demoMode = DEMO_MODE;
   readonly goalForm = this.fb.nonNullable.group({ title: ['', [Validators.required, Validators.minLength(2)]], metric: ['progression'], target_value: [1, [Validators.required, Validators.min(0.01)]], current_value: [0], unit: ['séances', Validators.required], due_date: [''], notes: [''] });
   readonly recordForm = this.fb.nonNullable.group({ exercise_name: ['', Validators.required], value: [1, [Validators.required, Validators.min(0.01)]], unit: ['kg', Validators.required], notes: [''] });
   addGoal(): void { if (this.goalForm.invalid) return; this.service.createGoal(this.goalForm.getRawValue()).subscribe(() => location.reload()); }

@@ -1,8 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, map, switchMap, tap } from 'rxjs';
 import { API_URL } from '../api.config';
+import { UserService } from './user.service';
 
 export interface LoginResponse { access_token: string; refresh_token: string; token_type: string; }
 export interface RegisterRequest { email: string; full_name: string; password: string; role: 'sportif' | 'coach'; }
@@ -12,7 +13,11 @@ export class AuthService {
   private readonly apiUrl = API_URL;
   readonly isAuthenticated = signal(Boolean(localStorage.getItem('access_token')));
 
-  constructor(private readonly http: HttpClient, private readonly router: Router) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly router: Router,
+    private readonly userService: UserService
+  ) {}
 
   login(email: string, password: string): Observable<LoginResponse> {
     const body = new HttpParams().set('username', email).set('password', password);
@@ -22,8 +27,15 @@ export class AuthService {
       tap((response) => {
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('refresh_token', response.refresh_token);
+        // Utilisé uniquement par les données visuelles locales de démonstration.
+        localStorage.setItem('demo_user_email', email.trim().toLowerCase());
         this.isAuthenticated.set(true);
-      })
+      }),
+      // Le rôle vient toujours du profil renvoyé par le serveur, jamais d'une supposition côté client.
+      switchMap((response) => this.userService.me().pipe(
+        tap((user) => localStorage.setItem('user_role', user.role)),
+        map(() => response)
+      ))
     );
   }
 
@@ -38,7 +50,14 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('demo_user_email');
+    localStorage.removeItem('user_role');
     this.isAuthenticated.set(false);
     void this.router.navigate(['/login']);
+  }
+
+  isCoachOrAdmin(): boolean {
+    const role = localStorage.getItem('user_role');
+    return role === 'coach' || role === 'admin';
   }
 }

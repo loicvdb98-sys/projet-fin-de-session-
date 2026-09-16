@@ -4,12 +4,14 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 import { StatisticsService } from '../services/statistics.service';
+import { DEMO_MODE } from '../demo-data';
 
 @Component({
   standalone: true,
   imports: [AsyncPipe, MatCardModule, MatButtonModule, RouterLink],
   template: `
     <section class="page">
+      @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Données locales temporaires affichées pour la présentation.</span></div> }
       <div class="page-heading"><div><p class="eyebrow">VOTRE ESPACE SPORTIF</p><h1>Tableau de bord</h1><p class="text-secondary">Gardez le rythme et suivez votre progression.</p></div><span class="status-badge success"><span aria-hidden="true">●</span> Actif</span></div>
       <div class="cards">
         @if (stats$ | async; as stats) {
@@ -24,5 +26,6 @@ import { StatisticsService } from '../services/statistics.service';
   `
 })
 export class DashboardComponent {
+  readonly demoMode = DEMO_MODE;
   readonly stats$ = inject(StatisticsService).mine();
 }
