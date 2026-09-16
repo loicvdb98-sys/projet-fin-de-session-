@@ -2,14 +2,15 @@
 
 :root {
   --color-powder-blush-50: #ffe8e5; --color-powder-blush-100: #ffd0cc; --color-powder-blush-300: #ff7366; --color-powder-blush-400: #ff4433; --color-powder-blush-500: #ff1500; --color-powder-blush-600: #cc1100;
+  --color-violet-50: #f4f1ff; --color-violet-100: #e2d9ff; --color-violet-300: #b7a1ff; --color-violet-400: #9b7dff; --color-violet-500: #7c5cff; --color-violet-600: #6344d6;
   --color-deep-teal-50: #e5fbfa; --color-deep-teal-300: #66e6dd; --color-deep-teal-400: #33ded2; --color-deep-teal-600: #00aa9f; --color-deep-teal-700: #008077;
   --color-slate-50: #f7f8f9; --color-slate-100: #eceef1; --color-slate-200: #d5d9df; --color-slate-300: #b3bac4; --color-slate-600: #545b6c; --color-slate-700: #434857; --color-slate-800: #2b2f38; --color-slate-900: #181a20; --color-slate-950: #0c0d10;
   --color-success-500: #16a34a; --color-warning-500: #f59e0b; --color-info-500: #0ea5e9;
-  --bg-body: var(--color-slate-50); --bg-surface: #fff; --bg-surface-alt: var(--color-slate-100); --text-primary: var(--color-slate-900); --text-secondary: var(--color-slate-600); --border-default: var(--color-slate-200); --accent-primary: var(--color-powder-blush-500); --accent-primary-hover: var(--color-powder-blush-600); --accent-secondary: var(--color-deep-teal-600); --surface-glow: rgb(255 255 255 / 78%); --shadow-soft: 0 18px 45px rgb(24 26 32 / 9%);
+  --bg-body: var(--color-slate-50); --bg-surface: #fff; --bg-surface-alt: var(--color-slate-100); --text-primary: var(--color-slate-900); --text-secondary: var(--color-slate-600); --border-default: var(--color-slate-200); --accent-primary: var(--color-violet-500); --accent-primary-hover: var(--color-violet-600); --accent-secondary: var(--color-deep-teal-600); --surface-glow: rgb(255 255 255 / 78%); --shadow-soft: 0 18px 45px rgb(24 26 32 / 9%);
 }
 
 html[data-theme='dark'] {
-  --bg-body: #101217; --bg-surface: #1b1e26; --bg-surface-alt: #252a34; --text-primary: #f7f8f9; --text-secondary: #c5ccd7; --border-default: #4a5362; --accent-primary: var(--color-powder-blush-400); --accent-primary-hover: var(--color-powder-blush-300); --accent-secondary: var(--color-deep-teal-300); --surface-glow: rgb(37 42 52 / 82%); --shadow-soft: 0 20px 50px rgb(0 0 0 / 32%);
+  --bg-body: #101217; --bg-surface: #1b1e26; --bg-surface-alt: #252a34; --text-primary: #f7f8f9; --text-secondary: #c5ccd7; --border-default: #4a5362; --accent-primary: var(--color-violet-400); --accent-primary-hover: var(--color-violet-300); --accent-secondary: var(--color-deep-teal-300); --surface-glow: rgb(37 42 52 / 82%); --shadow-soft: 0 20px 50px rgb(0 0 0 / 32%);
 }
 
 * { box-sizing: border-box; }
