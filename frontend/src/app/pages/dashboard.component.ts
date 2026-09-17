@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { combineLatest, map, shareReplay } from 'rxjs';
 import { StatisticsService } from '../services/statistics.service';
@@ -9,39 +9,37 @@ import { SessionService } from '../services/session.service';
 import { PerformanceService } from '../services/performance.service';
 import { NotificationService } from '../services/notification.service';
 import { GoalService } from '../services/goal.service';
+import { ParticipationService } from '../services/participation.service';
+import { ProgramService } from '../services/program.service';
+import { JournalService } from '../services/journal.service';
 import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
-type SectionKey = 'today' | 'progress' | 'organize' | 'coaching';
-interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; section: SectionKey; size?: 'lg'; }
-interface ModuleSection { key: SectionKey; eyebrow: string; title: string; items: DashboardModule[]; }
-
-const SECTION_INFO: Record<SectionKey, { eyebrow: string; title: string }> = {
-  today: { eyebrow: 'AUJOURD’HUI', title: 'Suivi du jour' },
-  progress: { eyebrow: 'PROGRESSION', title: 'Progression' },
-  organize: { eyebrow: 'ORGANISATION', title: 'Organisation' },
-  coaching: { eyebrow: 'ESPACE COACH', title: 'Coaching' },
-};
+interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; }
 
 const MODULES: DashboardModule[] = [
-  { key: 'sessions', title: 'Séances', description: 'Consultez et gérez vos séances d’entraînement.', link: '/sessions', color: 'secondary', section: 'today', size: 'lg' },
-  { key: 'calendar', title: 'Calendrier', description: 'Visualisez votre planning à venir.', link: '/calendar', color: 'info', section: 'today' },
-  { key: 'participations', title: 'Participations', description: 'Suivez vos inscriptions aux séances.', link: '/participations', color: 'success', section: 'today' },
-  { key: 'performances', title: 'Performances', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary', section: 'progress', size: 'lg' },
-  { key: 'goals', title: 'Objectifs', description: 'Définissez vos cibles et records personnels.', link: '/goals', color: 'warning', section: 'progress' },
-  { key: 'programs', title: 'Programmes', description: 'Suivez vos programmes d’entraînement.', link: '/programs', color: 'secondary', section: 'organize' },
-  { key: 'journal', title: 'Journal', description: 'Consignez vos ressentis après chaque séance.', link: '/journal', color: 'info', section: 'organize' },
-  { key: 'notifications', title: 'Notifications', description: 'Restez informé des dernières alertes.', link: '/notifications', color: 'warning', section: 'organize' },
+  { key: 'sessions', title: 'Séances', description: 'Consultez et gérez vos séances d’entraînement.', link: '/sessions', color: 'secondary' },
+  { key: 'calendar', title: 'Calendrier', description: 'Visualisez votre planning à venir.', link: '/calendar', color: 'info' },
+  { key: 'participations', title: 'Participations', description: 'Suivez vos inscriptions aux séances.', link: '/participations', color: 'success' },
+  { key: 'performances', title: 'Performances', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary' },
+  { key: 'goals', title: 'Objectifs', description: 'Définissez vos cibles et records personnels.', link: '/goals', color: 'warning' },
+  { key: 'programs', title: 'Programmes', description: 'Suivez vos programmes d’entraînement.', link: '/programs', color: 'secondary' },
+  { key: 'journal', title: 'Journal', description: 'Consignez vos ressentis après chaque séance.', link: '/journal', color: 'info' },
+  { key: 'notifications', title: 'Notifications', description: 'Restez informé des dernières alertes.', link: '/notifications', color: 'warning' },
 ];
 
 const COACH_MODULES: DashboardModule[] = [
-  { key: 'athletes', title: 'Sportifs', description: 'Suivez vos athlètes et leur progression.', link: '/athletes', color: 'primary', section: 'coaching' },
-  { key: 'workout-new', title: 'Créer une séance', description: 'Composez un nouvel entraînement.', link: '/workouts/new', color: 'success', section: 'coaching' },
+  { key: 'athletes', title: 'Sportifs', description: 'Suivez vos athlètes et leur progression.', link: '/athletes', color: 'primary' },
+  { key: 'workout-new', title: 'Créer une séance', description: 'Composez un nouvel entraînement.', link: '/workouts/new', color: 'success' },
 ];
+
+const STATUS_LABELS: Record<string, string> = {
+  confirmed: 'Confirmée', pending: 'En attente', cancelled: 'Annulée', attended: 'Suivie',
+};
 
 @Component({
   standalone: true,
-  imports: [AsyncPipe, RouterLink],
+  imports: [AsyncPipe, SlicePipe, RouterLink],
   template: `
     <section class="page home-page">
       @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Données locales temporaires affichées pour la présentation.</span></div> }
@@ -75,12 +73,17 @@ const COACH_MODULES: DashboardModule[] = [
         </div>
       }
 
-      @for (section of sections; track section.key) {
-        <div class="module-heading"><p class="eyebrow">{{ section.eyebrow }}</p><h2>{{ section.title }}</h2></div>
-        <div class="module-grid home-modules">
-          @for (module of section.items; track module.link) {
-            <a class="module-card" [class]="'c-' + module.color + (module.size === 'lg' ? ' size-lg' : '')" [routerLink]="module.link">
-              <span class="module-icon" aria-hidden="true">
+      <div class="module-shell">
+        <nav class="module-rail" aria-label="Modules">
+          @for (module of modules; track module.link) {
+            <button
+              type="button"
+              class="module-rail-item"
+              [class]="'c-' + module.color"
+              [class.active]="module.key === selectedKey"
+              [attr.aria-current]="module.key === selectedKey ? 'true' : null"
+              (click)="selectModule(module.key)">
+              <span class="module-rail-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   @switch (module.key) {
                     @case ('sessions') { <path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/> }
@@ -96,42 +99,149 @@ const COACH_MODULES: DashboardModule[] = [
                   }
                 </svg>
               </span>
-              <span class="module-card-body">
-                <span class="module-card-title-row">
-                  <strong>{{ module.title }}</strong>
-                  @if (module.key === 'sessions' && (stats$ | async); as stats) {
-                    <span class="module-badge">{{ stats.upcoming_sessions }} à venir</span>
-                  }
-                  @if (module.key === 'performances' && (stats$ | async); as stats) {
-                    <span class="module-badge">{{ stats.total_performances }} enregistrées</span>
-                  }
-                  @if (module.key === 'notifications' && (unreadCount$ | async); as count) {
-                    <span class="module-badge">{{ count }} non lue{{ count > 1 ? 's' : '' }}</span>
-                  }
-                </span>
-                <span class="text-secondary">{{ module.description }}</span>
+              <span class="module-rail-label">{{ module.title }}</span>
+              @if (module.key === 'notifications' && (unreadCount$ | async); as count) {
+                <span class="module-rail-dot" [attr.title]="count + ' non lue' + (count > 1 ? 's' : '')"></span>
+              }
+            </button>
+          }
+        </nav>
 
-                @if (module.key === 'sessions' && (upcomingSessions$ | async); as upcoming) {
-                  @if (upcoming.length) {
-                    <span class="module-preview-list">
-                      @for (session of upcoming; track session.id) {
-                        <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }}</span></span>
-                      }
-                    </span>
-                  }
+        <div class="module-detail">
+          @if (selectedModule; as module) {
+            <div class="module-detail-card" [class]="'c-' + module.color">
+              <div class="module-detail-header">
+                <span class="module-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    @switch (module.key) {
+                      @case ('sessions') { <path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/> }
+                      @case ('calendar') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/> }
+                      @case ('participations') { <circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/> }
+                      @case ('performances') { <path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/> }
+                      @case ('goals') { <circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/> }
+                      @case ('programs') { <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h8M8 19h4"/> }
+                      @case ('journal') { <path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/> }
+                      @case ('notifications') { <path d="M6 10a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/> }
+                      @case ('athletes') { <circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.9-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.2 20c.2-2.4 1.9-4.5 4.8-4.5"/> }
+                      @case ('workout-new') { <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/> }
+                    }
+                  </svg>
+                </span>
+                <div>
+                  <p class="eyebrow">MODULE</p>
+                  <h2>{{ module.title }}</h2>
+                </div>
+                @if (module.key === 'sessions' && (stats$ | async); as stats) {
+                  <span class="module-badge">{{ stats.upcoming_sessions }} à venir</span>
                 }
-                @if (module.key === 'performances' && (performances$ | async); as perfs) {
-                  @if (perfs.length) {
-                    <span class="module-sparkline" aria-hidden="true">
-                      @for (bar of sparkBars(perfs); track $index) { <span [style.height.%]="bar"></span> }
-                    </span>
-                  }
+                @if (module.key === 'performances' && (stats$ | async); as stats) {
+                  <span class="module-badge">{{ stats.total_performances }} enregistrées</span>
                 }
-              </span>
-            </a>
+                @if (module.key === 'participations' && (stats$ | async); as stats) {
+                  <span class="module-badge">{{ stats.attended_sessions }}/{{ stats.total_participations }} suivies</span>
+                }
+                @if (module.key === 'goals' && (goals$ | async); as goals) {
+                  <span class="module-badge">{{ goals.length }} objectif{{ goals.length > 1 ? 's' : '' }}</span>
+                }
+                @if (module.key === 'programs' && (programs$ | async); as programs) {
+                  <span class="module-badge">{{ programs.length }} programme{{ programs.length > 1 ? 's' : '' }}</span>
+                }
+                @if (module.key === 'notifications' && (unreadCount$ | async); as count) {
+                  <span class="module-badge">{{ count }} non lue{{ count > 1 ? 's' : '' }}</span>
+                }
+                @if (module.key === 'athletes' && (athletes$ | async); as athletes) {
+                  <span class="module-badge">{{ athletes.length }} suivi{{ athletes.length > 1 ? 's' : '' }}</span>
+                }
+              </div>
+
+              <p class="text-secondary">{{ module.description }}</p>
+
+              @if (module.key === 'sessions' && (upcomingSessions$ | async); as upcoming) {
+                @if (upcoming.length) {
+                  <span class="module-preview-list">
+                    @for (session of upcoming; track session.id) {
+                      <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }} · {{ session.duration_minutes }} min</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'calendar' && (upcomingSessions$ | async); as upcoming) {
+                @if (upcoming.length) {
+                  <span class="module-preview-list">
+                    @for (session of upcoming; track session.id) {
+                      <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }}</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'participations' && (participations$ | async); as items) {
+                @if (items.length) {
+                  <span class="module-preview-list">
+                    @for (item of items; track item.id) {
+                      <span class="module-preview-row"><span>{{ item.sessionTitle }}</span><span class="text-secondary">{{ statusLabel(item.status) }}</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'performances' && (performances$ | async); as perfs) {
+                @if (perfs.length) {
+                  <span class="module-stat-line text-secondary">Moyenne {{ avgScore(perfs) }} pts · Dernier {{ perfs[perfs.length - 1].score }} pts</span>
+                  <span class="module-sparkline" aria-hidden="true">
+                    @for (bar of sparkBars(perfs); track $index) { <span [style.height.%]="bar"></span> }
+                  </span>
+                }
+              }
+              @if (module.key === 'goals' && (goals$ | async); as goals) {
+                @if (goals.length) {
+                  <span class="module-preview-list">
+                    @for (goal of goals.slice(0, 3); track goal.id) {
+                      <span class="module-preview-row"><span>{{ goal.title }}</span><span class="text-secondary">{{ goal.current_value }}/{{ goal.target_value }} {{ goal.unit }} · {{ goalProgress(goal) }}%</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'programs' && (programs$ | async); as programs) {
+                @if (programs.length) {
+                  <span class="module-preview-list">
+                    @for (program of programs; track program.id) {
+                      <span class="module-preview-row"><span>{{ program.name }}</span><span class="text-secondary">{{ program.weeks }} semaine{{ program.weeks > 1 ? 's' : '' }}</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'journal' && (journal$ | async); as entries) {
+                @if (entries.length) {
+                  <span class="module-preview-list">
+                    @for (entry of entries; track entry.id) {
+                      <span class="module-preview-row"><span>{{ entry.sessionTitle }}</span><span class="text-secondary">{{ entry.mood }} · fatigue {{ entry.fatigue }}</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'notifications' && (notifications$ | async); as notifs) {
+                @if (notifs.length) {
+                  <span class="module-preview-list">
+                    @for (notif of notifs.slice(0, 3); track notif.id) {
+                      <span class="module-preview-row"><span>{{ notif.title }}</span><span class="text-secondary">{{ notif.message | slice: 0:34 }}{{ notif.message.length > 34 ? '…' : '' }}</span></span>
+                    }
+                  </span>
+                }
+              }
+              @if (module.key === 'athletes' && (athletes$ | async); as athletes) {
+                @if (athletes.length) {
+                  <span class="module-preview-list">
+                    @for (athlete of athletes; track athlete.id) {
+                      <span class="module-preview-row"><span>{{ athlete.full_name }}</span><span class="text-secondary">{{ athlete.specialty || 'Sportif' }}</span></span>
+                    }
+                  </span>
+                }
+              }
+
+              <a class="module-detail-cta" [routerLink]="module.link">Ouvrir {{ module.title }} →</a>
+            </div>
           }
         </div>
-      }
+      </div>
     </section>
   `
 })
@@ -141,15 +251,21 @@ export class DashboardComponent {
   readonly stats$ = inject(StatisticsService).mine();
   readonly user$ = inject(UserService).me();
   readonly performances$ = inject(PerformanceService).list();
-  readonly unreadCount$ = inject(NotificationService).list().pipe(
+  readonly goals$ = inject(GoalService).goals();
+  readonly notifications$ = inject(NotificationService).list().pipe(
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  readonly unreadCount$ = this.notifications$.pipe(
     map((notifications) => notifications.filter((notification) => !notification.is_read).length)
   );
-  private readonly goals$ = inject(GoalService).goals();
   readonly tagline$ = combineLatest([this.stats$, this.goals$]).pipe(
     map(([stats, goals]) => this.computeTagline(stats.upcoming_sessions, goals))
   );
 
-  private readonly sessions$ = inject(SessionService).list().pipe(
+  private readonly allSessions$ = inject(SessionService).list().pipe(
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly sessions$ = this.allSessions$.pipe(
     map((sessions) => sessions
       .filter((session) => new Date(session.starts_at) > new Date())
       .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())),
@@ -158,18 +274,46 @@ export class DashboardComponent {
   readonly nextSession$ = this.sessions$.pipe(map((sessions) => sessions[0]));
   readonly upcomingSessions$ = this.sessions$.pipe(map((sessions) => sessions.slice(0, 3)));
 
+  readonly participations$ = combineLatest([inject(ParticipationService).list(), this.allSessions$]).pipe(
+    map(([participations, sessions]) => participations
+      .slice(-3)
+      .reverse()
+      .map((participation) => ({
+        ...participation,
+        sessionTitle: sessions.find((session) => session.id === participation.session_id)?.title ?? 'Séance',
+      })))
+  );
+
+  readonly programs$ = inject(ProgramService).list().pipe(
+    map((programs) => [...programs]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3))
+  );
+
+  readonly journal$ = combineLatest([inject(JournalService).list(), this.allSessions$]).pipe(
+    map(([entries, sessions]) => [...entries]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3)
+      .map((entry) => ({
+        ...entry,
+        sessionTitle: sessions.find((session) => session.id === entry.session_id)?.title ?? 'Séance',
+      })))
+  );
+
+  readonly athletes$ = inject(UserService).athletes().pipe(map((athletes) => athletes.slice(0, 3)));
+
+  selectedKey = 'sessions';
+
   get modules(): DashboardModule[] {
     return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
   }
 
-  get sections(): ModuleSection[] {
-    const bySection = new Map<SectionKey, DashboardModule[]>();
-    for (const module of this.modules) {
-      const items = bySection.get(module.section) ?? [];
-      items.push(module);
-      bySection.set(module.section, items);
-    }
-    return Array.from(bySection.entries()).map(([key, items]) => ({ key, items, ...SECTION_INFO[key] }));
+  get selectedModule(): DashboardModule | undefined {
+    return this.modules.find((module) => module.key === this.selectedKey) ?? this.modules[0];
+  }
+
+  selectModule(key: string): void {
+    this.selectedKey = key;
   }
 
   firstName(fullName: string): string {
@@ -188,6 +332,19 @@ export class DashboardComponent {
   sparkBars(items: { score: number }[]): number[] {
     const recent = items.slice(-6);
     return recent.map((item) => Math.max(8, Math.min(100, item.score)));
+  }
+
+  avgScore(items: { score: number }[]): number {
+    return Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length);
+  }
+
+  goalProgress(goal: { current_value: number; target_value: number }): number {
+    if (!goal.target_value) { return 0; }
+    return Math.round(Math.min(100, (goal.current_value / goal.target_value) * 100));
+  }
+
+  statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status.charAt(0).toUpperCase() + status.slice(1);
   }
 
   private computeTagline(upcomingSessions: number, goals: { title: string; due_date?: string }[]): string {
