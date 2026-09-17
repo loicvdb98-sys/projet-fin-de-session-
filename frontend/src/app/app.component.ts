@@ -14,9 +14,11 @@ import { DemoNoticeComponent } from './components/demo-notice.component';
       <aside class="app-rail" aria-label="Navigation principale">
         <a class="app-rail-brand" routerLink="/dashboard" aria-label="SportPlan - tableau de bord">
           <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 7c0-1.7-1.8-3-4-3H9C6.8 4 5 5.3 5 7s1.8 3 4 3h2c2.2 0 4 1.3 4 3s-1.8 3-4 3H9c-2.2 0-4-1.3-4-3"/>
-              <circle cx="16" cy="16" r="1.1" fill="currentColor" stroke="none"/>
+            <svg viewBox="0 0 22 22" fill="currentColor">
+              <rect x="4" y="12" width="3.2" height="6" rx="1.6"/>
+              <rect x="9.4" y="8" width="3.2" height="10" rx="1.6"/>
+              <rect x="14.8" y="4" width="3.2" height="14" rx="1.6"/>
+              <circle cx="16.4" cy="2.1" r="1.3"/>
             </svg>
           </span>
           <span>SportPlan</span>
