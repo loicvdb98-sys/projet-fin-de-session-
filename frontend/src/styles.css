@@ -257,7 +257,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .builder-heading h2, .timer-card h2 { margin: .2rem 0 .35rem; }
 .workout-session-fields, .exercise-row { display: grid; gap: .75rem; }
 .workout-session-fields { grid-template-columns: 2fr 1.5fr 1fr 1fr; }
-.exercise-list { display: grid; gap: .5rem; margin-top: .5rem; }
+.exercise-list { display: grid; gap: .5rem; margin-top: .5rem; max-height: 26rem; overflow-y: auto; padding-right: .25rem; }
 .exercise-row { grid-template-columns: 2.3rem 2fr 1fr 1fr 1fr auto; align-items: center; }
 .exercise-row .mat-mdc-form-field { width: 100%; }
 .exercise-number { color: var(--accent-secondary); font-weight: 800; text-align: center; }
