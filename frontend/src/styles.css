@@ -18,7 +18,8 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, B
 .app-shell { display: flex; align-items: flex-start; min-height: 100vh; }
 .app-rail { position: sticky; top: 0; align-self: flex-start; flex: 0 0 15.5rem; width: 15.5rem; height: 100vh; display: flex; flex-direction: column; gap: 1.1rem; padding: 1.25rem 1rem; background: color-mix(in srgb, var(--bg-surface) 94%, transparent); backdrop-filter: blur(16px); border-right: 1px solid var(--border-default); overflow-y: auto; }
 .app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: -.02em; padding: 0 .3rem; }
-.brand-mark { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; font-weight: 900; box-shadow: 0 5px 14px rgb(124 92 255 / 26%); transform: rotate(-5deg); }
+.brand-mark { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(124 92 255 / 26%); transform: rotate(-5deg); }
+.brand-mark svg { width: 1.2rem; height: 1.2rem; }
 .app-rail-nav { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-height: 0; }
 .app-rail-item { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; padding: .55rem .65rem; background: transparent; border: none; border-radius: .9rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .84rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .app-rail-item:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
