@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Goal, GoalService, PersonalRecord } from '../services/goal.service';
+import { ToastService } from '../services/toast.service';
 import { DEMO_MODE } from '../demo-data';
 
 @Component({
@@ -48,13 +49,31 @@ import { DEMO_MODE } from '../demo-data';
 export class GoalsComponent {
   private readonly service = inject(GoalService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
   readonly goals$ = this.service.goals();
   readonly records$ = this.service.records();
   readonly demoMode = DEMO_MODE;
   readonly goalForm = this.fb.nonNullable.group({ title: ['', [Validators.required, Validators.minLength(2)]], metric: ['progression'], target_value: [1, [Validators.required, Validators.min(0.01)]], current_value: [0], unit: ['séances', Validators.required], due_date: [''], notes: [''] });
   readonly recordForm = this.fb.nonNullable.group({ exercise_name: ['', Validators.required], value: [1, [Validators.required, Validators.min(0.01)]], unit: ['kg', Validators.required], notes: [''] });
-  addGoal(): void { if (this.goalForm.invalid) return; this.service.createGoal(this.goalForm.getRawValue()).subscribe(() => location.reload()); }
-  addRecord(): void { if (this.recordForm.invalid) return; this.service.createRecord(this.recordForm.getRawValue()).subscribe(() => location.reload()); }
-  removeGoal(id: number): void { this.service.deleteGoal(id).subscribe(() => location.reload()); }
+  addGoal(): void {
+    if (this.goalForm.invalid) return;
+    this.service.createGoal(this.goalForm.getRawValue()).subscribe({
+      next: () => { this.toast.showOnNextLoad('Objectif créé.'); location.reload(); },
+      error: () => this.toast.error('Impossible de créer cet objectif.')
+    });
+  }
+  addRecord(): void {
+    if (this.recordForm.invalid) return;
+    this.service.createRecord(this.recordForm.getRawValue()).subscribe({
+      next: () => { this.toast.showOnNextLoad('Record ajouté.'); location.reload(); },
+      error: () => this.toast.error('Impossible d’ajouter ce record.')
+    });
+  }
+  removeGoal(id: number): void {
+    this.service.deleteGoal(id).subscribe({
+      next: () => { this.toast.showOnNextLoad('Objectif supprimé.'); location.reload(); },
+      error: () => this.toast.error('Impossible de supprimer cet objectif.')
+    });
+  }
   progress(goal: Goal): number { return Math.min(100, Math.round((goal.current_value / goal.target_value) * 100)); }
 }

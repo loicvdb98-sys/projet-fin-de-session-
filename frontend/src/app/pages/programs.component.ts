@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ProgramService, WorkoutProgram } from '../services/program.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   standalone: true,
@@ -34,8 +35,20 @@ import { ProgramService, WorkoutProgram } from '../services/program.service';
 export class ProgramsComponent {
   private readonly service = inject(ProgramService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
   readonly programs$ = this.service.list();
   readonly form = this.fb.nonNullable.group({ name: ['', [Validators.required, Validators.minLength(2)]], description: [''], weeks: [4, [Validators.required, Validators.min(1), Validators.max(52)]] });
-  create(): void { if (this.form.invalid) return; this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe(() => location.reload()); }
-  remove(id: number): void { this.service.delete(id).subscribe(() => location.reload()); }
+  create(): void {
+    if (this.form.invalid) return;
+    this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe({
+      next: () => { this.toast.showOnNextLoad('Programme créé.'); location.reload(); },
+      error: () => this.toast.error('Impossible de créer ce programme.')
+    });
+  }
+  remove(id: number): void {
+    this.service.delete(id).subscribe({
+      next: () => { this.toast.showOnNextLoad('Programme supprimé.'); location.reload(); },
+      error: () => this.toast.error('Impossible de supprimer ce programme.')
+    });
+  }
 }

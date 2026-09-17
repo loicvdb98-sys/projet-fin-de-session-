@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { AppNotification, NotificationService } from '../services/notification.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   standalone: true,
@@ -22,7 +23,13 @@ import { AppNotification, NotificationService } from '../services/notification.s
 })
 export class NotificationsComponent {
   private readonly service = inject(NotificationService);
+  private readonly toast = inject(ToastService);
   readonly notifications$ = this.service.list();
-  read(notification: AppNotification): void { this.service.markRead(notification.id).subscribe(() => location.reload()); }
+  read(notification: AppNotification): void {
+    this.service.markRead(notification.id).subscribe({
+      next: () => { this.toast.showOnNextLoad('Notification marquée comme lue.'); location.reload(); },
+      error: () => this.toast.error('Impossible de marquer cette notification comme lue.')
+    });
+  }
   icon(kind: string): string { return kind === 'success' ? '✓' : kind === 'warning' ? '!' : kind === 'danger' ? '×' : 'i'; }
 }

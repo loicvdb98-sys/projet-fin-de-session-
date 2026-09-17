@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { SessionService, Exercise } from '../services/session.service';
 import { UserService } from '../services/user.service';
 import { ParticipationService } from '../services/participation.service';
+import { ToastService } from '../services/toast.service';
 import { forkJoin } from 'rxjs';
 
 type ExerciseForm = {
@@ -75,6 +76,7 @@ export class SessionsComponent implements OnDestroy {
   private readonly users = inject(UserService);
   private readonly fb = inject(FormBuilder);
   private readonly participation = inject(ParticipationService);
+  private readonly toast = inject(ToastService);
   readonly sessions$ = this.service.list();
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
@@ -119,7 +121,12 @@ export class SessionsComponent implements OnDestroy {
       });
     }, error: () => { this.createError = 'Impossible de créer la séance. Vérifiez vos droits et les informations saisies.'; } }));
   }
-  register(session_id: number): void { this.users.me().subscribe(user => this.participation.create(user.id, session_id).subscribe(() => alert('Inscription confirmée.'))); }
+  register(session_id: number): void {
+    this.users.me().subscribe(user => this.participation.create(user.id, session_id).subscribe({
+      next: () => this.toast.success('Inscription confirmée.'),
+      error: () => this.toast.error('Impossible de vous inscrire à cette séance.')
+    }));
+  }
   loadExercises(sessionId: number): void { this.service.exercises(sessionId).subscribe(exercises => this.selectedExercises = exercises); }
   startTimer(exercise: Exercise): void { this.timerExercise = exercise; this.timerSeconds = exercise.rest_seconds; this.timerRunning = false; this.clearTimer(); }
   toggleTimer(): void {

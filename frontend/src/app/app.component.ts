@@ -2,11 +2,12 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { ThemeService } from './services/theme.service';
+import { ToastContainerComponent } from './components/toast-container.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
   template: `
     <div class="app-shell">
       <aside class="app-rail" aria-label="Navigation principale">
@@ -105,6 +106,7 @@ import { ThemeService } from './services/theme.service';
 
       <main><router-outlet /></main>
     </div>
+    <app-toasts />
   `
 })
 export class AppComponent {
