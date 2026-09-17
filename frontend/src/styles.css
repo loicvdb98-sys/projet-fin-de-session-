@@ -322,6 +322,18 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
 @media (max-width: 800px) { .workout-session-fields, .exercise-row { grid-template-columns: 1fr 1fr; } .exercise-row .exercise-number, .exercise-row .exercise-pictogram { display: none; } .timer-card { flex-wrap: wrap; gap: 1rem; } .timer-value { margin-left: 0; } }
 @media (max-width: 560px) { .library-grid { grid-template-columns: 1fr; } .pattern-shell { flex-direction: column; } .pattern-rail { flex-direction: row; flex: 0 0 auto; width: 100%; overflow-x: auto; gap: .3rem; } .pattern-rail-item { flex: 0 0 auto; width: auto; } .pattern-rail-label { white-space: nowrap; } }
 @media (max-width: 800px) { .workout-layout { grid-template-columns: 1fr; } }
+@media (min-width: 801px) {
+  .workout-page { height: calc(100vh - 2 * clamp(2rem, 5vw, 4rem)); display: flex; flex-direction: column; overflow: hidden; }
+  .workout-page .page-heading { flex: 0 0 auto; }
+  .workout-page .workout-layout { flex: 1; min-height: 0; }
+  .workout-form-card, .workout-page .exercise-library { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  .workout-form-card form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .workout-form-card .exercise-list { flex: 1; min-height: 0; max-height: none; }
+  .workout-form-card .builder-actions { flex: 0 0 auto; }
+  .workout-page .pattern-shell { flex: 1; min-height: 0; }
+  .workout-page .pattern-rail { overflow-y: auto; }
+  .workout-page .library-grid { flex: 1; min-height: 0; max-height: none; }
+}
 @media (max-width: 800px) { .profile-layout { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .home-hero { flex-direction: column; align-items: flex-start; } }
 @media (max-width: 700px) { .goals-layout { grid-template-columns: 1fr; } }
