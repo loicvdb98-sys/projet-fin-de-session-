@@ -63,6 +63,8 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .status-badge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .35rem .65rem; font-size: .75rem; font-weight: 700; }
 .status-badge.success { background: rgb(22 163 74 / 12%); color: var(--color-success-500); }
 .status-badge.info { background: rgb(14 165 233 / 12%); color: var(--color-info-500); }
+.status-badge.danger { background: color-mix(in srgb, var(--color-danger-500) 12%, transparent); color: var(--color-danger-500); }
+.session-card.past { opacity: .72; }
 .session-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
 .session-icon { display: grid; place-items: center; width: 2.7rem; height: 2.7rem; border-radius: .85rem; background: linear-gradient(135deg, rgb(0 170 159 / 18%), rgb(0 170 159 / 6%)); color: var(--accent-secondary); }
 .session-date { color: var(--accent-primary); font-weight: 700; }
