@@ -18,12 +18,12 @@ interface WorkoutExerciseForm {
 
 type MovementPattern = 'squat' | 'hinge' | 'push' | 'pull' | 'core' | 'carry' | 'conditioning' | 'mobility';
 interface LibraryExercise { name: string; category: string; pattern: MovementPattern; }
-interface LibraryGroup { category: string; items: LibraryExercise[]; }
 
 const PATTERN_LABELS: Record<MovementPattern, string> = {
   squat: 'Squat', hinge: 'Hinge', push: 'Poussée', pull: 'Tirage',
   core: 'Gainage', carry: 'Port de charge', conditioning: 'Cardio', mobility: 'Mobilité',
 };
+const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'core', 'carry', 'conditioning', 'mobility'];
 
 @Component({
   standalone: true,
@@ -94,43 +94,56 @@ const PATTERN_LABELS: Record<MovementPattern, string> = {
             <mat-label>Rechercher un exercice</mat-label>
             <input matInput [(ngModel)]="searchTerm" [ngModelOptions]="{ standalone: true }" placeholder="Ex. épaules">
           </mat-form-field>
-          <div class="category-filters" role="group" aria-label="Filtrer par groupe musculaire">
-            <button type="button" [class.active-filter]="selectedCategory === 'Tous'" (click)="selectedCategory = 'Tous'">Tous</button>
-            @for (category of categories; track category) {
-              <button type="button" [class.active-filter]="selectedCategory === category" (click)="selectedCategory = category">{{ category }}</button>
-            }
-          </div>
-          <div class="library-groups">
-            @for (group of groupedLibrary; track group.category) {
-              <div class="library-group">
-                <p class="library-group-heading">{{ group.category }}</p>
-                <div class="library-grid">
-                  @for (exercise of group.items; track exercise.name) {
-                    <button type="button" class="library-item" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
-                      @if (isAdded(exercise.name)) { <span class="library-added-badge" aria-hidden="true">✓</span> }
-                      <span class="library-pictogram" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                          @switch (exercise.pattern) {
-                            @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
-                            @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
-                            @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
-                            @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
-                            @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
-                            @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
-                            @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
-                            @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
-                          }
-                        </svg>
-                      </span>
-                      <strong>{{ exercise.name }}</strong>
-                      <span class="library-pattern-tag">{{ patternLabel(exercise.pattern) }}</span>
-                    </button>
-                  }
-                </div>
-              </div>
-            } @empty {
-              <p class="empty-state">Aucun exercice ne correspond à votre recherche.</p>
-            }
+
+          <div class="pattern-shell">
+            <nav class="pattern-rail" aria-label="Filtrer par mouvement">
+              @for (pattern of patterns; track pattern) {
+                <button type="button" class="pattern-rail-item" [class.active]="pattern === selectedPattern" (click)="selectPattern(pattern)">
+                  <span class="pattern-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      @switch (pattern) {
+                        @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
+                        @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
+                        @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
+                        @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
+                        @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
+                        @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
+                        @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
+                        @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
+                      }
+                    </svg>
+                  </span>
+                  <span class="pattern-rail-label">{{ patternLabel(pattern) }}</span>
+                  <span class="pattern-rail-count">{{ patternCount(pattern) }}</span>
+                </button>
+              }
+            </nav>
+
+            <div class="library-grid">
+              @for (exercise of patternExercises; track exercise.name) {
+                <button type="button" class="library-item" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
+                  @if (isAdded(exercise.name)) { <span class="library-added-badge" aria-hidden="true">✓</span> }
+                  <span class="library-pictogram" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      @switch (exercise.pattern) {
+                        @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
+                        @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
+                        @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
+                        @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
+                        @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
+                        @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
+                        @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
+                        @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
+                      }
+                    </svg>
+                  </span>
+                  <strong>{{ exercise.name }}</strong>
+                  <span class="library-pattern-tag">{{ exercise.category }}</span>
+                </button>
+              } @empty {
+                <p class="empty-state">Aucun exercice ne correspond à votre recherche.</p>
+              }
+            </div>
           </div>
         </mat-card>
       </div>
@@ -218,32 +231,25 @@ export class WorkoutCreateComponent {
     { name: 'Étirement ischio-jambiers', category: 'Mobilité', pattern: 'mobility' },
     { name: 'Rotation thoracique', category: 'Mobilité', pattern: 'mobility' }
   ];
+  readonly patterns = PATTERN_ORDER;
   searchTerm = '';
-  selectedCategory = 'Tous';
+  selectedPattern: MovementPattern = 'squat';
   error = '';
 
-  get categories(): string[] {
-    return [...new Set(this.library.map((exercise) => exercise.category))].sort((a, b) => a.localeCompare(b));
-  }
-
-  get filteredLibrary(): LibraryExercise[] {
+  get patternExercises(): LibraryExercise[] {
     const term = this.searchTerm.trim().toLocaleLowerCase();
     return this.library.filter((exercise) =>
-      (this.selectedCategory === 'Tous' || exercise.category === this.selectedCategory) &&
+      exercise.pattern === this.selectedPattern &&
       (!term || `${exercise.name} ${exercise.category}`.toLocaleLowerCase().includes(term))
     );
   }
 
-  get groupedLibrary(): LibraryGroup[] {
-    const groups = new Map<string, LibraryExercise[]>();
-    for (const exercise of this.filteredLibrary) {
-      const items = groups.get(exercise.category) ?? [];
-      items.push(exercise);
-      groups.set(exercise.category, items);
-    }
-    return [...groups.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([category, items]) => ({ category, items }));
+  patternCount(pattern: MovementPattern): number {
+    return this.library.filter((exercise) => exercise.pattern === pattern).length;
+  }
+
+  selectPattern(pattern: MovementPattern): void {
+    this.selectedPattern = pattern;
   }
 
   isAdded(name: string): boolean {
