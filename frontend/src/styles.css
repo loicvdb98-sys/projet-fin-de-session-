@@ -96,6 +96,14 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .module-stat-line { display: block; margin-top: .9rem; font-size: .78rem; font-weight: 700; }
 .module-detail-cta { align-self: flex-start; margin-top: auto; padding-top: 1.75rem; color: var(--module-tint, var(--accent-primary)); font-weight: 800; font-size: .92rem; text-decoration: none; }
 .module-detail-cta:hover { text-decoration: underline; }
+.skeleton-card { gap: .9rem; }
+.skeleton-block, .skeleton-line { position: relative; overflow: hidden; background: var(--bg-surface-alt); }
+.skeleton-block { border-radius: 1.1rem; }
+.skeleton-line { display: block; width: 100%; height: .85rem; border-radius: .4rem; }
+.skeleton-preview { display: flex; flex-direction: column; gap: .55rem; margin-top: .3rem; padding-top: .9rem; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
+.skeleton-block::after, .skeleton-line::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--bg-surface) 65%, transparent), transparent); animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+@keyframes skeleton-shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .skeleton-block::after, .skeleton-line::after { animation: none; } }
 .module-icon { display: grid; place-items: center; flex: 0 0 3.1rem; width: 3.1rem; height: 3.1rem; border-radius: 1rem; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 16%, var(--bg-surface)); color: var(--module-tint, var(--accent-secondary)); }
 .module-icon svg { width: 1.5rem; height: 1.5rem; }
 .module-badge { font-size: .66rem; font-weight: 800; letter-spacing: .02em; white-space: nowrap; padding: .22rem .55rem; border-radius: 999px; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 16%, var(--bg-surface)); color: var(--module-tint, var(--accent-secondary)); }

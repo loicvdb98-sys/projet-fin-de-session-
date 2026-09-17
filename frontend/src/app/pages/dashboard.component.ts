@@ -108,7 +108,24 @@ const STATUS_LABELS: Record<string, string> = {
         </nav>
 
         <div class="module-detail">
-          @if (selectedModule; as module) {
+          @if (!(ready$ | async)) {
+            <div class="module-detail-card skeleton-card" aria-hidden="true">
+              <div class="module-detail-header">
+                <span class="module-icon skeleton-block"></span>
+                <div>
+                  <span class="skeleton-line" style="width:4rem"></span>
+                  <span class="skeleton-line" style="width:8rem;height:1.3rem;margin-top:.5rem"></span>
+                </div>
+              </div>
+              <span class="skeleton-line" style="width:85%"></span>
+              <span class="skeleton-line" style="width:55%"></span>
+              <div class="skeleton-preview">
+                <span class="skeleton-line"></span>
+                <span class="skeleton-line"></span>
+                <span class="skeleton-line" style="width:70%"></span>
+              </div>
+            </div>
+          } @else if (selectedModule; as module) {
             <div class="module-detail-card" [class]="'c-' + module.color">
               <div class="module-detail-header">
                 <span class="module-icon" aria-hidden="true">
@@ -248,10 +265,10 @@ const STATUS_LABELS: Record<string, string> = {
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   readonly demoMode = DEMO_MODE;
-  readonly stats$ = inject(StatisticsService).mine();
+  readonly stats$ = inject(StatisticsService).mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly user$ = inject(UserService).me();
-  readonly performances$ = inject(PerformanceService).list();
-  readonly goals$ = inject(GoalService).goals();
+  readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  readonly goals$ = inject(GoalService).goals().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly notifications$ = inject(NotificationService).list().pipe(
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -281,13 +298,15 @@ export class DashboardComponent {
       .map((participation) => ({
         ...participation,
         sessionTitle: sessions.find((session) => session.id === participation.session_id)?.title ?? 'Séance',
-      })))
+      }))),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
   readonly programs$ = inject(ProgramService).list().pipe(
     map((programs) => [...programs]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 3))
+      .slice(0, 3)),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
   readonly journal$ = combineLatest([inject(JournalService).list(), this.allSessions$]).pipe(
@@ -297,10 +316,20 @@ export class DashboardComponent {
       .map((entry) => ({
         ...entry,
         sessionTitle: sessions.find((session) => session.id === entry.session_id)?.title ?? 'Séance',
-      })))
+      }))),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
-  readonly athletes$ = inject(UserService).athletes().pipe(map((athletes) => athletes.slice(0, 3)));
+  readonly athletes$ = inject(UserService).athletes().pipe(
+    map((athletes) => athletes.slice(0, 3)),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+
+  /** Prêt une fois que les données du module actuellement affiché ont eu le temps d'arriver au moins une fois. */
+  readonly ready$ = combineLatest([
+    this.stats$, this.goals$, this.performances$, this.participations$,
+    this.programs$, this.journal$, this.notifications$, this.athletes$, this.sessions$
+  ]).pipe(map(() => true), shareReplay({ bufferSize: 1, refCount: true }));
 
   selectedKey = 'sessions';
 
