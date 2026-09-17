@@ -222,7 +222,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .coach-note { padding: .7rem; background: rgb(0 170 159 / 10%); border-radius: .5rem; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
-.workout-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 1rem; align-items: start; }
+.workout-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(360px, 1fr); gap: 1rem; align-items: start; }
 .workout-form-card, .exercise-library { min-width: 0; }
 .exercise-library h2 { margin: .25rem 0 .35rem; }
 .library-search { width: 100%; margin-top: .75rem; }
