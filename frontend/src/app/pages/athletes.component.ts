@@ -3,7 +3,6 @@ import { Component, inject } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
-import { DEMO_MODE } from '../demo-data';
 import { User, UserService } from '../services/user.service';
 
 @Component({
@@ -18,13 +17,6 @@ import { User, UserService } from '../services/user.service';
           <p class="text-secondary">Retrouvez les sportifs actifs et accédez rapidement à leur suivi.</p>
         </div>
       </div>
-
-      @if (demoMode) {
-        <div class="demo-banner">
-          <strong>Mode démonstration</strong>
-          <span>Profils fictifs affichés pour rendre la page plus visuelle pendant l'oral.</span>
-        </div>
-      }
 
       @if (athletes$ | async; as athletes) {
         <div class="athlete-grid">
@@ -62,7 +54,6 @@ import { User, UserService } from '../services/user.service';
 })
 export class AthletesComponent {
   readonly athletes$ = inject(UserService).athletes();
-  readonly demoMode = DEMO_MODE;
 
   initials(name: string): string {
     return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('');

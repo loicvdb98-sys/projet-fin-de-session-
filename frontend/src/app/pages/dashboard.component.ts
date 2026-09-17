@@ -12,7 +12,6 @@ import { GoalService } from '../services/goal.service';
 import { ParticipationService } from '../services/participation.service';
 import { ProgramService } from '../services/program.service';
 import { JournalService } from '../services/journal.service';
-import { DEMO_MODE } from '../demo-data';
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; }
@@ -42,7 +41,6 @@ const STATUS_LABELS: Record<string, string> = {
   imports: [AsyncPipe, SlicePipe, RouterLink],
   template: `
     <section class="page home-page">
-      @if (demoMode) { <div class="demo-banner"><strong>Mode démonstration</strong><span>Données locales temporaires affichées pour la présentation.</span></div> }
       <div class="home-hero">
         <div>
           <p class="eyebrow">VOTRE ESPACE SPORTIF</p>
@@ -264,7 +262,6 @@ const STATUS_LABELS: Record<string, string> = {
 })
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
-  readonly demoMode = DEMO_MODE;
   readonly stats$ = inject(StatisticsService).mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly user$ = inject(UserService).me();
   readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
