@@ -17,24 +17,24 @@ html[data-theme='dark'] {
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: radial-gradient(circle at 85% -10%, rgb(var(--accent-secondary-rgb) / 8%), transparent 28rem), radial-gradient(circle at 0% 25%, rgb(var(--accent-rgb) / 7%), transparent 24rem), var(--bg-body); color: var(--text-primary); transition: background .2s ease, color .2s ease; line-height: 1.5; }
 .app-shell { display: flex; align-items: flex-start; min-height: 100vh; }
-.app-rail { position: sticky; top: 0; align-self: flex-start; flex: 0 0 15.5rem; width: 15.5rem; height: 100vh; display: flex; flex-direction: column; gap: 1.1rem; padding: 1.25rem 1rem; background: color-mix(in srgb, var(--bg-surface) 94%, transparent); backdrop-filter: blur(16px); border-right: 1px solid var(--border-default); overflow-y: auto; }
-.app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: -.02em; padding: 0 .3rem; }
-.brand-mark { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
-.brand-mark svg { width: 1.2rem; height: 1.2rem; }
-.app-rail-user { display: flex; align-items: center; gap: .6rem; padding: 0 .3rem .75rem; margin-bottom: .25rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
-.profile-avatar.rail-avatar { flex: 0 0 auto; width: 2.15rem; height: 2.15rem; margin: 0; border-radius: .65rem; font-size: .7rem; }
-.app-rail-user-info { min-width: 0; display: flex; flex-direction: column; gap: .05rem; line-height: 1.2; }
-.app-rail-user-info strong { font-size: .78rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-rail-user-info .role-badge { padding: 0; background: none !important; font-size: .64rem; font-weight: 700; }
-.app-rail-nav { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-.app-rail-item { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; padding: .55rem .65rem; background: transparent; border: none; border-radius: .9rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .84rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.app-rail { position: sticky; top: 0; align-self: flex-start; flex: 0 0 15.5rem; width: 15.5rem; height: 100vh; display: flex; flex-direction: column; gap: .6rem; padding: .9rem .75rem; background: color-mix(in srgb, var(--bg-surface) 94%, transparent); backdrop-filter: blur(16px); border-right: 1px solid var(--border-default); overflow-y: auto; }
+.app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; letter-spacing: -.02em; padding: 0 .3rem; font-size: .92rem; }
+.brand-mark { display: grid; place-items: center; flex: 0 0 1.85rem; width: 1.85rem; height: 1.85rem; border-radius: .6rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
+.brand-mark svg { width: 1rem; height: 1rem; }
+.app-rail-user { display: flex; align-items: center; gap: .55rem; padding: 0 .3rem .5rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
+.profile-avatar.rail-avatar { flex: 0 0 auto; width: 1.85rem; height: 1.85rem; margin: 0; border-radius: .6rem; font-size: .64rem; }
+.app-rail-user-info { min-width: 0; display: flex; flex-direction: column; gap: .05rem; line-height: 1.15; }
+.app-rail-user-info strong { font-size: .74rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-rail-user-info .role-badge { padding: 0; background: none !important; font-size: .6rem; font-weight: 700; }
+.app-rail-nav { display: flex; flex-direction: column; gap: .05rem; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.app-rail-item { position: relative; display: flex; align-items: center; gap: .6rem; width: 100%; padding: .34rem .55rem; background: transparent; border: none; border-radius: .7rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .78rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .app-rail-item:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
 .app-rail-item.active { background: color-mix(in srgb, var(--accent-primary) 15%, transparent); color: var(--text-primary); }
 .app-rail-item.active .app-rail-icon { background: var(--accent-primary); color: #fff; }
-.app-rail-icon { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: var(--bg-surface-alt); color: var(--text-secondary); transition: background .15s ease, color .15s ease; }
-.app-rail-icon svg { width: 1.05rem; height: 1.05rem; }
+.app-rail-icon { display: grid; place-items: center; flex: 0 0 1.6rem; width: 1.6rem; height: 1.6rem; border-radius: .55rem; background: var(--bg-surface-alt); color: var(--text-secondary); transition: background .15s ease, color .15s ease; }
+.app-rail-icon svg { width: .88rem; height: .88rem; }
 .app-rail-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-rail-footer { display: flex; flex-direction: column; gap: .25rem; flex: 0 0 auto; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); padding-top: .75rem; }
+.app-rail-footer { display: flex; flex-direction: column; gap: .05rem; flex: 0 0 auto; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); padding-top: .4rem; }
 main { flex: 1; min-width: 0; max-width: 1160px; margin: 0 auto; padding: clamp(2rem, 5vw, 4rem) 1.25rem; }
 .page { animation: page-enter .35s ease-out; }
 .page-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 72%, transparent); }
