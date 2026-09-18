@@ -5,13 +5,19 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { of, switchMap } from 'rxjs';
+import { forkJoin, of, shareReplay, switchMap } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
+import { SessionService } from '@features/sessions/session.service';
+import { ParticipationService } from '@features/participations/participation.service';
 import { ThemeService } from '@shared/services/theme.service';
+import { ToastService } from '@shared/services/toast.service';
 import { ToastContainerComponent } from '@shared/components/toast-container.component';
 import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
+
+/** Fenêtre avant le début d'une séance pendant laquelle un rappel est affiché. */
+const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-root',
@@ -142,11 +148,22 @@ export class AppComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
   private readonly users = inject(UserService);
+  private readonly sessions = inject(SessionService);
+  private readonly participations = inject(ParticipationService);
+  private readonly toast = inject(ToastService);
 
   // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois).
+  // shareReplay évite un second appel à /users/me pour la vérification des rappels ci-dessous.
   readonly currentUser$ = toObservable(this.auth.isAuthenticated).pipe(
-    switchMap((isAuthenticated) => (isAuthenticated ? this.users.me() : of(null)))
+    switchMap((isAuthenticated) => (isAuthenticated ? this.users.me() : of(null))),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
+
+  constructor() {
+    this.currentUser$.subscribe((user) => {
+      if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
+    });
+  }
 
   initials(name: string): string {
     return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
@@ -154,5 +171,27 @@ export class AppComponent {
 
   roleLabel(role: string): string {
     return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif';
+  }
+
+  /**
+   * Affiche un rappel (une seule fois par séance, via localStorage) pour chaque séance à
+   * laquelle le sportif est inscrit et qui commence dans les prochaines heures.
+   */
+  private checkUpcomingReminders(userId: number): void {
+    forkJoin([this.participations.list(), this.sessions.list()]).subscribe(([participations, sessions]) => {
+      const now = Date.now();
+      const upcoming = participations.filter((p) => p.user_id === userId && p.status !== 'absent');
+      for (const participation of upcoming) {
+        const session = sessions.find((item) => item.id === participation.session_id);
+        if (!session) continue;
+        const delta = new Date(session.starts_at).getTime() - now;
+        if (delta <= 0 || delta > REMINDER_WINDOW_MS) continue;
+        const key = `reminder_shown_${session.id}`;
+        if (localStorage.getItem(key)) continue;
+        localStorage.setItem(key, '1');
+        const hours = Math.round(delta / (60 * 60 * 1000));
+        this.toast.info(`Rappel : « ${session.title} » commence ${hours <= 1 ? 'bientôt' : 'dans ' + hours + ' h'}.`);
+      }
+    });
   }
 }
