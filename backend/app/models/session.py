@@ -35,3 +35,8 @@ class Session(Base):
     def coach_name(self) -> str:
         """Nom complet du coach qui anime la séance, exposé aux schémas de lecture."""
         return self.coach.full_name
+
+    @property
+    def registered_count(self) -> int:
+        """Nombre d'inscriptions (toutes statuts confondus) à la séance, pour afficher les places restantes."""
+        return len(self.participations)

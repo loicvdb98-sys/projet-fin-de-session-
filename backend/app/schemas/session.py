@@ -37,3 +37,4 @@ class SessionRead(SessionBase):
     id: int
     coach_id: int
     coach_name: str
+    registered_count: int

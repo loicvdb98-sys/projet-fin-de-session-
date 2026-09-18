@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..database import get_db
 from ..dependencies import get_current_user, require_roles
@@ -17,9 +17,12 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 @router.get("/", response_model=list[SessionRead])
 def list_sessions(db: Session = Depends(get_db)):
     """Liste toutes les séances, triées par date de début (GET /sessions/). Accessible sans authentification."""
-    # joinedload évite une requête coach par séance (coach_name est dérivé de la relation).
+    # Charge coach (coach_name) et participations (registered_count) en une seule requête chacune,
+    # au lieu d'une requête par séance.
     return db.scalars(
-        select(SportSession).options(joinedload(SportSession.coach)).order_by(SportSession.starts_at)
+        select(SportSession)
+        .options(joinedload(SportSession.coach), selectinload(SportSession.participations))
+        .order_by(SportSession.starts_at)
     ).unique().all()
 
 
@@ -45,7 +48,9 @@ def create_session(data: SessionCreate, db: Session = Depends(get_db), user: Use
 def get_session(session_id: int, db: Session = Depends(get_db)):
     """Récupère le détail d'une séance par son id (GET /sessions/{session_id})."""
     item = db.scalar(
-        select(SportSession).options(joinedload(SportSession.coach)).where(SportSession.id == session_id)
+        select(SportSession)
+        .options(joinedload(SportSession.coach), selectinload(SportSession.participations))
+        .where(SportSession.id == session_id)
     )
     if not item:
         raise HTTPException(404, "Séance introuvable")
