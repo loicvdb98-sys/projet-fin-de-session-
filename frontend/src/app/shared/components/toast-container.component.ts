@@ -1,3 +1,7 @@
+/**
+ * Empilement visuel des notifications (toasts) émises par ToastService,
+ * affiché en overlay au-dessus de toutes les pages.
+ */
 import { Component, inject } from '@angular/core';
 import { ToastService } from '@shared/services/toast.service';
 
@@ -24,6 +28,7 @@ import { ToastService } from '@shared/services/toast.service';
     </div>
   `
 })
+/** Se contente de lire les toasts courants dans ToastService et de les rendre. */
 export class ToastContainerComponent {
   readonly svc = inject(ToastService);
 }

@@ -1,3 +1,7 @@
+/**
+ * Fiche de suivi individuel d'un sportif (progression, rythme, historique de
+ * scores). Utilise toujours les données de démonstration DEMO_ATHLETES.
+ */
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -33,11 +37,14 @@ import { DEMO_ATHLETES } from '@shared/data/demo-data';
     </section>
   `
 })
+/** Détail d'un sportif identifié par l'id dans l'URL, avec un mini graphique de tendance. */
 export class AthleteDetailComponent {
   private readonly route = inject(ActivatedRoute);
   readonly athlete = DEMO_ATHLETES.find(item => item.id === Number(this.route.snapshot.paramMap.get('id')));
+  // Historique de scores factice propre à chaque sportif de démo (non lié à l'API performances).
   readonly scores = this.athlete?.id === 402 ? [46, 55, 61, 64, 68] : this.athlete?.id === 403 ? [62, 70, 76, 85, 91] : [55, 64, 70, 76, 82];
 
+  /** Initiales (jusqu'à 2) utilisées comme avatar textuel. */
   initials(name: string): string {
     return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('');
   }

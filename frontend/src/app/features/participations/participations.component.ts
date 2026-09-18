@@ -7,6 +7,11 @@ import { SessionService } from '@features/sessions/session.service';
 import { ParticipationService } from './participation.service';
 import { ToastService } from '@shared/services/toast.service';
 
+/**
+ * Écran "Mes participations" : croise les inscriptions du sportif avec les
+ * détails de séance, puis les répartit entre séances à venir et terminées.
+ */
+
 type ParticipationStatus = 'inscrit' | 'present' | 'absent';
 interface EnrichedParticipation {
   id: number; session_id: number; status: string;
@@ -91,6 +96,8 @@ export class ParticipationsComponent {
   private readonly service = inject(ParticipationService);
   private readonly toast = inject(ToastService);
 
+  // Une participation ne référence qu'un session_id : on enrichit avec les détails de la
+  // séance correspondante pour l'affichage (titre, date, durée).
   private readonly enriched$ = combineLatest([this.service.list(), inject(SessionService).list()]).pipe(
     map(([participations, sessions]) => participations.map((participation): EnrichedParticipation => {
       const session = sessions.find((s) => s.id === participation.session_id);
@@ -103,6 +110,7 @@ export class ParticipationsComponent {
     }))
   );
 
+  /** Sépare les participations en deux listes triées : séances à venir et séances passées. */
   readonly grouped$ = this.enriched$.pipe(
     map((items) => {
       const now = new Date();
@@ -120,6 +128,7 @@ export class ParticipationsComponent {
     return STATUS_META[status as ParticipationStatus] ?? { label: status.charAt(0).toUpperCase() + status.slice(1), badge: 'info' };
   }
 
+  /** Supprime la participation (désinscription) puis recharge la page. */
   cancel(id: number): void {
     this.service.remove(id).subscribe({
       next: () => { this.toast.showOnNextLoad('Désinscription confirmée.'); location.reload(); },

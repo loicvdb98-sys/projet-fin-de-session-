@@ -1,3 +1,8 @@
+/**
+ * Service Angular exposant les statistiques agrégées de l'utilisateur connecté
+ * (séances, participations, performances) depuis l'API, ou des données de
+ * démonstration figées si DEMO_MODE est actif.
+ */
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -13,9 +18,12 @@ export interface Statistics {
   average_score: number | null;
 }
 
+/** Récupère les statistiques agrégées de l'utilisateur courant. */
 @Injectable({ providedIn: 'root' })
 export class StatisticsService {
   private readonly api = `${API_URL}/statistics`;
   constructor(private readonly http: HttpClient) {}
+
+  /** Statistiques de l'utilisateur connecté (données de démo si DEMO_MODE est actif). */
   mine(): Observable<Statistics> { return DEMO_MODE ? of(DEMO_STATISTICS) : this.http.get<Statistics>(`${this.api}/me`); }
 }

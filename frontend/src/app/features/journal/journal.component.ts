@@ -9,6 +9,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { JournalService, TrainingJournal } from './journal.service';
 import { SessionService, SportSession } from '@features/sessions/session.service';
 
+/**
+ * Écran du journal d'entraînement : formulaire de bilan post-séance
+ * (fatigue, humeur, douleur, notes) et historique des entrées.
+ */
 @Component({
   standalone: true,
   imports: [AsyncPipe, DatePipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule],
@@ -48,6 +52,8 @@ export class JournalComponent {
   readonly journals$ = this.service.list();
   readonly form = this.fb.nonNullable.group({ session_id: [0, [Validators.required, Validators.min(1)]], fatigue: [5, [Validators.required, Validators.min(1), Validators.max(10)]], mood: ['bien', Validators.required], notes: [''], pain: [''] });
   error = '';
+
+  /** Envoie le bilan de séance à l'API puis recharge la page pour rafraîchir l'historique. */
   create(): void {
     if (this.form.invalid) return;
     this.error = '';

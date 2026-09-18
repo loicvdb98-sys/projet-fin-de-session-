@@ -13,6 +13,10 @@ import { UserService } from '@features/athletes/user.service';
 import { Statistics, StatisticsService } from '@shared/services/statistics.service';
 import { ThemeService } from '@shared/services/theme.service';
 import { AuthService } from '@features/auth/auth.service';
+/**
+ * Écran de profil utilisateur : informations personnelles, statistiques
+ * d'activité, préférence de thème et changement de mot de passe.
+ */
 @Component({ standalone: true, template: `
 <section class="page profile-page">
   @if (user$ | async; as user) {
@@ -75,6 +79,7 @@ import { AuthService } from '@features/auth/auth.service';
     <mat-card class="empty-state-card"><h2>Profil indisponible</h2><p class="text-secondary">Impossible de charger vos informations pour le moment.</p></mat-card>
   }
 </section>` , imports: [AsyncPipe, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule, MatDividerModule, RouterLink] })
+/** Combine profil, statistiques et sécurité (mot de passe) sur un seul écran. */
 export class ProfileComponent {
   private readonly service = inject(UserService); private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
@@ -90,6 +95,8 @@ export class ProfileComponent {
   constructor() { this.user$.subscribe(user => this.form.patchValue({ full_name: user.full_name })); }
   initials(name: string): string { return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join(''); }
   roleLabel(role: string): string { return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif'; }
+
+  /** Enregistre le nom complet modifié via UserService.update. */
   save(id: number): void {
     if (this.form.invalid) return;
     this.saving = true; this.message = '';
@@ -98,6 +105,8 @@ export class ProfileComponent {
       error: () => { this.saving = false; this.message = 'La mise à jour a échoué. Réessayez.'; }
     });
   }
+
+  /** Change le mot de passe puis réinitialise le formulaire en cas de succès. */
   changePassword(): void {
     if (this.passwordForm.invalid) return;
     const { current_password, new_password } = this.passwordForm.getRawValue();

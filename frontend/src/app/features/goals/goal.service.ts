@@ -1,3 +1,7 @@
+/**
+ * Service Angular pour les objectifs et records personnels : lecture (avec
+ * données de démo en DEMO_MODE) et écriture (toujours via l'API réelle).
+ */
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -13,11 +17,15 @@ export interface PersonalRecord {
   achieved_at: string; notes?: string;
 }
 
+/** CRUD des objectifs et records personnels du sportif connecté. */
 @Injectable({ providedIn: 'root' })
 export class GoalService {
   private readonly api = API_URL;
   constructor(private readonly http: HttpClient) {}
+
   goals(): Observable<Goal[]> { return DEMO_MODE ? of(DEMO_GOALS) : this.http.get<Goal[]>(`${this.api}/goals`); }
+  // Note : contrairement à goals()/records(), la création/suppression passe toujours par l'API réelle,
+  // même en DEMO_MODE — les données de démo ne sont donc pas modifiées par ces actions.
   createGoal(data: Omit<Goal, 'id' | 'user_id'>): Observable<Goal> { return this.http.post<Goal>(`${this.api}/goals`, data); }
   deleteGoal(id: number): Observable<void> { return this.http.delete<void>(`${this.api}/goals/${id}`); }
   records(): Observable<PersonalRecord[]> { return DEMO_MODE ? of(DEMO_RECORDS) : this.http.get<PersonalRecord[]>(`${this.api}/records`); }

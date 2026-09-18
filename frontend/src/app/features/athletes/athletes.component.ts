@@ -1,3 +1,7 @@
+/**
+ * Écran coach listant les sportifs suivis, avec leur progression et un accès
+ * rapide vers la page de suivi individuel.
+ */
 import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
@@ -52,9 +56,11 @@ import { User, UserService } from './user.service';
     </section>
   `
 })
+/** Liste des sportifs sous forme de cartes, avec avatar généré à partir des initiales. */
 export class AthletesComponent {
   readonly athletes$ = inject(UserService).athletes();
 
+  /** Initiales (jusqu'à 2) utilisées comme avatar textuel. */
   initials(name: string): string {
     return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('');
   }

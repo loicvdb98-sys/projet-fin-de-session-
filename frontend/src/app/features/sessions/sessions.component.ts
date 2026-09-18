@@ -12,6 +12,11 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { ToastService } from '@shared/services/toast.service';
 import { forkJoin } from 'rxjs';
 
+/**
+ * Écran des séances : liste des séances disponibles, inscription, consultation
+ * des exercices avec chronomètre de repos, et (pour les coachs) un éditeur
+ * pour créer une nouvelle séance de musculation avec ses exercices.
+ */
 type ExerciseForm = {
   name: FormControl<string>;
   sets: FormControl<number>;
@@ -71,6 +76,7 @@ type ExerciseForm = {
     </section>
   `
 })
+/** Pilote la liste des séances, le formulaire de création (coach) et le chronomètre de repos. */
 export class SessionsComponent implements OnDestroy {
   private readonly service = inject(SessionService);
   private readonly users = inject(UserService);
@@ -94,7 +100,11 @@ export class SessionsComponent implements OnDestroy {
   timerRunning = false;
   private timer?: ReturnType<typeof setInterval>;
 
+  // Le rôle n'est pas dans le token JWT décodable côté client : on le récupère via le profil
+  // pour savoir si l'éditeur de création de séance doit être affiché.
   constructor() { this.users.me().subscribe(user => this.canManage = user.role === 'coach' || user.role === 'admin'); }
+
+  /** Ajoute une ligne d'exercice vierge (valeurs par défaut) au formulaire de création. */
   addExercise(): void {
     this.exercises.push(new FormGroup<ExerciseForm>({
       name: this.fb.nonNullable.control('', Validators.required),
@@ -104,6 +114,12 @@ export class SessionsComponent implements OnDestroy {
     }));
   }
   removeExercise(index: number): void { this.exercises.removeAt(index); }
+
+  /**
+   * Crée la séance puis enregistre tous ses exercices en parallèle (forkJoin).
+   * Si la séance est créée mais qu'un exercice échoue, un message dédié est affiché
+   * plutôt que l'erreur générique de création de séance.
+   */
   create(): void {
     if (this.form.invalid || !this.exercises.length) return;
     this.createError = '';
@@ -121,6 +137,8 @@ export class SessionsComponent implements OnDestroy {
       });
     }, error: () => { this.createError = 'Impossible de créer la séance. Vérifiez vos droits et les informations saisies.'; } }));
   }
+
+  /** Inscrit l'utilisateur connecté à une séance. */
   register(session_id: number): void {
     this.users.me().subscribe(user => this.participation.create(user.id, session_id).subscribe({
       next: () => this.toast.success('Inscription confirmée.'),
@@ -128,7 +146,11 @@ export class SessionsComponent implements OnDestroy {
     }));
   }
   loadExercises(sessionId: number): void { this.service.exercises(sessionId).subscribe(exercises => this.selectedExercises = exercises); }
+
+  /** Ouvre le chronomètre de repos pour un exercice, initialisé sur son temps de repos configuré. */
   startTimer(exercise: Exercise): void { this.timerExercise = exercise; this.timerSeconds = exercise.rest_seconds; this.timerRunning = false; this.clearTimer(); }
+
+  /** Démarre ou met en pause le décompte du chronomètre de repos. */
   toggleTimer(): void {
     this.timerRunning = !this.timerRunning;
     if (this.timerRunning) this.timer = setInterval(() => { if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; this.clearTimer(); } }, 1000);

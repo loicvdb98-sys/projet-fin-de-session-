@@ -8,6 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { Goal, GoalService, PersonalRecord } from './goal.service';
 import { ToastService } from '@shared/services/toast.service';
 
+/**
+ * Écran des objectifs et records personnels : formulaires de création et
+ * listes avec barres de progression.
+ */
 @Component({
   standalone: true,
   imports: [AsyncPipe, DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
@@ -52,6 +56,8 @@ export class GoalsComponent {
   readonly records$ = this.service.records();
   readonly goalForm = this.fb.nonNullable.group({ title: ['', [Validators.required, Validators.minLength(2)]], metric: ['progression'], target_value: [1, [Validators.required, Validators.min(0.01)]], current_value: [0], unit: ['séances', Validators.required], due_date: [''], notes: [''] });
   readonly recordForm = this.fb.nonNullable.group({ exercise_name: ['', Validators.required], value: [1, [Validators.required, Validators.min(0.01)]], unit: ['kg', Validators.required], notes: [''] });
+
+  /** Crée l'objectif puis recharge la page pour repartir d'un état serveur propre. */
   addGoal(): void {
     if (this.goalForm.invalid) return;
     this.service.createGoal(this.goalForm.getRawValue()).subscribe({
@@ -59,6 +65,8 @@ export class GoalsComponent {
       error: () => this.toast.error('Impossible de créer cet objectif.')
     });
   }
+
+  /** Enregistre un nouveau record personnel puis recharge la page. */
   addRecord(): void {
     if (this.recordForm.invalid) return;
     this.service.createRecord(this.recordForm.getRawValue()).subscribe({
@@ -66,11 +74,14 @@ export class GoalsComponent {
       error: () => this.toast.error('Impossible d’ajouter ce record.')
     });
   }
+
+  /** Supprime un objectif puis recharge la page. */
   removeGoal(id: number): void {
     this.service.deleteGoal(id).subscribe({
       next: () => { this.toast.showOnNextLoad('Objectif supprimé.'); location.reload(); },
       error: () => this.toast.error('Impossible de supprimer cet objectif.')
     });
   }
+
   progress(goal: Goal): number { return Math.min(100, Math.round((goal.current_value / goal.target_value) * 100)); }
 }

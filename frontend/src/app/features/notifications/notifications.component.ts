@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { AppNotification, NotificationService } from './notification.service';
 import { ToastService } from '@shared/services/toast.service';
 
+/** Centre de notifications : liste les alertes de l'utilisateur et permet de les marquer comme lues. */
 @Component({
   standalone: true,
   imports: [AsyncPipe, DatePipe, MatButtonModule, MatCardModule],
@@ -25,6 +26,8 @@ export class NotificationsComponent {
   private readonly service = inject(NotificationService);
   private readonly toast = inject(ToastService);
   readonly notifications$ = this.service.list();
+
+  /** Marque la notification comme lue côté serveur puis recharge la page. */
   read(notification: AppNotification): void {
     this.service.markRead(notification.id).subscribe({
       next: () => { this.toast.showOnNextLoad('Notification marquée comme lue.'); location.reload(); },

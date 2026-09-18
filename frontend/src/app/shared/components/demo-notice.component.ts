@@ -1,3 +1,7 @@
+/**
+ * Popup d'avertissement affiché quand DEMO_MODE est actif, pour rappeler
+ * que les données visibles sont locales et temporaires.
+ */
 import { Component, signal } from '@angular/core';
 import { DEMO_MODE } from '@shared/data/demo-data';
 
@@ -23,7 +27,9 @@ const STORAGE_KEY = 'demo_notice_dismissed';
     }
   `
 })
+/** Affiche le bandeau une fois par session tant que l'utilisateur ne l'a pas fermé. */
 export class DemoNoticeComponent {
+  // Visible seulement en mode démo, et pas si déjà fermé pendant cette session (sessionStorage).
   readonly visible = signal(DEMO_MODE && sessionStorage.getItem(STORAGE_KEY) !== '1');
 
   dismiss(): void {

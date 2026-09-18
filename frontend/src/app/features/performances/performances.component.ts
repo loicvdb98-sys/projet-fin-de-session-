@@ -6,6 +6,10 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
+/**
+ * Écran des performances : score moyen, meilleur score, graphique
+ * d'évolution (Chart.js) et historique détaillé.
+ */
 @Component({
   standalone: true,
   imports: [AsyncPipe, DatePipe, DecimalPipe, MatCardModule],
@@ -33,6 +37,7 @@ Chart.register(...registerables);
     </section>
   `
 })
+/** Affiche les statistiques de performance et pilote le graphique Chart.js associé. */
 export class PerformancesComponent implements AfterViewInit, OnDestroy {
   @ViewChild('performanceChart') chartCanvas?: ElementRef<HTMLCanvasElement>;
   readonly performances$ = inject(PerformanceService).list();
@@ -54,10 +59,13 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
     return items.length ? Math.max(...items.map((item) => item.score)) : 0;
   }
 
+  /** Construit (ou reconstruit) le graphique en ligne des scores dans le temps. */
   private renderChart(items: Performance[]): void {
     const canvas = this.chartCanvas?.nativeElement;
     if (!canvas) return;
     this.chart?.destroy();
+    // Lit les couleurs directement depuis les variables CSS du thème courant (clair/sombre)
+    // pour que le graphique Chart.js reste cohérent avec le reste de l'interface.
     const styles = getComputedStyle(document.documentElement);
     const textColor = styles.getPropertyValue('--text-secondary').trim();
     const gridColor = styles.getPropertyValue('--border-default').trim();

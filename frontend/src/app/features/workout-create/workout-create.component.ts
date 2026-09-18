@@ -9,6 +9,12 @@ import { MatInputModule } from '@angular/material/input';
 import { SessionService } from '@features/sessions/session.service';
 import { UserService } from '@features/athletes/user.service';
 
+/**
+ * Écran (réservé coach) de création d'une séance de musculation : formulaire
+ * de séance, bibliothèque d'exercices filtrable par mouvement/recherche, et
+ * enregistrement de la séance avec tous ses exercices.
+ */
+
 interface WorkoutExerciseForm {
   name: FormControl<string>;
   sets: FormControl<number>;
@@ -150,6 +156,7 @@ const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'cor
     </section>
   `
 })
+/** Compose une nouvelle séance à partir d'une bibliothèque d'exercices classés par mouvement. */
 export class WorkoutCreateComponent {
   private readonly fb = inject(FormBuilder);
   private readonly sessions = inject(SessionService);
@@ -236,6 +243,7 @@ export class WorkoutCreateComponent {
   selectedPattern: MovementPattern = 'squat';
   error = '';
 
+  /** Exercices de la bibliothèque pour le mouvement sélectionné, filtrés par le terme de recherche. */
   get patternExercises(): LibraryExercise[] {
     const term = this.searchTerm.trim().toLocaleLowerCase();
     return this.library.filter((exercise) =>
@@ -252,10 +260,12 @@ export class WorkoutCreateComponent {
     this.selectedPattern = pattern;
   }
 
+  /** Indique si un exercice de la bibliothèque a déjà été ajouté au formulaire de séance. */
   isAdded(name: string): boolean {
     return this.exercises.controls.some((control) => control.controls.name.value === name);
   }
 
+  /** Retrouve le mouvement (pattern) d'un exercice nommé, pour choisir son pictogramme. */
   patternOf(name: string): MovementPattern | undefined {
     return this.library.find((exercise) => exercise.name === name)?.pattern;
   }
@@ -264,6 +274,7 @@ export class WorkoutCreateComponent {
     return PATTERN_LABELS[pattern];
   }
 
+  /** Ajoute un exercice de la bibliothèque au formulaire de séance, avec des valeurs par défaut. */
   addExercise(name: string): void {
     this.exercises.push(new FormGroup<WorkoutExerciseForm>({
       name: this.fb.nonNullable.control(name, Validators.required),
@@ -277,6 +288,11 @@ export class WorkoutCreateComponent {
     this.exercises.removeAt(index);
   }
 
+  /**
+   * Crée la séance (avec l'utilisateur courant comme coach) puis enregistre
+   * chaque exercice individuellement ; redirige vers /sessions une fois tous
+   * les exercices confirmés par le serveur.
+   */
   save(): void {
     this.error = '';
     this.users.me().subscribe({

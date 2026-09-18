@@ -1,3 +1,9 @@
+/**
+ * Tableau de bord principal : agrège les données de tous les modules
+ * (séances, participations, performances, objectifs, programmes, journal,
+ * notifications, sportifs suivis) pour afficher un aperçu par module
+ * sélectionnable, plus la prochaine séance et un message d'accroche.
+ */
 import { Component, inject } from '@angular/core';
 import { AsyncPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -260,6 +266,7 @@ const STATUS_LABELS: Record<string, string> = {
     </section>
   `
 })
+/** Compose les flux réactifs de chaque module et pilote le module actuellement sélectionné. */
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   readonly stats$ = inject(StatisticsService).mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
@@ -330,6 +337,7 @@ export class DashboardComponent {
 
   selectedKey = 'sessions';
 
+  /** Modules affichés dans le rail : modules communs, plus modules coach si le rôle le permet. */
   get modules(): DashboardModule[] {
     return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
   }
@@ -346,15 +354,18 @@ export class DashboardComponent {
     return fullName.split(' ')[0] || fullName;
   }
 
+  /** Date complète en français avec majuscule initiale (ex. "Lundi 15 septembre, 18:00"). */
   formatSessionDate(iso: string): string {
     const formatted = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
+  /** Date courte utilisée dans les aperçus de liste (ex. "15/09, 18:00"). */
   shortSessionDate(iso: string): string {
     return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 
+  /** Hauteurs (%) des barres du mini-graphique de performances, sur les 6 derniers scores. */
   sparkBars(items: { score: number }[]): number[] {
     const recent = items.slice(-6);
     return recent.map((item) => Math.max(8, Math.min(100, item.score)));
@@ -364,6 +375,7 @@ export class DashboardComponent {
     return Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length);
   }
 
+  /** Pourcentage de progression d'un objectif, plafonné à 100 %. */
   goalProgress(goal: { current_value: number; target_value: number }): number {
     if (!goal.target_value) { return 0; }
     return Math.round(Math.min(100, (goal.current_value / goal.target_value) * 100));
@@ -373,6 +385,10 @@ export class DashboardComponent {
     return STATUS_LABELS[status] ?? status.charAt(0).toUpperCase() + status.slice(1);
   }
 
+  /**
+   * Message d'accroche affiché sous le titre : priorité à un objectif dont
+   * l'échéance est dans les 7 jours, sinon rappel du nombre de séances à venir.
+   */
   private computeTagline(upcomingSessions: number, goals: { title: string; due_date?: string }[]): string {
     const now = new Date();
     const nearestGoal = goals

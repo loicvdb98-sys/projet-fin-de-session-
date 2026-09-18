@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ProgramService, WorkoutProgram } from './program.service';
 import { ToastService } from '@shared/services/toast.service';
 
+/** Écran des programmes d'entraînement : création de modèles et liste des programmes existants. */
 @Component({
   standalone: true,
   imports: [AsyncPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
@@ -38,6 +39,8 @@ export class ProgramsComponent {
   private readonly toast = inject(ToastService);
   readonly programs$ = this.service.list();
   readonly form = this.fb.nonNullable.group({ name: ['', [Validators.required, Validators.minLength(2)]], description: [''], weeks: [4, [Validators.required, Validators.min(1), Validators.max(52)]] });
+
+  /** Crée un programme vide (sans séances modèles) puis recharge la page. */
   create(): void {
     if (this.form.invalid) return;
     this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe({
@@ -45,6 +48,8 @@ export class ProgramsComponent {
       error: () => this.toast.error('Impossible de créer ce programme.')
     });
   }
+
+  /** Supprime un programme puis recharge la page. */
   remove(id: number): void {
     this.service.delete(id).subscribe({
       next: () => { this.toast.showOnNextLoad('Programme supprimé.'); location.reload(); },

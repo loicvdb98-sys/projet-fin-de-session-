@@ -1,8 +1,11 @@
+/** Service Angular pour les inscriptions (participations) d'un sportif à des séances. */
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '@core/api.config';
 export interface Participation { id: number; user_id: number; session_id: number; status: string; }
+
+/** CRUD des participations (inscription, changement de statut, désinscription). */
 @Injectable({ providedIn: 'root' })
 export class ParticipationService {
   private readonly api = `${API_URL}/participations`;

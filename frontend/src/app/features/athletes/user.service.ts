@@ -1,3 +1,7 @@
+/**
+ * Service Angular pour le profil utilisateur : récupération du compte
+ * courant, liste des sportifs suivis par un coach, et mise à jour du profil.
+ */
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -8,12 +12,20 @@ export interface User {
   id: number; email: string; full_name: string; role: string; is_active: boolean;
   specialty?: string; weekly_sessions?: number; progress?: number; goal?: string; last_activity?: string;
 }
+
+/** Gère la lecture/écriture du profil utilisateur, réel (API) ou simulé (DEMO_MODE). */
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly api = `${API_URL}/users`;
   constructor(private readonly http: HttpClient) {}
+
+  /** Profil de l'utilisateur connecté (dérivé de l'email de connexion en mode démo). */
   me(): Observable<User> { return DEMO_MODE ? of(this.demoCurrentUser()) : this.http.get<User>(`${this.api}/me`); }
+
+  /** Liste des sportifs visibles par un coach. */
   athletes(): Observable<User[]> { return DEMO_MODE ? of(DEMO_ATHLETES) : this.http.get<User[]>(`${this.api}/athletes`); }
+
+  /** Met à jour un sous-ensemble éditable du profil (nom, rôle, statut actif). */
   update(id: number, data: Partial<Pick<User, 'full_name' | 'role' | 'is_active'>>): Observable<User> {
     return DEMO_MODE ? of({ ...this.demoCurrentUser(), ...data }) : this.http.patch<User>(`${this.api}/${id}`, data);
   }

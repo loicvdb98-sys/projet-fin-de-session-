@@ -1,3 +1,7 @@
+/**
+ * Guards de routage Angular : bloquent l'accès aux écrans protégés selon
+ * l'état de connexion et le rôle (sportif vs coach/admin) de l'utilisateur.
+ */
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';

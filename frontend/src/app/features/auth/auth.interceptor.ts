@@ -1,3 +1,8 @@
+/**
+ * Intercepteur HTTP global : ajoute le token Bearer à chaque requête sortante,
+ * déconnecte automatiquement l'utilisateur sur une réponse 401, et affiche
+ * un toast d'erreur générique pour les échecs de chargement (GET) silencieux.
+ */
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';

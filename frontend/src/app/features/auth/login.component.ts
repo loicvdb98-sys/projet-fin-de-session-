@@ -1,3 +1,7 @@
+/**
+ * Écran de connexion/inscription : formulaire unique basculant entre les deux
+ * modes, avec validation et gestion des messages d'erreur du serveur.
+ */
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -54,6 +58,7 @@ import { AuthService } from './auth.service';
     </mat-card>
   `
 })
+/** Formulaire réactif (template-driven) de connexion et d'inscription. */
 export class LoginComponent {
   registerMode = false;
   email = '';
@@ -67,12 +72,14 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  /** Bascule entre le formulaire de connexion et celui d'inscription, en réinitialisant les messages. */
   toggleMode(): void {
     this.registerMode = !this.registerMode;
     this.error = '';
     this.success = '';
   }
 
+  /** Soumet le formulaire : inscription puis connexion automatique, ou connexion directe. */
   submit(): void {
     this.error = '';
     this.success = '';

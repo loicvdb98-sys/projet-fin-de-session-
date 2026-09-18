@@ -1,3 +1,7 @@
+/**
+ * Table de routage de l'application : associe chaque URL à son composant
+ * de fonctionnalité et protège les écrans sensibles via authGuard/coachGuard.
+ */
 import { Routes } from '@angular/router';
 import { LoginComponent } from '@features/auth/login.component';
 import { DashboardComponent } from '@features/dashboard/dashboard.component';

@@ -1,3 +1,7 @@
+/**
+ * Composant racine de l'application : affiche la coquille (rail de navigation,
+ * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
+ */
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';
@@ -113,6 +117,7 @@ import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
     <app-demo-notice />
   `
 })
+/** Coquille applicative : navigation latérale, toasts et popup de mode démo sont montés ici une seule fois. */
 export class AppComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
