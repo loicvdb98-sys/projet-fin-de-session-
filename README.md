@@ -70,6 +70,7 @@ npm test
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — organisation du code backend et frontend.
+- [docs/ROLES.md](docs/ROLES.md) — ce que peuvent voir et faire un sportif, un coach et un admin.
 - [backend/SETUP_LOCAL.md](backend/SETUP_LOCAL.md) — configuration de la base de données et de l'API en local.
 - [backend/SEED.md](backend/SEED.md) — comptes et données de démonstration.
 - [frontend/README.md](frontend/README.md) — structure et commandes du frontend Angular.

@@ -56,6 +56,7 @@ frontend/src/app/
     ├── notifications/   notifications
     ├── journal/         journal d'entraînement
     ├── athletes/        gestion des athlètes (côté coach)
+    ├── admin/           gestion des comptes (côté admin)
     └── profile/         profil utilisateur
 ```
 
@@ -89,7 +90,11 @@ transverse utilise l'alias correspondant.
    `/auth` du backend.
 3. `authInterceptor` (`features/auth/auth.interceptor.ts`) ajoute
    automatiquement le token à chaque requête HTTP sortante.
-4. `authGuard` / `coachGuard` (`core/auth.guard.ts`) protègent les routes
-   Angular définies dans `core/app.routes.ts` selon le rôle de l'utilisateur.
+4. `authGuard` / `coachGuard` / `adminGuard` (`core/auth.guard.ts`) protègent les
+   routes Angular définies dans `core/app.routes.ts` selon le rôle de
+   l'utilisateur.
 5. Côté backend, `security.py` valide le JWT et `dependencies.py` expose
    l'utilisateur courant aux routeurs qui en ont besoin.
+
+Voir [ROLES.md](ROLES.md) pour le détail de ce que chaque rôle (sportif, coach,
+admin) peut voir et faire dans l'application.

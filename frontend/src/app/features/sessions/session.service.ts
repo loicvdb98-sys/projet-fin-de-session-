@@ -26,6 +26,7 @@ export class SessionService {
   list(): Observable<SportSession[]> { return this.http.get<SportSession[]>(this.apiUrl); }
   // coach_name et registered_count sont calculés par le serveur : jamais envoyés à la création.
   create(data: Omit<SportSession, 'id' | 'coach_name' | 'registered_count'>): Observable<SportSession> { return this.http.post<SportSession>(`${this.apiUrl}/`, data); }
+  /** Modifie une séance existante (réservé au coach responsable ou à un admin). */
   update(id: number, data: Partial<Pick<SportSession, 'title' | 'description' | 'starts_at' | 'duration_minutes' | 'capacity'>>): Observable<SportSession> {
     return this.http.patch<SportSession>(`${this.apiUrl}/${id}`, data);
   }
