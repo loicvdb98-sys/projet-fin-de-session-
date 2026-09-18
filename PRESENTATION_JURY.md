@@ -82,10 +82,10 @@ Le projet est une application web de gestion de séances sportives. Elle central
 
 ```text
 frontend/src/app/
-├── pages/       écrans : tableau de bord, séances, objectifs, programmes…
-├── services/    appels à l'API et logique partagée
-├── auth.guard.ts
-└── auth.interceptor.ts
+├── core/        bootstrap, routes, guard d'authentification
+├── shared/      composants et services transverses (toasts, thème…)
+└── features/    un dossier par écran : dashboard, séances, objectifs, programmes…
+                 (page + service co-localisés, ex. features/goals/)
 
 backend/app/
 ├── routers/     endpoints REST regroupés par domaine
@@ -95,6 +95,8 @@ backend/app/
 ├── security.py  JWT et hachage des mots de passe
 └── database.py  connexion et sessions de base de données
 ```
+
+> Détail complet de l'architecture : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 > **Visuel PowerPoint :** transforme cette arborescence en schéma avec trois blocs : **Angular (frontend)** ↔ **FastAPI (API)** ↔ **SQL Server (base de données)**. Ajoute des flèches entre les blocs. N'affiche pas toute l'arborescence sur la diapositive.
 
