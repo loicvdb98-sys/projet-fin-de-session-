@@ -1,3 +1,6 @@
+"""Regroupe et ré-exporte les schémas Pydantic les plus utilisés de l'application
+pour un import simplifié."""
+
 from .auth import Token, TokenRefresh
 from .user import UserCreate, UserRead, UserUpdate
 from .session import SessionCreate, SessionRead, SessionUpdate

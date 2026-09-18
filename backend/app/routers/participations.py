@@ -1,3 +1,6 @@
+"""Routeur FastAPI exposant les endpoints d'inscription des sportifs aux séances
+(participations) et de gestion de leur statut de présence."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -15,6 +18,9 @@ router = APIRouter(prefix="/participations", tags=["participations"])
 
 @router.get("/", response_model=list[ParticipationRead])
 def list_participations(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Liste les participations visibles par l'utilisateur connecté (GET /participations/) :
+    toutes pour un admin, celles des séances qu'il encadre pour un coach, les siennes pour un sportif.
+    """
     if user.role == "admin":
         query = select(Participation)
     elif user.role == "coach":
@@ -26,6 +32,10 @@ def list_participations(db: Session = Depends(get_db), user: User = Depends(get_
 
 @router.post("/", response_model=ParticipationRead, status_code=201)
 def create_participation(data: ParticipationCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Inscrit un utilisateur à une séance (POST /participations/). Un sportif ne peut
+    s'inscrire que lui-même. Rejette les séances passées, complètes, ou une double
+    inscription.
+    """
     if user.role == "sportif" and data.user_id != user.id:
         raise HTTPException(403, "Vous ne pouvez inscrire qu'un compte")
     if not db.get(User, data.user_id) or not db.get(SportSession, data.session_id):
@@ -49,6 +59,10 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
 
 @router.patch("/{participation_id}", response_model=ParticipationRead)
 def update_participation(participation_id: int, data: ParticipationUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Met à jour le statut d'une participation (PATCH /participations/{participation_id}).
+    Un sportif peut se remettre au statut "inscrit" ; seuls le coach de la séance ou
+    un admin peuvent la marquer présent/absent.
+    """
     item = db.get(Participation, participation_id)
     if not item:
         raise HTTPException(404, "Participation introuvable")
@@ -67,6 +81,9 @@ def update_participation(participation_id: int, data: ParticipationUpdate, db: S
 
 @router.delete("/{participation_id}", status_code=204)
 def delete_participation(participation_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Supprime une participation, càd désinscrit un utilisateur d'une séance
+    (DELETE /participations/{participation_id}). Impossible une fois la séance commencée.
+    """
     item = db.get(Participation, participation_id)
     if not item:
         raise HTTPException(404, "Participation introuvable")

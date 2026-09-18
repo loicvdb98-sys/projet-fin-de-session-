@@ -1,8 +1,12 @@
+"""Schémas Pydantic pour les séances d'entraînement."""
+
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class SessionBase(BaseModel):
+    """Champs communs décrivant une séance."""
+
     title: str = Field(min_length=1, max_length=150)
     description: str | None = None
     starts_at: datetime
@@ -11,10 +15,14 @@ class SessionBase(BaseModel):
 
 
 class SessionCreate(SessionBase):
+    """Données requises pour créer une séance, avec le coach qui l'anime."""
+
     coach_id: int
 
 
 class SessionUpdate(BaseModel):
+    """Champs modifiables d'une séance existante, tous optionnels."""
+
     title: str | None = None
     description: str | None = None
     starts_at: datetime | None = None
@@ -23,6 +31,8 @@ class SessionUpdate(BaseModel):
 
 
 class SessionRead(SessionBase):
+    """Représentation complète d'une séance retournée par l'API."""
+
     model_config = ConfigDict(from_attributes=True)
     id: int
     coach_id: int

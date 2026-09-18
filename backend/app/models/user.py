@@ -1,3 +1,5 @@
+"""Modèle ORM représentant un utilisateur de l'application (coach, sportif ou admin)."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, String
@@ -11,6 +13,8 @@ if TYPE_CHECKING:
 
 
 class User(Base):
+    """Compte utilisateur : identité, mot de passe haché, rôle et statut actif/inactif."""
+
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)

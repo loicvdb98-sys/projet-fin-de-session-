@@ -1,3 +1,5 @@
+"""Modèle ORM représentant une séance d'entraînement sportif animée par un coach."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -13,6 +15,10 @@ if TYPE_CHECKING:
 
 
 class Session(Base):
+    """Séance de sport (titre, horaire, durée, capacité) organisée par un coach,
+    regroupant des exercices et des participations.
+    """
+
     __tablename__ = "sport_sessions"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(150))

@@ -1,3 +1,5 @@
+"""Modèle ORM représentant l'inscription (participation) d'un utilisateur à une séance."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, ForeignKey
@@ -11,6 +13,10 @@ if TYPE_CHECKING:
 
 
 class Participation(Base):
+    """Lien entre un utilisateur et une séance, avec un statut de présence
+    (inscrit / présent / absent).
+    """
+
     __tablename__ = "participations"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))

@@ -1,3 +1,5 @@
+"""Modèle ORM représentant la performance (score) réalisée par un utilisateur lors d'une séance."""
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -12,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class Performance(Base):
+    """Score enregistré pour un utilisateur sur une séance donnée, avec notes optionnelles."""
+
     __tablename__ = "performances"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))

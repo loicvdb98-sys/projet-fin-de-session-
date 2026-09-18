@@ -1,3 +1,5 @@
+"""Routeur FastAPI exposant les endpoints CRUD pour les séances d'entraînement."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,11 +16,15 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @router.get("/", response_model=list[SessionRead])
 def list_sessions(db: Session = Depends(get_db)):
+    """Liste toutes les séances, triées par date de début (GET /sessions/). Accessible sans authentification."""
     return db.scalars(select(SportSession).order_by(SportSession.starts_at)).all()
 
 
 @router.post("/", response_model=SessionRead, status_code=201)
 def create_session(data: SessionCreate, db: Session = Depends(get_db), user: User = Depends(require_roles("coach", "admin"))):
+    """Crée une nouvelle séance (POST /sessions/). Réservé aux comptes coach et admin ;
+    un coach ne peut se déclarer lui-même que comme animateur. La date de début doit être future.
+    """
     if user.role == "coach" and data.coach_id != user.id:
         raise HTTPException(403, "Un coach ne peut créer que ses propres séances")
     if is_past(data.starts_at):
@@ -34,6 +40,7 @@ def create_session(data: SessionCreate, db: Session = Depends(get_db), user: Use
 
 @router.get("/{session_id}", response_model=SessionRead)
 def get_session(session_id: int, db: Session = Depends(get_db)):
+    """Récupère le détail d'une séance par son id (GET /sessions/{session_id})."""
     item = db.get(SportSession, session_id)
     if not item:
         raise HTTPException(404, "Séance introuvable")
@@ -42,6 +49,9 @@ def get_session(session_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/{session_id}", response_model=SessionRead)
 def update_session(session_id: int, data: SessionUpdate, db: Session = Depends(get_db), user: User = Depends(require_roles("coach", "admin"))):
+    """Met à jour une séance (PATCH /sessions/{session_id}). Réservé au coach responsable
+    ou à un admin. Impossible de modifier une séance déjà passée, ni de la reprogrammer dans le passé.
+    """
     item = db.get(SportSession, session_id)
     if not item:
         raise HTTPException(404, "Séance introuvable")
@@ -60,6 +70,9 @@ def update_session(session_id: int, data: SessionUpdate, db: Session = Depends(g
 
 @router.delete("/{session_id}", status_code=204)
 def delete_session(session_id: int, db: Session = Depends(get_db), user: User = Depends(require_roles("coach", "admin"))):
+    """Supprime une séance (DELETE /sessions/{session_id}). Réservé au coach responsable
+    ou à un admin. Impossible de supprimer une séance déjà passée.
+    """
     item = db.get(SportSession, session_id)
     if not item:
         raise HTTPException(404, "Séance introuvable")

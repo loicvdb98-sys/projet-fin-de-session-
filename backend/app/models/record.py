@@ -1,3 +1,5 @@
+"""Modèle ORM représentant un record personnel atteint par un utilisateur pour un exercice donné."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String
@@ -7,6 +9,8 @@ from ..database import Base
 
 
 class PersonalRecord(Base):
+    """Record personnel : meilleure valeur atteinte par un utilisateur pour un exercice, à une date donnée."""
+
     __tablename__ = "personal_records"
 
     id: Mapped[int] = mapped_column(primary_key=True)

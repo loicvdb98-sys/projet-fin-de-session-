@@ -1,3 +1,5 @@
+"""Modèle ORM représentant une notification adressée à un utilisateur."""
+
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
@@ -7,6 +9,8 @@ from ..database import Base
 
 
 class Notification(Base):
+    """Notification destinée à un utilisateur (titre, message, type, statut lu/non lu)."""
+
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(primary_key=True)

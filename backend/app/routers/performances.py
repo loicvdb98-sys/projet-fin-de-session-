@@ -1,3 +1,6 @@
+"""Routeur FastAPI exposant les endpoints CRUD pour les performances (scores) des sportifs
+lors des séances."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -15,6 +18,9 @@ router = APIRouter(prefix="/performances", tags=["performances"])
 
 @router.get("/", response_model=list[PerformanceRead])
 def list_performances(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Liste les performances visibles par l'utilisateur connecté (GET /performances/) :
+    toutes pour un admin, celles des séances qu'il encadre pour un coach, les siennes pour un sportif.
+    """
     if user.role == "admin":
         query = select(Performance)
     elif user.role == "coach":
@@ -26,6 +32,10 @@ def list_performances(db: Session = Depends(get_db), user: User = Depends(get_cu
 
 @router.post("/", response_model=PerformanceRead, status_code=201)
 def create_performance(data: PerformanceCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Enregistre une performance pour un sportif sur une séance (POST /performances/).
+    Un sportif ne peut enregistrer que ses propres performances ; le sportif visé doit
+    être inscrit (participant) à la séance.
+    """
     if user.role == "sportif" and data.user_id != user.id:
         raise HTTPException(403, "Vous ne pouvez enregistrer que vos propres performances")
     session = db.get(SportSession, data.session_id)
@@ -53,6 +63,9 @@ def update_performance(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """Met à jour une performance existante (PATCH /performances/{performance_id}).
+    Réservé au sportif propriétaire ou au coach de la séance concernée.
+    """
     item = db.get(Performance, performance_id)
     if not item:
         raise HTTPException(404, "Performance introuvable")
@@ -69,6 +82,9 @@ def update_performance(
 
 @router.delete("/{performance_id}", status_code=204)
 def delete_performance(performance_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Supprime une performance (DELETE /performances/{performance_id}).
+    Réservé au sportif propriétaire ou au coach de la séance concernée.
+    """
     item = db.get(Performance, performance_id)
     if not item:
         raise HTTPException(404, "Performance introuvable")

@@ -1,3 +1,5 @@
+"""Modèle ORM représentant un programme d'entraînement personnalisé sur plusieurs semaines."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, JSON, String, Text
@@ -7,6 +9,10 @@ from ..database import Base
 
 
 class WorkoutProgram(Base):
+    """Programme d'entraînement d'un utilisateur : durée en semaines et plan de séances
+    stocké en JSON (structure libre définie côté schémas/frontend).
+    """
+
     __tablename__ = "workout_programs"
 
     id: Mapped[int] = mapped_column(primary_key=True)

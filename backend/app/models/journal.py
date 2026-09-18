@@ -1,3 +1,6 @@
+"""Modèle ORM représentant une entrée de journal d'entraînement (ressenti d'un sportif
+après une séance, avec un éventuel commentaire de coach)."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
@@ -7,6 +10,10 @@ from ..database import Base
 
 
 class TrainingJournal(Base):
+    """Entrée de journal liée à un utilisateur et une séance (fatigue, humeur, douleurs, notes).
+    Une seule entrée est autorisée par couple (utilisateur, séance).
+    """
+
     __tablename__ = "training_journals"
     __table_args__ = (UniqueConstraint("user_id", "session_id", name="UQ_Journal_User_Session"),)
 

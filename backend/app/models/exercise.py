@@ -1,3 +1,5 @@
+"""Modèle ORM représentant un exercice rattaché à une séance d'entraînement."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text
@@ -10,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class Exercise(Base):
+    """Exercice (nom, séries, répétitions, temps de repos) appartenant à une séance."""
+
     __tablename__ = "exercises"
     id: Mapped[int] = mapped_column(primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"))

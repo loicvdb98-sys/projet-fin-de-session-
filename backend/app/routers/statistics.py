@@ -1,3 +1,6 @@
+"""Routeur FastAPI exposant les statistiques agrégées de l'utilisateur connecté
+(séances, participations, performances), calculées différemment selon le rôle."""
+
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
@@ -17,8 +20,13 @@ router = APIRouter(prefix="/statistics", tags=["statistics"])
 
 @router.get("/me", response_model=StatisticsRead)
 def my_statistics(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Calcule les statistiques de l'utilisateur connecté (GET /statistics/me).
+    Pour un coach/admin : statistiques sur les séances qu'il encadre (toutes séances pour un admin).
+    Pour un sportif : statistiques sur ses propres participations et performances.
+    """
     now = datetime.now(timezone.utc)
     if user.role in {"coach", "admin"}:
+        # `True` comme filtre neutralise le WHERE pour un admin (accès à toutes les séances).
         session_filter = True if user.role == "admin" else SportSession.coach_id == user.id
         total_sessions = db.scalar(select(func.count(SportSession.id)).where(session_filter)) or 0
         upcoming_sessions = db.scalar(select(func.count(SportSession.id)).where(session_filter, SportSession.starts_at > now)) or 0

@@ -1,1 +1,1 @@
-"""Sports session management API."""
+"""Package principal de l'API de gestion des séances de sport."""

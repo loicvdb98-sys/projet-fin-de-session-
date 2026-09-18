@@ -1,3 +1,6 @@
+"""Modèle ORM représentant un objectif personnel fixé par un utilisateur (ex: atteindre
+une certaine valeur pour une métrique donnée avant une échéance)."""
+
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, ForeignKey, String, Text
@@ -7,6 +10,8 @@ from ..database import Base
 
 
 class Goal(Base):
+    """Objectif d'un utilisateur : métrique suivie, valeur cible/actuelle et échéance."""
+
     __tablename__ = "goals"
 
     id: Mapped[int] = mapped_column(primary_key=True)
