@@ -74,4 +74,9 @@ export class AuthService {
     const role = localStorage.getItem('user_role');
     return role === 'coach' || role === 'admin';
   }
+
+  /** Indique si l'utilisateur connecté est administrateur (gestion des comptes). */
+  isAdmin(): boolean {
+    return localStorage.getItem('user_role') === 'admin';
+  }
 }

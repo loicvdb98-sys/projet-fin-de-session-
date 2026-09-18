@@ -25,6 +25,9 @@ export class UserService {
   /** Liste des sportifs visibles par un coach. */
   athletes(): Observable<User[]> { return DEMO_MODE ? of(DEMO_ATHLETES) : this.http.get<User[]>(`${this.api}/athletes`); }
 
+  /** Liste tous les comptes (réservé admin, pour la gestion des comptes). */
+  list(): Observable<User[]> { return this.http.get<User[]>(`${this.api}/`); }
+
   /** Met à jour un sous-ensemble éditable du profil (nom, rôle, statut actif). */
   update(id: number, data: Partial<Pick<User, 'full_name' | 'role' | 'is_active'>>): Observable<User> {
     return DEMO_MODE ? of({ ...this.demoCurrentUser(), ...data }) : this.http.patch<User>(`${this.api}/${id}`, data);

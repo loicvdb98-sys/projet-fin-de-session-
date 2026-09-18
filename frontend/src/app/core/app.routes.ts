@@ -17,7 +17,8 @@ import { NotificationsComponent } from '@features/notifications/notifications.co
 import { AthletesComponent } from '@features/athletes/athletes.component';
 import { AthleteDetailComponent } from '@features/athletes/athlete-detail.component';
 import { JournalComponent } from '@features/journal/journal.component';
-import { authGuard, coachGuard } from './auth.guard';
+import { AdminUsersComponent } from '@features/admin/admin-users.component';
+import { authGuard, coachGuard, adminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -34,6 +35,7 @@ export const routes: Routes = [
   { path: 'athletes', component: AthletesComponent, canActivate: [coachGuard] },
   { path: 'athletes/:id', component: AthleteDetailComponent, canActivate: [coachGuard] },
   { path: 'journal', component: JournalComponent, canActivate: [authGuard] },
+  { path: 'admin/users', component: AdminUsersComponent, canActivate: [adminGuard] },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

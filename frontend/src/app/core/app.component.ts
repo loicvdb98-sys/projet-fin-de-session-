@@ -88,6 +88,12 @@ import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
                 <span class="app-rail-label">Sportifs</span>
               </a>
             }
+            @if (auth.isAdmin()) {
+              <a class="app-rail-item" routerLink="/admin/users" routerLinkActive="active">
+                <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/></svg></span>
+                <span class="app-rail-label">Comptes</span>
+              </a>
+            }
             <a class="app-rail-item" routerLink="/journal" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/></svg></span>
               <span class="app-rail-label">Journal</span>

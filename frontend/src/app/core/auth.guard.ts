@@ -19,3 +19,11 @@ export const coachGuard: CanActivateFn = () => {
   if (!auth.isAuthenticated()) return router.createUrlTree(['/login']);
   return auth.isCoachOrAdmin() ? true : router.createUrlTree(['/dashboard']);
 };
+
+/** Réserve les écrans de gestion des comptes aux administrateurs. */
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) return router.createUrlTree(['/login']);
+  return auth.isAdmin() ? true : router.createUrlTree(['/dashboard']);
+};
