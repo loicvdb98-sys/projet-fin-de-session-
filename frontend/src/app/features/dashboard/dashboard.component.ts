@@ -181,28 +181,28 @@ const STATUS_LABELS: Record<string, string> = {
                 @if (upcoming.length) {
                   <span class="module-preview-list">
                     @for (session of upcoming; track session.id) {
-                      <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }} · {{ session.duration_minutes }} min</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }} · {{ session.duration_minutes }} min</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucune séance à venir pour le moment.</p> }
               }
               @if (module.key === 'calendar' && (upcomingSessions$ | async); as upcoming) {
                 @if (upcoming.length) {
                   <span class="module-preview-list">
                     @for (session of upcoming; track session.id) {
-                      <span class="module-preview-row"><span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ session.title }}</span><span class="text-secondary">{{ shortSessionDate(session.starts_at) }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Rien de planifié sur votre calendrier pour le moment.</p> }
               }
               @if (module.key === 'participations' && (participations$ | async); as items) {
                 @if (items.length) {
                   <span class="module-preview-list">
                     @for (item of items; track item.id) {
-                      <span class="module-preview-row"><span>{{ item.sessionTitle }}</span><span class="text-secondary">{{ statusLabel(item.status) }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ item.sessionTitle }}</span><span class="text-secondary">{{ statusLabel(item.status) }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucune participation récente. Inscrivez-vous à une séance pour la retrouver ici.</p> }
               }
               @if (module.key === 'performances' && (performances$ | async); as perfs) {
                 @if (perfs.length) {
@@ -210,52 +210,56 @@ const STATUS_LABELS: Record<string, string> = {
                   <span class="module-sparkline" aria-hidden="true">
                     @for (bar of sparkBars(perfs); track $index) { <span [style.height.%]="bar"></span> }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucune performance enregistrée pour le moment.</p> }
               }
               @if (module.key === 'goals' && (goals$ | async); as goals) {
                 @if (goals.length) {
                   <span class="module-preview-list">
                     @for (goal of goals.slice(0, 3); track goal.id) {
-                      <span class="module-preview-row"><span>{{ goal.title }}</span><span class="text-secondary">{{ goal.current_value }}/{{ goal.target_value }} {{ goal.unit }} · {{ goalProgress(goal) }}%</span></span>
+                      <span class="module-preview-goal">
+                        <span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ goal.title }}</span>
+                        <span class="text-secondary">{{ goal.current_value }}/{{ goal.target_value }} {{ goal.unit }} · {{ goalProgress(goal) }}%</span>
+                        <span class="module-mini-progress" aria-hidden="true"><span [style.width.%]="goalProgress(goal)"></span></span>
+                      </span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucun objectif pour le moment. Définissez-en un pour suivre votre progression.</p> }
               }
               @if (module.key === 'programs' && (programs$ | async); as programs) {
                 @if (programs.length) {
                   <span class="module-preview-list">
                     @for (program of programs; track program.id) {
-                      <span class="module-preview-row"><span>{{ program.name }}</span><span class="text-secondary">{{ program.weeks }} semaine{{ program.weeks > 1 ? 's' : '' }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ program.name }}</span><span class="text-secondary">{{ program.weeks }} semaine{{ program.weeks > 1 ? 's' : '' }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucun programme pour le moment.</p> }
               }
               @if (module.key === 'journal' && (journal$ | async); as entries) {
                 @if (entries.length) {
                   <span class="module-preview-list">
                     @for (entry of entries; track entry.id) {
-                      <span class="module-preview-row"><span>{{ entry.sessionTitle }}</span><span class="text-secondary">{{ entry.mood }} · fatigue {{ entry.fatigue }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ entry.sessionTitle }}</span><span class="text-secondary">{{ entry.mood }} · fatigue {{ entry.fatigue }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucune entrée de journal pour le moment.</p> }
               }
               @if (module.key === 'notifications' && (notifications$ | async); as notifs) {
                 @if (notifs.length) {
                   <span class="module-preview-list">
                     @for (notif of notifs.slice(0, 3); track notif.id) {
-                      <span class="module-preview-row"><span>{{ notif.title }}</span><span class="text-secondary">{{ notif.message | slice: 0:34 }}{{ notif.message.length > 34 ? '…' : '' }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" [class.unread]="!notif.is_read" aria-hidden="true"></span>{{ notif.title }}</span><span class="text-secondary">{{ notif.message | slice: 0:34 }}{{ notif.message.length > 34 ? '…' : '' }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucune notification pour le moment.</p> }
               }
               @if (module.key === 'athletes' && (athletes$ | async); as athletes) {
                 @if (athletes.length) {
                   <span class="module-preview-list">
                     @for (athlete of athletes; track athlete.id) {
-                      <span class="module-preview-row"><span>{{ athlete.full_name }}</span><span class="text-secondary">{{ athlete.specialty || 'Sportif' }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ athlete.full_name }}</span><span class="text-secondary">{{ athlete.specialty || 'Sportif' }}</span></span>
                     }
                   </span>
-                }
+                } @else { <p class="empty-state module-empty">Aucun sportif suivi pour le moment.</p> }
               }
 
               <a class="module-detail-cta" [routerLink]="module.link">Ouvrir {{ module.title }} →</a>
