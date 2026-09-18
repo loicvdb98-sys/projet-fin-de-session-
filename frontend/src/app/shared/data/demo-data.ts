@@ -8,7 +8,7 @@
  * `true` par `false` ci-dessous. Le reste de l'application utilisera
  * alors l'API normalement.
  */
-export const DEMO_MODE = true;
+export const DEMO_MODE = false;
 
 export const DEMO_STATISTICS = {
   total_sessions: 18,

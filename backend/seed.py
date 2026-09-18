@@ -78,9 +78,9 @@ def run_seed() -> None:
     now = datetime.now(timezone.utc).replace(microsecond=0)
 
     with SessionLocal() as db:
-        coach = get_or_create_user(db, "coach.demo@sportplan.local", "Camille Coach", "coach")
-        sportif = get_or_create_user(db, "sportif.demo@sportplan.local", "Alex Sportif", "sportif")
-        get_or_create_user(db, "admin.demo@sportplan.local", "Admin SportPlan", "admin")
+        coach = get_or_create_user(db, "coach.demo@sportplan.dev", "Camille Coach", "coach")
+        sportif = get_or_create_user(db, "sportif.demo@sportplan.dev", "Alex Sportif", "sportif")
+        get_or_create_user(db, "admin.demo@sportplan.dev", "Admin SportPlan", "admin")
 
         strength = get_or_create_session(
             db,
@@ -130,9 +130,9 @@ def run_seed() -> None:
         db.commit()
 
     print("Données de démonstration installées.")
-    print("Coach   : coach.demo@sportplan.local / " + DEMO_PASSWORD)
-    print("Sportif : sportif.demo@sportplan.local / " + DEMO_PASSWORD)
-    print("Admin   : admin.demo@sportplan.local / " + DEMO_PASSWORD)
+    print("Coach   : coach.demo@sportplan.dev / " + DEMO_PASSWORD)
+    print("Sportif : sportif.demo@sportplan.dev / " + DEMO_PASSWORD)
+    print("Admin   : admin.demo@sportplan.dev / " + DEMO_PASSWORD)
 
 
 if __name__ == "__main__":

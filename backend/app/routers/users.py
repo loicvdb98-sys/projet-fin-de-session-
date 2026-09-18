@@ -27,7 +27,8 @@ def list_users(db: Session = Depends(get_db)):
 @router.get("/athletes", response_model=list[UserRead], dependencies=[Depends(require_roles("coach", "admin"))])
 def list_athletes(db: Session = Depends(get_db)):
     """Liste les sportifs actifs (GET /users/athletes), triés par nom. Réservé aux comptes coach et admin."""
-    return db.scalars(select(User).where(User.role == "sportif", User.is_active.is_(True)).order_by(User.full_name)).all()
+    # SQL Server n'accepte pas "IS 1" (produit par .is_(True)) : il faut comparer avec "=".
+    return db.scalars(select(User).where(User.role == "sportif", User.is_active == True).order_by(User.full_name)).all()  # noqa: E712
 
 
 @router.patch("/{user_id}", response_model=UserRead)

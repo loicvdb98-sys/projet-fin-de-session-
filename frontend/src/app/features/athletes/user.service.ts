@@ -32,7 +32,7 @@ export class UserService {
 
   /** Construit le profil visuel depuis l'adresse saisie à la connexion. */
   private demoCurrentUser(): User {
-    const email = localStorage.getItem('demo_user_email') || 'coach.demo@sportplan.local';
+    const email = localStorage.getItem('demo_user_email') || 'coach.demo@sportplan.dev';
     const identifier = email.split('@')[0] || 'sportif';
     const fullName = identifier
       .split(/[._-]+/)

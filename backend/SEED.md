@@ -13,9 +13,9 @@ Comptes créés :
 
 | Rôle | Email | Mot de passe |
 | --- | --- | --- |
-| Coach | `coach.demo@sportplan.local` | `SportPlanDemo2026!` |
-| Sportif | `sportif.demo@sportplan.local` | `SportPlanDemo2026!` |
-| Admin | `admin.demo@sportplan.local` | `SportPlanDemo2026!` |
+| Coach | `coach.demo@sportplan.dev` | `SportPlanDemo2026!` |
+| Sportif | `sportif.demo@sportplan.dev` | `SportPlanDemo2026!` |
+| Admin | `admin.demo@sportplan.dev` | `SportPlanDemo2026!` |
 
 Les comptes sont réservés au développement local. Changez les mots de passe avant
 toute utilisation sur un environnement partagé ou de production.

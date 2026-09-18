@@ -21,12 +21,16 @@ describe('AuthService', () => {
 
   it('stores tokens after a successful login', () => {
     service.login('athlete@example.com', 'Password2026!').subscribe();
-    const request = http.expectOne('http://localhost:8000/auth/login');
+    const loginRequest = http.expectOne('http://localhost:8000/auth/login');
+    loginRequest.flush({ access_token: 'access', refresh_token: 'refresh', token_type: 'bearer' });
 
-    request.flush({ access_token: 'access', refresh_token: 'refresh', token_type: 'bearer' });
+    // Le login enchaîne sur /users/me pour connaître le rôle réel de l'utilisateur.
+    const meRequest = http.expectOne('http://localhost:8000/users/me');
+    meRequest.flush({ id: 1, email: 'athlete@example.com', full_name: 'Athlete', role: 'sportif', is_active: true });
 
     expect(localStorage.getItem('access_token')).toBe('access');
     expect(localStorage.getItem('refresh_token')).toBe('refresh');
+    expect(localStorage.getItem('user_role')).toBe('sportif');
     expect(service.isAuthenticated()).toBe(true);
   });
 
