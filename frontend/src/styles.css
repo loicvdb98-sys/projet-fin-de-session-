@@ -21,6 +21,11 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, B
 .app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: -.02em; padding: 0 .3rem; }
 .brand-mark { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
 .brand-mark svg { width: 1.2rem; height: 1.2rem; }
+.app-rail-user { display: flex; align-items: center; gap: .65rem; padding: .7rem .65rem; margin: .25rem 0 .35rem; background: var(--bg-surface-alt); border-radius: .9rem; }
+.rail-avatar { flex: 0 0 auto; width: 2.3rem; height: 2.3rem; margin: 0; border-radius: .7rem; font-size: .85rem; }
+.app-rail-user-info { min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
+.app-rail-user-info strong { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-rail-user-info .role-badge { padding: .15rem .5rem; font-size: .66rem; align-self: flex-start; }
 .app-rail-nav { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-height: 0; }
 .app-rail-item { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; padding: .55rem .65rem; background: transparent; border: none; border-radius: .9rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .84rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .app-rail-item:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
@@ -68,6 +73,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .session-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
 .session-icon { display: grid; place-items: center; width: 2.7rem; height: 2.7rem; border-radius: .85rem; background: linear-gradient(135deg, rgb(0 170 159 / 18%), rgb(0 170 159 / 6%)); color: var(--accent-secondary); }
 .session-date { color: var(--accent-primary); font-weight: 700; }
+.session-coach { font-size: .8rem; color: var(--text-secondary); margin-top: .3rem; }
 .insight-card { margin-top: 1rem; }
 
 .home-page { max-width: 1160px; }
@@ -151,7 +157,10 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .profile-avatar { display: grid; place-items: center; width: 5.5rem; height: 5.5rem; margin: .25rem auto 1rem; border-radius: 1.5rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; font-size: 1.7rem; font-weight: 900; }
 .profile-hero h2 { margin: .25rem 0 .15rem; }
 .profile-hero .text-secondary { margin-top: 0; overflow-wrap: anywhere; }
-.role-badge { display: inline-flex; padding: .35rem .7rem; border-radius: 999px; background: rgb(0 170 159 / 14%); color: var(--accent-secondary); font-size: .78rem; font-weight: 800; }
+.role-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; background: rgb(0 170 159 / 14%); color: var(--accent-secondary); font-size: .78rem; font-weight: 800; }
+.role-badge.role-sportif { background: rgb(14 165 233 / 14%); color: var(--color-info-500); }
+.role-badge.role-coach { background: color-mix(in srgb, var(--accent-secondary) 16%, transparent); color: var(--accent-secondary); }
+.role-badge.role-admin { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); color: var(--accent-primary); }
 .profile-hero mat-divider { margin: 1.25rem 0; }
 .profile-details { display: grid; gap: .8rem; text-align: left; margin: 0 0 1.25rem; }
 .profile-details div { display: flex; justify-content: space-between; gap: 1rem; }

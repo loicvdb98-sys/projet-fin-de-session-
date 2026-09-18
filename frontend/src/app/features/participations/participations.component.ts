@@ -15,7 +15,7 @@ import { ToastService } from '@shared/services/toast.service';
 type ParticipationStatus = 'inscrit' | 'present' | 'absent';
 interface EnrichedParticipation {
   id: number; session_id: number; status: string;
-  sessionTitle: string; startsAt: string; durationMinutes: number;
+  sessionTitle: string; startsAt: string; durationMinutes: number; coachName: string;
 }
 
 const STATUS_META: Record<ParticipationStatus, { label: string; badge: string }> = {
@@ -57,6 +57,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: string }>
                 <mat-card-content>
                   <p class="session-date">{{ item.startsAt | date:'dd/MM/yyyy à HH:mm' }}</p>
                   <p class="text-secondary">{{ item.durationMinutes }} min</p>
+                  @if (item.coachName) { <p class="session-coach">Coach : {{ item.coachName }}</p> }
                 </mat-card-content>
                 @if (item.status === 'inscrit') {
                   <mat-card-actions>
@@ -83,6 +84,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: string }>
                 <mat-card-content>
                   <p class="session-date">{{ item.startsAt | date:'dd/MM/yyyy à HH:mm' }}</p>
                   <p class="text-secondary">{{ item.durationMinutes }} min</p>
+                  @if (item.coachName) { <p class="session-coach">Coach : {{ item.coachName }}</p> }
                 </mat-card-content>
               </mat-card>
             }
@@ -106,6 +108,7 @@ export class ParticipationsComponent {
         sessionTitle: session?.title ?? 'Séance supprimée',
         startsAt: session?.starts_at ?? '',
         durationMinutes: session?.duration_minutes ?? 0,
+        coachName: session?.coach_name ?? '',
       };
     }))
   );

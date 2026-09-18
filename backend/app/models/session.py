@@ -30,3 +30,8 @@ class Session(Base):
     coach: Mapped["User"] = relationship(back_populates="sessions")
     exercises: Mapped[list["Exercise"]] = relationship(back_populates="session", cascade="all, delete-orphan")
     participations: Mapped[list["Participation"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+    @property
+    def coach_name(self) -> str:
+        """Nom complet du coach qui anime la séance, exposé aux schémas de lecture."""
+        return self.coach.full_name

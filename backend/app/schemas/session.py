@@ -36,3 +36,4 @@ class SessionRead(SessionBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     coach_id: int
+    coach_name: str

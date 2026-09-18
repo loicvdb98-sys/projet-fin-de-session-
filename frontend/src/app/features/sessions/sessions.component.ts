@@ -66,7 +66,7 @@ type ExerciseForm = {
       @if (sessions$ | async; as sessions) {
         @if (sessions.length) {
           <div class="cards">@for (session of sessions; track session.id) {
-            <mat-card class="session-card"><div class="session-card-top"><span class="session-icon" aria-hidden="true">⚡</span><span class="status-badge info">À venir</span></div><mat-card-title>{{ session.title }}</mat-card-title><mat-card-content><p class="session-date">{{ session.starts_at | date:'dd/MM/yyyy à HH:mm' }}</p><p class="text-secondary">{{ session.duration_minutes }} min · {{ session.capacity }} places</p></mat-card-content><mat-card-actions><button mat-button class="teal-action" (click)="register(session.id)">S'inscrire</button><button mat-button (click)="loadExercises(session.id)">Exercices</button></mat-card-actions></mat-card>
+            <mat-card class="session-card"><div class="session-card-top"><span class="session-icon" aria-hidden="true">⚡</span><span class="status-badge info">À venir</span></div><mat-card-title>{{ session.title }}</mat-card-title><mat-card-content><p class="session-date">{{ session.starts_at | date:'dd/MM/yyyy à HH:mm' }}</p><p class="text-secondary">{{ session.duration_minutes }} min · {{ session.capacity }} places</p><p class="session-coach">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</p></mat-card-content><mat-card-actions><button mat-button class="teal-action" (click)="register(session.id)">S'inscrire</button><button mat-button (click)="loadExercises(session.id)">Exercices</button></mat-card-actions></mat-card>
           }</div>
         } @else { <p>Aucune séance disponible.</p> }
       }
@@ -92,6 +92,7 @@ export class SessionsComponent implements OnDestroy {
     exercises: this.fb.array<FormGroup<ExerciseForm>>([])
   });
   canManage = false;
+  currentUserId?: number;
   createError = '';
   exercises = this.form.controls.exercises;
   selectedExercises: Exercise[] = [];
@@ -102,7 +103,12 @@ export class SessionsComponent implements OnDestroy {
 
   // Le rôle n'est pas dans le token JWT décodable côté client : on le récupère via le profil
   // pour savoir si l'éditeur de création de séance doit être affiché.
-  constructor() { this.users.me().subscribe(user => this.canManage = user.role === 'coach' || user.role === 'admin'); }
+  constructor() {
+    this.users.me().subscribe(user => {
+      this.canManage = user.role === 'coach' || user.role === 'admin';
+      this.currentUserId = user.id;
+    });
+  }
 
   /** Ajoute une ligne d'exercice vierge (valeurs par défaut) au formulaire de création. */
   addExercise(): void {

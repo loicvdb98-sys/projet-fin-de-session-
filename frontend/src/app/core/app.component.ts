@@ -3,8 +3,12 @@
  * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
  */
 import { Component, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { of, switchMap } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';
+import { UserService } from '@features/athletes/user.service';
 import { ThemeService } from '@shared/services/theme.service';
 import { ToastContainerComponent } from '@shared/components/toast-container.component';
 import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
@@ -12,7 +16,7 @@ import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, DemoNoticeComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent, DemoNoticeComponent],
   template: `
     <div class="app-shell">
       <aside class="app-rail" aria-label="Navigation principale">
@@ -27,6 +31,16 @@ import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
           </span>
           <span>SportPlan</span>
         </a>
+
+        @if (currentUser$ | async; as me) {
+          <div class="app-rail-user">
+            <div class="profile-avatar rail-avatar" aria-hidden="true">{{ initials(me.full_name) }}</div>
+            <div class="app-rail-user-info">
+              <strong>{{ me.full_name }}</strong>
+              <span class="role-badge" [class]="'role-' + me.role">{{ roleLabel(me.role) }}</span>
+            </div>
+          </div>
+        }
 
         <nav class="app-rail-nav">
           <a class="app-rail-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
@@ -121,4 +135,18 @@ import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
 export class AppComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
+  private readonly users = inject(UserService);
+
+  // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois).
+  readonly currentUser$ = toObservable(this.auth.isAuthenticated).pipe(
+    switchMap((isAuthenticated) => (isAuthenticated ? this.users.me() : of(null)))
+  );
+
+  initials(name: string): string {
+    return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
+  }
+
+  roleLabel(role: string): string {
+    return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif';
+  }
 }

@@ -29,7 +29,7 @@ import { AuthService } from '@features/auth/auth.service';
         <div class="profile-avatar" aria-hidden="true">{{ initials(user.full_name) }}</div>
         <h2>{{ user.full_name }}</h2>
         <p class="text-secondary">{{ user.email }}</p>
-        <span class="role-badge">{{ roleLabel(user.role) }}</span>
+        <span class="role-badge" [class]="'role-' + user.role">{{ roleLabel(user.role) }}</span>
         <mat-divider></mat-divider>
         <dl class="profile-details">
           <div><dt>Identifiant</dt><dd>#{{ user.id }}</dd></div>

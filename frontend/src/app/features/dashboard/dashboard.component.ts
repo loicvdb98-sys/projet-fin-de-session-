@@ -66,7 +66,7 @@ const STATUS_LABELS: Record<string, string> = {
           <span class="next-session-body">
             <span class="eyebrow">PROCHAINE SÉANCE</span>
             <strong>{{ next.title }}</strong>
-            <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min</span>
+            <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min · Coach : {{ next.coach_name }}</span>
           </span>
           <span class="next-session-cta">Voir →</span>
         </a>

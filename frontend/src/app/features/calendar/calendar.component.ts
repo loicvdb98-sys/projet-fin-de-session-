@@ -78,6 +78,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
               <mat-card-content>
                 <p class="session-date">{{ session.starts_at | date:'HH:mm' }}</p>
                 <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.capacity }} places</p>
+                <p class="session-coach">Coach : {{ session.coach_name }}</p>
                 @if (session.description) { <p class="text-secondary">{{ session.description }}</p> }
               </mat-card-content>
               @if (!isRegistered(session.id)) {
