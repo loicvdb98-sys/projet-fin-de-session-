@@ -7,7 +7,7 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { combineLatest, map, shareReplay } from 'rxjs';
+import { combineLatest, map, of, shareReplay } from 'rxjs';
 import { StatisticsService } from '@shared/services/statistics.service';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
@@ -324,10 +324,10 @@ export class DashboardComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
-  readonly athletes$ = inject(UserService).athletes().pipe(
-    map((athletes) => athletes.slice(0, 3)),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
+  // Réservé aux coachs/admins : le backend rejette /users/athletes (403) pour un sportif.
+  readonly athletes$ = this.auth.isCoachOrAdmin()
+    ? inject(UserService).athletes().pipe(map((athletes) => athletes.slice(0, 3)), shareReplay({ bufferSize: 1, refCount: true }))
+    : of([]);
 
   /** Prêt une fois que les données du module actuellement affiché ont eu le temps d'arriver au moins une fois. */
   readonly ready$ = combineLatest([
