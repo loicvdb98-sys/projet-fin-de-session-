@@ -11,7 +11,7 @@ import { combineLatest, map, of, shareReplay } from 'rxjs';
 import { StatisticsService } from '@shared/services/statistics.service';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
-import { SessionService } from '@features/sessions/session.service';
+import { SessionService, SportSession } from '@features/sessions/session.service';
 import { PerformanceService } from '@features/performances/performance.service';
 import { NotificationService } from '@features/notifications/notification.service';
 import { GoalService } from '@features/goals/goal.service';
@@ -66,7 +66,7 @@ const STATUS_LABELS: Record<string, string> = {
           <span class="next-session-body">
             <span class="eyebrow">PROCHAINE SÉANCE</span>
             <strong>{{ next.title }}</strong>
-            <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min · Coach : {{ next.coach_name }}</span>
+            <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min · Coach : {{ next.coach_name }} · {{ remainingSpots(next) > 0 ? remainingSpots(next) + ' places restantes' : 'Complet' }}</span>
           </span>
           <span class="next-session-cta">Voir →</span>
         </a>
@@ -356,6 +356,11 @@ export class DashboardComponent {
 
   firstName(fullName: string): string {
     return fullName.split(' ')[0] || fullName;
+  }
+
+  /** Places encore disponibles pour une séance (jamais négatif). */
+  remainingSpots(session: SportSession): number {
+    return Math.max(0, session.capacity - session.registered_count);
   }
 
   /** Date complète en français avec majuscule initiale (ex. "Lundi 15 septembre, 18:00"). */

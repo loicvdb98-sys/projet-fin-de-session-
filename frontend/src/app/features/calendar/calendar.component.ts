@@ -72,18 +72,22 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                 <span class="session-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 15l2.5 2.5L16 13"/></svg>
                 </span>
-                @if (isRegistered(session.id)) { <span class="status-badge success">Inscrit</span> }
+                @if (isRegistered(session.id)) {
+                  <span class="status-badge success">Inscrit</span>
+                } @else {
+                  <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
+                }
               </div>
               <mat-card-title>{{ session.title }}</mat-card-title>
               <mat-card-content>
                 <p class="session-date">{{ session.starts_at | date:'HH:mm' }}</p>
-                <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.capacity }} places</p>
+                <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.registered_count }}/{{ session.capacity }} inscrits</p>
                 <p class="session-coach">Coach : {{ session.coach_name }}</p>
                 @if (session.description) { <p class="text-secondary">{{ session.description }}</p> }
               </mat-card-content>
               @if (!isRegistered(session.id)) {
                 <mat-card-actions>
-                  <button mat-button class="teal-action" (click)="register(session.id)">S'inscrire</button>
+                  <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
                 </mat-card-actions>
               }
             </mat-card>
@@ -157,12 +161,19 @@ export class CalendarComponent {
     return this.participations.some((p) => p.session_id === sessionId && p.user_id === this.currentUserId);
   }
 
+  /** Places encore disponibles pour une séance (jamais négatif). */
+  remainingSpots(session: SportSession): number {
+    return Math.max(0, session.capacity - session.registered_count);
+  }
+
   /** Inscrit l'utilisateur connecté à une séance depuis le calendrier, sans quitter la page. */
   register(sessionId: number): void {
     if (!this.currentUserId) return;
     this.participationService.create(this.currentUserId, sessionId).subscribe({
       next: (participation) => {
         this.participations = [...this.participations, participation];
+        const session = this.sessions.find((item) => item.id === sessionId);
+        if (session) session.registered_count += 1;
         this.toast.success('Inscription confirmée.');
         this.rebuild();
       },
