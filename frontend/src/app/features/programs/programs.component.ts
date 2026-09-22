@@ -1,6 +1,6 @@
-import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,7 +11,7 @@ import { ToastService } from '@shared/services/toast.service';
 /** Écran des programmes d'entraînement : création de modèles et liste des programmes existants. */
 @Component({
   standalone: true,
-  imports: [AsyncPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
+  imports: [RouterLink, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page">
       <div class="page-heading"><div><p class="eyebrow">PLANIFICATION</p><h1>Programmes</h1><p class="text-secondary">Créez des plans réutilisables sur plusieurs semaines.</p></div></div>
@@ -20,10 +20,15 @@ import { ToastService } from '@shared/services/toast.service';
           <mat-form-field appearance="outline"><mat-label>Nom du programme</mat-label><input matInput formControlName="name" placeholder="Ex. Transformation 8 semaines"></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Description</mat-label><textarea matInput rows="2" formControlName="description"></textarea></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Nombre de semaines</mat-label><input matInput type="number" formControlName="weeks"></mat-form-field>
+          @if (createError) { <p class="error" role="alert">{{ createError }}</p> }
           <button mat-flat-button class="primary-action" [disabled]="form.invalid">Créer le programme</button>
         </form>
       </mat-card>
-      @if (programs$ | async; as programs) {
+      @if (loading) {
+        <p class="text-secondary">Chargement des programmes…</p>
+      } @else if (loadError) {
+        <mat-card class="empty-state-card"><h2>Impossible de charger vos programmes</h2><p class="text-secondary">Vérifiez votre connexion puis réessayez.</p><button mat-stroked-button (click)="load()">Réessayer</button></mat-card>
+      } @else {
         <div class="program-grid">
           @for (program of programs; track program.id) {
             <mat-card class="program-card"><div class="card-heading"><div><p class="eyebrow">{{ program.weeks }} SEMAINES</p><h2>{{ program.name }}</h2></div><button mat-button class="danger-action" (click)="remove(program.id)">Supprimer</button></div><p class="text-secondary">{{ program.description || 'Programme personnalisé prêt à être planifié.' }}</p><div class="program-meta"><span>{{ program.sessions.length }} séance(s) modèle</span><a mat-button class="teal-action" routerLink="/workouts/new">Créer une séance</a></div></mat-card>
@@ -37,22 +42,41 @@ export class ProgramsComponent {
   private readonly service = inject(ProgramService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  readonly programs$ = this.service.list();
+  programs: WorkoutProgram[] = [];
+  loading = true;
+  loadError = false;
+  createError = '';
   readonly form = this.fb.nonNullable.group({ name: ['', [Validators.required, Validators.minLength(2)]], description: [''], weeks: [4, [Validators.required, Validators.min(1), Validators.max(52)]] });
 
-  /** Crée un programme vide (sans séances modèles) puis recharge la page. */
-  create(): void {
-    if (this.form.invalid) return;
-    this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe({
-      next: () => { this.toast.showOnNextLoad('Programme créé.'); location.reload(); },
-      error: () => this.toast.error('Impossible de créer ce programme.')
+  constructor() { this.load(); }
+
+  load(): void {
+    this.loading = true;
+    this.loadError = false;
+    this.service.list().subscribe({
+      next: (programs) => { this.programs = programs; this.loading = false; },
+      error: () => { this.loadError = true; this.loading = false; }
     });
   }
 
-  /** Supprime un programme puis recharge la page. */
+  /** Crée un programme vide (sans séances modèles) et l'ajoute directement à la liste. */
+  create(): void {
+    if (this.form.invalid) return;
+    this.createError = '';
+    this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe({
+      next: (program) => {
+        this.programs = [program, ...this.programs];
+        this.form.reset({ name: '', description: '', weeks: 4 });
+        this.toast.success('Programme créé.');
+      },
+      error: () => { this.createError = 'Impossible de créer ce programme.'; }
+    });
+  }
+
+  /** Supprime un programme et le retire directement de la liste. */
   remove(id: number): void {
     this.service.delete(id).subscribe({
-      next: () => { this.toast.showOnNextLoad('Programme supprimé.'); location.reload(); },
+      next: () => { this.programs = this.programs.filter((program) => program.id !== id); this.toast.success('Programme supprimé.'); },
       error: () => this.toast.error('Impossible de supprimer ce programme.')
     });
   }
