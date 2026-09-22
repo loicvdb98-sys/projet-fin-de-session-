@@ -1,108 +1,118 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
-import { AsyncPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Performance, PerformanceService } from './performance.service';
 import { SessionService } from '@features/sessions/session.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { UserService } from '@features/athletes/user.service';
-import { combineLatest, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
+import { combineLatest, map, of, shareReplay, switchMap } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { markForCheck } from '@core/mark-for-check.operator';
 
 Chart.register(...registerables);
 
+type Section = 'overview' | 'history' | 'attendance';
 interface AttendancePoint { title: string; date: string; rate: number; present: number; total: number; }
 interface EnrichedPerformance extends Performance { sessionTitle: string; athleteName: string | null; }
 
 /**
- * Écran des performances : score moyen, meilleur score, graphique
- * d'évolution (Chart.js) et historique détaillé. Pour un coach ou un admin,
- * affiche en plus un graphique d'assiduité (taux de présence par séance
- * passée, calculé à partir des participations des séances qu'il gère).
+ * Écran des statistiques : trois modules dans le rail (comme les pages Séances
+ * et Participations) - Vue d'ensemble (score moyen, meilleur score, graphique
+ * de progression), Historique (détail des performances), et Assiduité (taux
+ * de présence par séance passée). L'assiduité est calculée sur les séances
+ * qu'il encadre pour un coach (toutes pour un admin), et sur ses propres
+ * participations pour un sportif.
  */
 @Component({
   standalone: true,
-  imports: [AsyncPipe, DatePipe, DecimalPipe, NgTemplateOutlet, MatCardModule],
+  imports: [AsyncPipe, DatePipe, DecimalPipe, MatCardModule],
   template: `
     <section class="page">
       <div class="page-heading">
         <div>
           <p class="eyebrow">SUIVI</p>
           <h1>Statistiques</h1>
-          <p class="text-secondary">{{ isCoach ? 'Assiduité à vos séances et performances de vos sportifs.' : 'Analysez vos résultats au fil des séances.' }}</p>
+          <p class="text-secondary">{{ isCoach ? 'Assiduité à vos séances et performances de vos sportifs.' : 'Votre progression, votre historique et votre assiduité.' }}</p>
         </div>
       </div>
 
-      @if (isCoach) {
-        <div class="module-shell">
-          <nav class="module-rail" aria-label="Sections statistiques">
-            <button type="button" class="module-rail-item c-secondary" [class.active]="selectedSection === 'attendance'" (click)="selectSection('attendance')">
-              <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
-              <span class="module-rail-label">Assiduité</span>
-            </button>
-            <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'performance'" (click)="selectSection('performance')">
-              <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></span>
-              <span class="module-rail-label">Performances</span>
-            </button>
-          </nav>
+      <div class="module-shell">
+        <nav class="module-rail" aria-label="Sections statistiques">
+          <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'overview'" (click)="selectSection('overview')">
+            <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></span>
+            <span class="module-rail-label">Vue d'ensemble</span>
+          </button>
+          <button type="button" class="module-rail-item c-info" [class.active]="selectedSection === 'history'" (click)="selectSection('history')">
+            <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+            <span class="module-rail-label">Historique</span>
+          </button>
+          <button type="button" class="module-rail-item c-secondary" [class.active]="selectedSection === 'attendance'" (click)="selectSection('attendance')">
+            <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
+            <span class="module-rail-label">Assiduité</span>
+          </button>
+        </nav>
 
-          <div class="module-detail">
-            @if (selectedSection === 'attendance') {
+        <div class="module-detail">
+          @if (selectedSection === 'overview') {
+            @if (performances$ | async; as performances) {
               <div class="cards">
-                <mat-card class="stat-card accent">
-                  <mat-card-title>Taux de présence moyen</mat-card-title>
-                  <strong class="stat-value">{{ averageAttendance }}%</strong>
-                  <p class="text-secondary">sur {{ attendancePoints.length }} séance(s) passée(s)</p>
-                </mat-card>
+                <mat-card class="stat-card accent"><mat-card-title>Score moyen</mat-card-title><strong class="stat-value">{{ average(performances) | number:'1.0-1' }}</strong><p class="text-secondary">sur {{ performances.length }} performance(s)</p></mat-card>
+                <mat-card class="stat-card"><mat-card-title>Meilleur score</mat-card-title><strong class="stat-value">{{ best(performances) | number:'1.0-1' }}</strong><p class="text-secondary">{{ isCoach ? 'Meilleur score enregistré' : 'Votre record actuel' }}</p></mat-card>
               </div>
-              @if (attendancePoints.length) {
-                <mat-card class="chart-card">
-                  <mat-card-title>Présence par séance</mat-card-title>
-                  <mat-card-content><div class="performance-chart"><canvas #attendanceChart aria-label="Graphique du taux de présence par séance"></canvas></div></mat-card-content>
-                </mat-card>
-                <mat-card class="exercise-summary">
-                  <h2>Détail par séance</h2>
-                  @for (point of attendancePoints; track point.title + point.date) {
-                    <div class="exercise-summary-row">
-                      <span><strong>{{ point.title }}</strong><small>{{ point.date | date:'dd/MM/yyyy' }} · {{ point.present }}/{{ point.total }} présent(s)</small></span>
-                      <span class="status-badge" [class]="point.rate >= 70 ? 'success' : point.rate >= 40 ? 'info' : 'danger'">{{ point.rate }}%</span>
-                    </div>
+              @if (performances.length) {
+                <mat-card class="chart-card"><mat-card-title>Évolution des performances</mat-card-title><mat-card-content><div class="performance-chart"><canvas #performanceChart aria-label="Graphique de progression des performances"></canvas></div></mat-card-content></mat-card>
+              } @else {
+                <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">{{ isCoach ? 'Aucune performance enregistrée par vos sportifs pour le moment.' : 'Enregistrez vos premiers résultats pour voir votre progression.' }}</p></mat-card>
+              }
+            }
+          }
+
+          @if (selectedSection === 'history') {
+            @if ((enrichedPerformances$ | async) ?? []; as items) {
+              @if (items.length) {
+                <mat-card class="exercise-summary"><h2>Historique</h2>
+                  @for (item of items; track item.id) {
+                    <div class="exercise-summary-row"><span><strong>{{ item.sessionTitle }}</strong><small>{{ item.athleteName ? item.athleteName + ' · ' : '' }}{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
                   }
                 </mat-card>
               } @else {
-                <mat-card class="empty-state-card"><h2>Pas encore de données d'assiduité</h2><p class="text-secondary">Les statistiques de présence apparaîtront après vos premières séances passées.</p></mat-card>
+                <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">{{ isCoach ? 'Aucune performance enregistrée par vos sportifs pour le moment.' : 'Enregistrez vos premiers résultats pour voir votre historique.' }}</p></mat-card>
               }
-            } @else {
-              <ng-container *ngTemplateOutlet="performanceBlock"></ng-container>
             }
-          </div>
-        </div>
-      } @else {
-        <ng-container *ngTemplateOutlet="performanceBlock"></ng-container>
-      }
-    </section>
+          }
 
-    <ng-template #performanceBlock>
-      @if (performances$ | async; as performances) {
-        <div class="cards">
-          <mat-card class="stat-card accent"><mat-card-title>Score moyen</mat-card-title><strong class="stat-value">{{ average(performances) | number:'1.0-1' }}</strong><p class="text-secondary">sur {{ performances.length }} performance(s)</p></mat-card>
-          <mat-card class="stat-card"><mat-card-title>Meilleur score</mat-card-title><strong class="stat-value">{{ best(performances) | number:'1.0-1' }}</strong><p class="text-secondary">{{ isCoach ? 'Meilleur score enregistré' : 'Votre record actuel' }}</p></mat-card>
-        </div>
-        @if (performances.length) {
-          <mat-card class="chart-card"><mat-card-title>Évolution des performances</mat-card-title><mat-card-content><div class="performance-chart"><canvas #performanceChart aria-label="Graphique de progression des performances"></canvas></div></mat-card-content></mat-card>
-          <mat-card class="exercise-summary"><h2>Historique</h2>
-            @for (item of (enrichedPerformances$ | async) ?? []; track item.id) {
-              <div class="exercise-summary-row"><span><strong>{{ item.sessionTitle }}</strong><small>{{ item.athleteName ? item.athleteName + ' · ' : '' }}{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
+          @if (selectedSection === 'attendance') {
+            <div class="cards">
+              <mat-card class="stat-card accent">
+                <mat-card-title>Taux de présence moyen</mat-card-title>
+                <strong class="stat-value">{{ averageAttendance }}%</strong>
+                <p class="text-secondary">sur {{ attendancePoints.length }} séance(s) passée(s)</p>
+              </mat-card>
+            </div>
+            @if (attendancePoints.length) {
+              <mat-card class="chart-card">
+                <mat-card-title>Présence par séance</mat-card-title>
+                <mat-card-content><div class="performance-chart"><canvas #attendanceChart aria-label="Graphique du taux de présence par séance"></canvas></div></mat-card-content>
+              </mat-card>
+              <mat-card class="exercise-summary">
+                <h2>Détail par séance</h2>
+                @for (point of attendancePoints; track point.title + point.date) {
+                  <div class="exercise-summary-row">
+                    <span><strong>{{ point.title }}</strong><small>{{ point.date | date:'dd/MM/yyyy' }} · {{ isCoach ? point.present + '/' + point.total + ' présent(s)' : (point.rate === 100 ? 'Présent' : 'Absent') }}</small></span>
+                    <span class="status-badge" [class]="point.rate >= 70 ? 'success' : point.rate >= 40 ? 'info' : 'danger'">{{ point.rate }}%</span>
+                  </div>
+                }
+              </mat-card>
+            } @else {
+              <mat-card class="empty-state-card"><h2>Pas encore de données d'assiduité</h2><p class="text-secondary">{{ isCoach ? 'Les statistiques de présence apparaîtront après vos premières séances passées.' : 'Vos statistiques de présence apparaîtront après vos premières séances passées.' }}</p></mat-card>
             }
-          </mat-card>
-        } @else {
-          <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">{{ isCoach ? 'Aucune performance enregistrée par vos sportifs pour le moment.' : 'Enregistrez vos premiers résultats pour voir votre progression.' }}</p></mat-card>
-        }
-      }
-    </ng-template>
+          }
+        </div>
+      </div>
+    </section>
   `
 })
-/** Affiche les statistiques de performance (et d'assiduité pour un coach) et pilote les graphiques Chart.js associés. */
+/** Pilote les trois modules de statistiques (vue d'ensemble, historique, assiduité) et les graphiques Chart.js associés. */
 export class PerformancesComponent implements AfterViewInit, OnDestroy {
   @ViewChild('performanceChart') chartCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('attendanceChart') attendanceCanvas?: ElementRef<HTMLCanvasElement>;
@@ -138,8 +148,8 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private isAdmin = false;
   private currentUserId?: number;
   attendancePoints: AttendancePoint[] = [];
-  /** Section affichée dans le panneau de droite (coach uniquement, comme le rail du tableau de bord). */
-  selectedSection: 'attendance' | 'performance' = 'attendance';
+  /** Section affichée dans le panneau de droite, comme le rail des pages Séances/Participations. */
+  selectedSection: Section = 'overview';
   private latestPerformances: Performance[] = [];
 
   ngAfterViewInit(): void {
@@ -151,7 +161,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
       this.isCoach = user.role === 'coach' || user.role === 'admin';
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
-      if (this.isCoach) this.loadAttendance();
+      this.loadAttendance();
     });
   }
 
@@ -160,11 +170,11 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
    * (elle n'était affichée que par un `@if`), il faut donc redessiner son graphique
    * une fois le nouveau contenu rendu.
    */
-  selectSection(section: 'attendance' | 'performance'): void {
+  selectSection(section: Section): void {
     this.selectedSection = section;
     this.afterRender(() => {
       if (section === 'attendance' && this.attendancePoints.length) this.renderAttendanceChart();
-      if (section === 'performance' && this.latestPerformances.length) this.renderChart(this.latestPerformances);
+      if (section === 'overview' && this.latestPerformances.length) this.renderChart(this.latestPerformances);
     });
   }
 
@@ -194,14 +204,19 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Calcule le taux de présence (présents / inscrits) de chaque séance passée
-   * gérée par le coach connecté (toutes les séances pour un admin), triées
-   * chronologiquement, puis dessine le graphique correspondant.
+   * Calcule le taux de présence de chaque séance passée : présents / inscrits sur les
+   * séances gérées par le coach connecté (toutes les séances pour un admin), ou sa
+   * propre présence (100/0 %) sur les séances où il était inscrit pour un sportif.
+   * Trié chronologiquement, puis dessine le graphique correspondant.
    */
   private loadAttendance(): void {
-    forkJoin([this.sessionService.list(), this.participationService.list()]).pipe(markForCheck(this.cd)).subscribe(([sessions, participations]) => {
+    combineLatest([this.sessionService.list(), this.participationService.list()]).pipe(markForCheck(this.cd)).subscribe(([sessions, participations]) => {
       const now = new Date();
-      const managed = sessions.filter((session) => (this.isAdmin || session.coach_id === this.currentUserId) && new Date(session.starts_at) < now);
+      const ownSessionIds = new Set(participations.map((participation) => participation.session_id));
+      const managed = sessions.filter((session) => {
+        if (new Date(session.starts_at) >= now) return false;
+        return this.isCoach ? (this.isAdmin || session.coach_id === this.currentUserId) : ownSessionIds.has(session.id);
+      });
       this.attendancePoints = managed
         .map((session) => {
           const rows = participations.filter((participation) => participation.session_id === session.id);
@@ -209,7 +224,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
           return { title: session.title, date: session.starts_at, present, total: rows.length, rate: rows.length ? Math.round((present / rows.length) * 100) : 0 };
         })
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      if (this.attendancePoints.length) this.afterRender(() => this.renderAttendanceChart());
+      if (this.selectedSection === 'attendance' && this.attendancePoints.length) this.afterRender(() => this.renderAttendanceChart());
     });
   }
 
