@@ -143,7 +143,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.performances$.subscribe((performances) => {
       this.latestPerformances = performances;
-      if (performances.length) setTimeout(() => this.renderChart(performances));
+      if (performances.length) this.afterRender(() => this.renderChart(performances));
     });
     this.me$.subscribe((user) => {
       this.isCoach = user.role === 'coach' || user.role === 'admin';
@@ -160,10 +160,22 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
    */
   selectSection(section: 'attendance' | 'performance'): void {
     this.selectedSection = section;
-    setTimeout(() => {
+    this.afterRender(() => {
       if (section === 'attendance' && this.attendancePoints.length) this.renderAttendanceChart();
       if (section === 'performance' && this.latestPerformances.length) this.renderChart(this.latestPerformances);
     });
+  }
+
+  /**
+   * Attend qu'Angular ait fini de mettre à jour le DOM et que le navigateur ait peint
+   * ce changement (double requestAnimationFrame) avant d'exécuter `fn`. Un simple
+   * setTimeout(0) peut s'exécuter avant que le canvas nouvellement inséré (derrière un
+   * `@if`) n'ait de dimensions définitives, ce qui faisait échouer silencieusement le
+   * premier dessin du graphique — un second clic laissait alors le temps au navigateur
+   * de rattraper son retard et « réparait » le problème en apparence.
+   */
+  private afterRender(fn: () => void): void {
+    requestAnimationFrame(() => requestAnimationFrame(fn));
   }
 
   average(items: Performance[]): number {
@@ -195,7 +207,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
           return { title: session.title, date: session.starts_at, present, total: rows.length, rate: rows.length ? Math.round((present / rows.length) * 100) : 0 };
         })
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      if (this.attendancePoints.length) setTimeout(() => this.renderAttendanceChart());
+      if (this.attendancePoints.length) this.afterRender(() => this.renderAttendanceChart());
     });
   }
 
