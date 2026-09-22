@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -42,7 +42,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
 
 @Component({
   standalone: true,
-  imports: [DatePipe, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page">
       <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez toutes vos séances à venir.</p></div><a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a></div>
@@ -84,72 +84,139 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
       } @else if (sessionsLoadError) {
         <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="refreshSessions()">Réessayer</button></p>
       } @else if (sessions.length) {
-        <div class="cards">
-          @for (session of sessions; track session.id) {
-            <mat-card class="session-card">
-              <div class="session-card-top">
-                <span class="session-icon" aria-hidden="true">⚡</span>
-                <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
-              </div>
+        <div class="view-toggle" role="group" aria-label="Type d'affichage">
+          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">▦ Grille</button>
+          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">☰ Tableau</button>
+          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'agenda'" (click)="viewMode = 'agenda'">📅 Chronologique</button>
+        </div>
 
-              @if (editingSessionId === session.id) {
-                <form class="session-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(session)">
-                  <mat-form-field appearance="outline"><mat-label>Nom</mat-label><input matInput formControlName="title"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Date et heure</mat-label><input matInput type="datetime-local" formControlName="starts_at"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Durée (min)</mat-label><input matInput type="number" formControlName="duration_minutes"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Places</mat-label><input matInput type="number" formControlName="capacity"></mat-form-field>
-                  @if (editError) { <p class="error" role="alert">{{ editError }}</p> }
-                  <div class="builder-actions">
-                    <button mat-button type="button" (click)="cancelEdit()">Annuler</button>
-                    <button mat-flat-button class="primary-action" type="submit" [disabled]="editForm.invalid">Enregistrer</button>
-                  </div>
-                </form>
-              } @else {
-                <mat-card-title>{{ session.title }}</mat-card-title>
-                <mat-card-content>
-                  <p class="session-date">{{ session.starts_at | date:'dd/MM/yyyy à HH:mm' }}</p>
-                  <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.registered_count }}/{{ session.capacity }} inscrits</p>
-                  <p class="session-coach">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</p>
-                </mat-card-content>
-                <mat-card-actions>
-                  <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
-                  <button mat-button (click)="loadExercises(session.id)">Exercices</button>
-                  @if (canManageSession(session)) {
-                    <button mat-button (click)="toggleAttendance(session)">Présences</button>
-                    <button mat-button (click)="startEdit(session)">Modifier</button>
-                    <button mat-button class="danger-action" (click)="cancelSession(session)">Annuler</button>
+        @if (viewMode === 'grid') {
+          <div class="cards">
+            @for (session of sessions; track session.id) {
+              <mat-card class="session-card">
+                <div class="session-card-top">
+                  <span class="session-icon" aria-hidden="true">⚡</span>
+                  <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
+                </div>
+                @if (editingSessionId === session.id) {
+                  <ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container>
+                } @else {
+                  <mat-card-title>{{ session.title }}</mat-card-title>
+                  <mat-card-content>
+                    <p class="session-date">{{ session.starts_at | date:'dd/MM/yyyy à HH:mm' }}</p>
+                    <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.registered_count }}/{{ session.capacity }} inscrits</p>
+                    <p class="session-coach">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</p>
+                  </mat-card-content>
+                  <mat-card-actions>
+                    <ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container>
+                  </mat-card-actions>
+                  @if (attendanceSessionId === session.id) {
+                    <ng-container *ngTemplateOutlet="attendanceTpl"></ng-container>
                   }
-                </mat-card-actions>
+                }
+              </mat-card>
+            }
+          </div>
+        }
 
+        @if (viewMode === 'table') {
+          <div class="session-table-wrap">
+            <table class="session-table">
+              <thead><tr><th>Séance</th><th>Date</th><th>Durée</th><th>Places</th><th>Coach</th><th>Actions</th></tr></thead>
+              <tbody>
+                @for (session of sessions; track session.id) {
+                  <tr>
+                    <td class="session-table-title">{{ session.title }}</td>
+                    <td>{{ session.starts_at | date:'dd/MM/yy HH:mm' }}</td>
+                    <td>{{ session.duration_minutes }} min</td>
+                    <td><span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span></td>
+                    <td>{{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</td>
+                    <td class="session-table-actions"><ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container></td>
+                  </tr>
+                  @if (editingSessionId === session.id) {
+                    <tr class="session-table-expanded"><td colspan="6"><ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container></td></tr>
+                  }
+                  @if (attendanceSessionId === session.id) {
+                    <tr class="session-table-expanded"><td colspan="6"><ng-container *ngTemplateOutlet="attendanceTpl"></ng-container></td></tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (viewMode === 'agenda') {
+          @for (group of groupedByDate(); track group.label) {
+            <h3 class="agenda-date-heading">{{ group.label }}</h3>
+            <div class="agenda-list">
+              @for (session of group.sessions; track session.id) {
+                <div class="agenda-row">
+                  <span class="agenda-time">{{ session.starts_at | date:'HH:mm' }}</span>
+                  <span class="agenda-title">{{ session.title }}</span>
+                  <span class="text-secondary agenda-coach">{{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</span>
+                  <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
+                  <div class="agenda-actions"><ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container></div>
+                </div>
+                @if (editingSessionId === session.id) {
+                  <div class="agenda-expanded"><ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container></div>
+                }
                 @if (attendanceSessionId === session.id) {
-                  <div class="attendance-panel">
-                    @if (attendanceLoading) {
-                      <p class="text-secondary">Chargement des inscrits…</p>
-                    } @else if (attendanceRows.length) {
-                      @for (row of attendanceRows; track row.participationId) {
-                        <div class="attendance-row">
-                          <span>{{ row.fullName }}</span>
-                          <div class="attendance-actions">
-                            @for (option of attendanceStatuses; track option.value) {
-                              <button
-                                type="button"
-                                class="attendance-chip"
-                                [class.active]="row.status === option.value"
-                                (click)="setAttendance(row, option.value)"
-                              >{{ option.label }}</button>
-                            }
-                          </div>
-                        </div>
-                      }
-                    } @else {
-                      <p class="empty-state">Aucun inscrit pour cette séance.</p>
-                    }
-                  </div>
+                  <div class="agenda-expanded"><ng-container *ngTemplateOutlet="attendanceTpl"></ng-container></div>
                 }
               }
-            </mat-card>
+            </div>
           }
-        </div>
+        }
+
+        <ng-template #actionsTpl let-session="session">
+          <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
+          <button mat-button (click)="loadExercises(session.id)">Exercices</button>
+          @if (canManageSession(session)) {
+            <button mat-button (click)="toggleAttendance(session)">Présences</button>
+            <button mat-button (click)="startEdit(session)">Modifier</button>
+            <button mat-button class="danger-action" (click)="cancelSession(session)">Annuler</button>
+          }
+        </ng-template>
+
+        <ng-template #editTpl let-session="session">
+          <form class="session-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(session)">
+            <mat-form-field appearance="outline"><mat-label>Nom</mat-label><input matInput formControlName="title"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Date et heure</mat-label><input matInput type="datetime-local" formControlName="starts_at"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Durée (min)</mat-label><input matInput type="number" formControlName="duration_minutes"></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Places</mat-label><input matInput type="number" formControlName="capacity"></mat-form-field>
+            @if (editError) { <p class="error" role="alert">{{ editError }}</p> }
+            <div class="builder-actions">
+              <button mat-button type="button" (click)="cancelEdit()">Annuler</button>
+              <button mat-flat-button class="primary-action" type="submit" [disabled]="editForm.invalid">Enregistrer</button>
+            </div>
+          </form>
+        </ng-template>
+
+        <ng-template #attendanceTpl>
+          <div class="attendance-panel">
+            @if (attendanceLoading) {
+              <p class="text-secondary">Chargement des inscrits…</p>
+            } @else if (attendanceRows.length) {
+              @for (row of attendanceRows; track row.participationId) {
+                <div class="attendance-row">
+                  <span>{{ row.fullName }}</span>
+                  <div class="attendance-actions">
+                    @for (option of attendanceStatuses; track option.value) {
+                      <button
+                        type="button"
+                        class="attendance-chip"
+                        [class.active]="row.status === option.value"
+                        (click)="setAttendance(row, option.value)"
+                      >{{ option.label }}</button>
+                    }
+                  </div>
+                </div>
+              }
+            } @else {
+              <p class="empty-state">Aucun inscrit pour cette séance.</p>
+            }
+          </div>
+        </ng-template>
       } @else { <p>Aucune séance disponible.</p> }
       @if (selectedExercises.length) {
         <mat-card class="exercise-summary"><h2>Exercices de la séance</h2>@for (exercise of selectedExercises; track exercise.id) { <div class="exercise-summary-row"><span><strong>{{ exercise.name }}</strong><small>{{ exercise.sets }} séries × {{ exercise.repetitions || '—' }} reps · {{ exercise.rest_seconds }} sec de repos</small></span><button mat-button class="teal-action" (click)="startTimer(exercise)">Lancer le repos</button></div> }</mat-card>
@@ -170,6 +237,7 @@ export class SessionsComponent implements OnDestroy {
   sessions: SportSession[] = [];
   sessionsLoading = true;
   sessionsLoadError = false;
+  viewMode: 'grid' | 'table' | 'agenda' = 'grid';
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
     starts_at: ['', Validators.required],
@@ -224,6 +292,22 @@ export class SessionsComponent implements OnDestroy {
   /** Places encore disponibles pour une séance (jamais négatif). */
   remainingSpots(session: SportSession): number {
     return Math.max(0, session.capacity - session.registered_count);
+  }
+
+  /** Regroupe les séances par jour civil, triées chronologiquement, pour la vue « Chronologique ». */
+  groupedByDate(): { label: string; sessions: SportSession[] }[] {
+    const groups = new Map<string, SportSession[]>();
+    for (const session of [...this.sessions].sort((a, b) => a.starts_at.localeCompare(b.starts_at))) {
+      const date = new Date(session.starts_at);
+      const key = date.toDateString();
+      const list = groups.get(key) ?? [];
+      list.push(session);
+      groups.set(key, list);
+    }
+    return Array.from(groups.entries()).map(([key, sessions]) => ({
+      label: new Date(key).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }),
+      sessions
+    }));
   }
 
   /** Un admin gère toutes les séances ; un coach ne gère que les siennes. */

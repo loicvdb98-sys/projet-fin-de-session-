@@ -77,6 +77,30 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .session-coach { font-size: .8rem; color: var(--text-secondary); margin-top: .3rem; }
 .insight-card { margin-top: 1rem; }
 
+/* Bascule Grille / Tableau / Chronologique (page Séances) */
+.view-toggle { display: inline-flex; gap: .3rem; padding: .3rem; margin: 1rem 0; border-radius: .85rem; background: var(--bg-surface-alt); border: 1px solid var(--border-default); }
+.view-toggle-btn { border: none; background: transparent; color: var(--text-secondary); font-weight: 700; font-size: .85rem; padding: .5rem .9rem; border-radius: .6rem; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.view-toggle-btn:hover { color: var(--text-primary); }
+.view-toggle-btn.active { background: var(--bg-surface); color: var(--accent-primary); box-shadow: var(--shadow-soft); }
+
+.session-table-wrap { overflow-x: auto; border: 1px solid var(--border-default); border-radius: 1rem; background: var(--bg-surface); }
+.session-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.session-table th { text-align: left; padding: .85rem 1rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); border-bottom: 1px solid var(--border-default); }
+.session-table td { padding: .85rem 1rem; border-bottom: 1px solid var(--border-default); vertical-align: middle; }
+.session-table tbody tr:last-child td { border-bottom: none; }
+.session-table-title { font-weight: 700; }
+.session-table-actions { display: flex; flex-wrap: wrap; gap: .25rem; }
+.session-table-expanded td { background: var(--bg-surface-alt); }
+
+.agenda-date-heading { text-transform: capitalize; margin: 1.6rem 0 .6rem; font-size: 1rem; color: var(--accent-primary); }
+.agenda-list { display: flex; flex-direction: column; gap: .5rem; }
+.agenda-row { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; padding: .85rem 1.1rem; border: 1px solid var(--border-default); border-radius: .85rem; background: var(--bg-surface); }
+.agenda-time { font-weight: 800; color: var(--accent-primary); min-width: 3.2rem; }
+.agenda-title { font-weight: 700; flex: 1 1 12rem; }
+.agenda-coach { flex: 0 0 auto; }
+.agenda-actions { display: flex; flex-wrap: wrap; gap: .25rem; margin-left: auto; }
+.agenda-expanded { padding: .5rem 1.1rem 1rem; margin-top: -.3rem; border: 1px solid var(--border-default); border-top: none; border-radius: 0 0 .85rem .85rem; background: var(--bg-surface-alt); }
+
 .home-page { max-width: 1160px; }
 .home-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 72%, transparent); }
 .home-hero h1 { margin: .2rem 0 .35rem; font-size: clamp(2.1rem, 4.2vw, 3.2rem); line-height: 1.05; letter-spacing: -.05em; }
