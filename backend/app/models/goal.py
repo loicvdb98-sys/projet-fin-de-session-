@@ -3,7 +3,7 @@ une certaine valeur pour une métrique donnée avant une échéance)."""
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -16,11 +16,11 @@ class Goal(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    title: Mapped[str] = mapped_column(String(120))
-    metric: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(Unicode(120))
+    metric: Mapped[str] = mapped_column(Unicode(40))
     target_value: Mapped[float] = mapped_column()
     current_value: Mapped[float] = mapped_column(default=0)
-    unit: Mapped[str] = mapped_column(String(20))
+    unit: Mapped[str] = mapped_column(Unicode(20))
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

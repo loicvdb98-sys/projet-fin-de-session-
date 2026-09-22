@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, Unicode
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -15,8 +15,8 @@ class PersonalRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    exercise_name: Mapped[str] = mapped_column(String(120))
+    exercise_name: Mapped[str] = mapped_column(Unicode(120))
     value: Mapped[float] = mapped_column()
-    unit: Mapped[str] = mapped_column(String(20))
+    unit: Mapped[str] = mapped_column(Unicode(20))
     achieved_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    notes: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Unicode(255), nullable=True)
