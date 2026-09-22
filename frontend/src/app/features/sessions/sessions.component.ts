@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, NgZone, OnDestroy, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -163,6 +163,7 @@ export class SessionsComponent implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly participation = inject(ParticipationService);
   private readonly toast = inject(ToastService);
+  private readonly zone = inject(NgZone);
 
   sessions: SportSession[] = [];
   sessionsLoading = true;
@@ -361,7 +362,9 @@ export class SessionsComponent implements OnDestroy {
   /** Démarre ou met en pause le décompte du chronomètre de repos. */
   toggleTimer(): void {
     this.timerRunning = !this.timerRunning;
-    if (this.timerRunning) this.timer = setInterval(() => { if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; this.clearTimer(); } }, 1000);
+    if (this.timerRunning) this.timer = this.zone.runOutsideAngular(() => setInterval(() => this.zone.run(() => {
+      if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; this.clearTimer(); }
+    }), 1000));
     else this.clearTimer();
   }
   resetTimer(): void { if (this.timerExercise) this.timerSeconds = this.timerExercise.rest_seconds; this.timerRunning = false; this.clearTimer(); }
