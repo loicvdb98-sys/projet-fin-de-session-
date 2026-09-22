@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, inject } from '@angular/core';
+import { ApplicationRef, Component, NgZone, OnDestroy, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -164,6 +164,7 @@ export class SessionsComponent implements OnDestroy {
   private readonly participation = inject(ParticipationService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
+  private readonly appRef = inject(ApplicationRef);
 
   sessions: SportSession[] = [];
   sessionsLoading = true;
@@ -364,6 +365,7 @@ export class SessionsComponent implements OnDestroy {
     this.timerRunning = !this.timerRunning;
     if (this.timerRunning) this.timer = this.zone.runOutsideAngular(() => setInterval(() => this.zone.run(() => {
       if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; this.clearTimer(); }
+      try { this.appRef.tick(); } catch { /* un tick est déjà en cours */ }
     }), 1000));
     else this.clearTimer();
   }
