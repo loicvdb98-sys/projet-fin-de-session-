@@ -316,10 +316,10 @@ export class SessionsComponent implements OnDestroy {
   }
 
   /** Couleur associée au remplissage de la séance : places nombreuses, rares, ou complet. */
-  sessionTint(session: SportSession): 'success' | 'warning' | 'danger' {
+  sessionTint(session: SportSession): 'primary' | 'warning' | 'danger' {
     const remaining = this.remainingSpots(session);
     if (remaining <= 0) return 'danger';
-    return session.capacity && remaining / session.capacity <= 0.25 ? 'warning' : 'success';
+    return session.capacity && remaining / session.capacity <= 0.25 ? 'warning' : 'primary';
   }
 
   /** Taux de remplissage (%) d'une séance, pour la barre de progression. */
