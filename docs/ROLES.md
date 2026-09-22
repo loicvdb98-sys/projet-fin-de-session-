@@ -21,12 +21,16 @@ Rôle par défaut. Peut :
   places (`registered_count < capacity`, affiché comme « X place(s) » ou
   « Complet » sur chaque séance).
 - Voir ses participations passées/à venir et se désinscrire
-  (page **Mes participations**).
+  (page **Mes participations**), avec un résumé (à venir, terminées, taux
+  de présence).
 - Recevoir un rappel (toast) quand une séance à laquelle il est inscrit
   commence dans moins de 3h (voir `AppComponent.checkUpcomingReminders`).
 - Suivre ses performances, objectifs, programmes et son journal
   d'entraînement — toujours restreints à ses propres données côté backend
   (`WHERE user_id = current_user.id`).
+- Sur la page **Statistiques**, consulter en plus son propre historique
+  d'assiduité (module **Assiduité**), calculé sur ses participations aux
+  séances passées.
 - Modifier son propre profil et mot de passe.
 
 Ne peut pas : créer/modifier/supprimer une séance, voir la liste des
@@ -45,6 +49,10 @@ Tout ce qu'un sportif peut faire, plus :
   liste les inscrits d'une séance et permet de les marquer
   Inscrit / Présent / Absent.
 - Voir la liste de ses sportifs suivis (page **Sportifs**) et leur détail.
+- Sur la page **Participations**, voir toutes les inscriptions des séances
+  qu'il anime (nom du sportif, statut), et sur **Statistiques**, le taux de
+  présence par séance (module **Assiduité**) et les performances de ses
+  sportifs.
 
 Ne peut pas : modifier une séance d'un autre coach, changer le rôle ou le
 statut actif d'un compte.
