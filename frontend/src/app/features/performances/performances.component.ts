@@ -1,16 +1,17 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
-import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { AsyncPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Performance, PerformanceService } from './performance.service';
 import { SessionService } from '@features/sessions/session.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { UserService } from '@features/athletes/user.service';
-import { forkJoin } from 'rxjs';
+import { combineLatest, forkJoin, map, shareReplay } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
 interface AttendancePoint { title: string; date: string; rate: number; present: number; total: number; }
+interface EnrichedPerformance extends Performance { sessionTitle: string; }
 
 /**
  * Écran des performances : score moyen, meilleur score, graphique
@@ -20,31 +21,67 @@ interface AttendancePoint { title: string; date: string; rate: number; present: 
  */
 @Component({
   standalone: true,
-  imports: [AsyncPipe, DatePipe, DecimalPipe, MatCardModule],
+  imports: [AsyncPipe, DatePipe, DecimalPipe, NgTemplateOutlet, MatCardModule],
   template: `
     <section class="page">
       <div class="page-heading">
-        <div><p class="eyebrow">PROGRESSION</p><h1>Performances</h1><p class="text-secondary">Analysez vos résultats au fil des séances.</p></div>
+        <div>
+          <p class="eyebrow">SUIVI</p>
+          <h1>Statistiques</h1>
+          <p class="text-secondary">{{ isCoach ? 'Assiduité de vos séances et évolution de vos performances.' : 'Analysez vos résultats au fil des séances.' }}</p>
+        </div>
       </div>
 
       @if (isCoach) {
-        <div class="cards">
-          <mat-card class="stat-card accent">
-            <mat-card-title>Taux de présence moyen</mat-card-title>
-            <strong class="stat-value">{{ averageAttendance }}%</strong>
-            <p class="text-secondary">sur {{ attendancePoints.length }} séance(s) passée(s)</p>
-          </mat-card>
-        </div>
-        @if (attendancePoints.length) {
-          <mat-card class="chart-card">
-            <mat-card-title>Assiduité par séance</mat-card-title>
-            <mat-card-content><div class="performance-chart"><canvas #attendanceChart aria-label="Graphique du taux de présence par séance"></canvas></div></mat-card-content>
-          </mat-card>
-        } @else {
-          <mat-card class="empty-state-card"><h2>Pas encore de données d'assiduité</h2><p class="text-secondary">Les statistiques de présence apparaîtront après vos premières séances passées.</p></mat-card>
-        }
-      }
+        <div class="module-shell">
+          <nav class="module-rail" aria-label="Sections statistiques">
+            <button type="button" class="module-rail-item c-secondary" [class.active]="selectedSection === 'attendance'" (click)="selectSection('attendance')">
+              <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
+              <span class="module-rail-label">Assiduité</span>
+            </button>
+            <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'performance'" (click)="selectSection('performance')">
+              <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></span>
+              <span class="module-rail-label">Mes performances</span>
+            </button>
+          </nav>
 
+          <div class="module-detail">
+            @if (selectedSection === 'attendance') {
+              <div class="cards">
+                <mat-card class="stat-card accent">
+                  <mat-card-title>Taux de présence moyen</mat-card-title>
+                  <strong class="stat-value">{{ averageAttendance }}%</strong>
+                  <p class="text-secondary">sur {{ attendancePoints.length }} séance(s) passée(s)</p>
+                </mat-card>
+              </div>
+              @if (attendancePoints.length) {
+                <mat-card class="chart-card">
+                  <mat-card-title>Présence par séance</mat-card-title>
+                  <mat-card-content><div class="performance-chart"><canvas #attendanceChart aria-label="Graphique du taux de présence par séance"></canvas></div></mat-card-content>
+                </mat-card>
+                <mat-card class="exercise-summary">
+                  <h2>Détail par séance</h2>
+                  @for (point of attendancePoints; track point.title + point.date) {
+                    <div class="exercise-summary-row">
+                      <span><strong>{{ point.title }}</strong><small>{{ point.date | date:'dd/MM/yyyy' }} · {{ point.present }}/{{ point.total }} présent(s)</small></span>
+                      <span class="status-badge" [class]="point.rate >= 70 ? 'success' : point.rate >= 40 ? 'info' : 'danger'">{{ point.rate }}%</span>
+                    </div>
+                  }
+                </mat-card>
+              } @else {
+                <mat-card class="empty-state-card"><h2>Pas encore de données d'assiduité</h2><p class="text-secondary">Les statistiques de présence apparaîtront après vos premières séances passées.</p></mat-card>
+              }
+            } @else {
+              <ng-container *ngTemplateOutlet="performanceBlock"></ng-container>
+            }
+          </div>
+        </div>
+      } @else {
+        <ng-container *ngTemplateOutlet="performanceBlock"></ng-container>
+      }
+    </section>
+
+    <ng-template #performanceBlock>
       @if (performances$ | async; as performances) {
         <div class="cards">
           <mat-card class="stat-card accent"><mat-card-title>Score moyen</mat-card-title><strong class="stat-value">{{ average(performances) | number:'1.0-1' }}</strong><p class="text-secondary">sur {{ performances.length }} performance(s)</p></mat-card>
@@ -53,15 +90,15 @@ interface AttendancePoint { title: string; date: string; rate: number; present: 
         @if (performances.length) {
           <mat-card class="chart-card"><mat-card-title>Évolution des performances</mat-card-title><mat-card-content><div class="performance-chart"><canvas #performanceChart aria-label="Graphique de progression des performances"></canvas></div></mat-card-content></mat-card>
           <mat-card class="exercise-summary"><h2>Historique</h2>
-            @for (item of performances; track item.id) {
-              <div class="exercise-summary-row"><span><strong>Séance #{{ item.session_id }}</strong><small>{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
+            @for (item of (enrichedPerformances$ | async) ?? []; track item.id) {
+              <div class="exercise-summary-row"><span><strong>{{ item.sessionTitle }}</strong><small>{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
             }
           </mat-card>
         } @else {
           <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">Enregistrez vos premiers résultats pour voir votre progression.</p></mat-card>
         }
       }
-    </section>
+    </ng-template>
   `
 })
 /** Affiche les statistiques de performance (et d'assiduité pour un coach) et pilote les graphiques Chart.js associés. */
@@ -72,6 +109,17 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private readonly sessionService = inject(SessionService);
   private readonly participationService = inject(ParticipationService);
   readonly performances$ = inject(PerformanceService).list();
+  // Associe chaque performance au titre de sa séance (au lieu d'afficher un simple id) pour l'historique.
+  readonly enrichedPerformances$ = combineLatest([
+    this.performances$,
+    this.sessionService.list().pipe(map((sessions) => new Map(sessions.map((session) => [session.id, session.title]))))
+  ]).pipe(
+    map(([performances, titles]): EnrichedPerformance[] => performances.map((item) => ({
+      ...item,
+      sessionTitle: titles.get(item.session_id) ?? `Séance #${item.session_id}`
+    }))),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
   private chart?: Chart;
   private attendanceChartInstance?: Chart;
 
@@ -79,9 +127,13 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private isAdmin = false;
   private currentUserId?: number;
   attendancePoints: AttendancePoint[] = [];
+  /** Section affichée dans le panneau de droite (coach uniquement, comme le rail du tableau de bord). */
+  selectedSection: 'attendance' | 'performance' = 'attendance';
+  private latestPerformances: Performance[] = [];
 
   ngAfterViewInit(): void {
     this.performances$.subscribe((performances) => {
+      this.latestPerformances = performances;
       if (performances.length) setTimeout(() => this.renderChart(performances));
     });
     this.users.me().subscribe((user) => {
@@ -89,6 +141,19 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
       if (this.isCoach) this.loadAttendance();
+    });
+  }
+
+  /**
+   * Change la section affichée. Le canvas de la section précédente a été retiré du DOM
+   * (elle n'était affichée que par un `@if`), il faut donc redessiner son graphique
+   * une fois le nouveau contenu rendu.
+   */
+  selectSection(section: 'attendance' | 'performance'): void {
+    this.selectedSection = section;
+    setTimeout(() => {
+      if (section === 'attendance' && this.attendancePoints.length) this.renderAttendanceChart();
+      if (section === 'performance' && this.latestPerformances.length) this.renderChart(this.latestPerformances);
     });
   }
 
