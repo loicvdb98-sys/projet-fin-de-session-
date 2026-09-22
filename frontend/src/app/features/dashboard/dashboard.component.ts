@@ -256,7 +256,7 @@ const STATUS_LABELS: Record<string, string> = {
                 @if (athletes.length) {
                   <span class="module-preview-list">
                     @for (athlete of athletes; track athlete.id) {
-                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ athlete.full_name }}</span><span class="text-secondary">{{ athlete.specialty || 'Sportif' }}</span></span>
+                      <span class="module-preview-row"><span class="module-preview-row-main"><span class="module-preview-dot" aria-hidden="true"></span>{{ athlete.full_name }}</span><span class="text-secondary">{{ athlete.email }}</span></span>
                     }
                   </span>
                 } @else { <p class="empty-state module-empty">Aucun sportif suivi pour le moment.</p> }

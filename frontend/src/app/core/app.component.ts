@@ -14,7 +14,6 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { ThemeService } from '@shared/services/theme.service';
 import { ToastService } from '@shared/services/toast.service';
 import { ToastContainerComponent } from '@shared/components/toast-container.component';
-import { DemoNoticeComponent } from '@shared/components/demo-notice.component';
 
 /** Fenêtre avant le début d'une séance pendant laquelle un rappel est affiché. */
 const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
@@ -22,7 +21,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent, DemoNoticeComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent],
   template: `
     <div class="app-shell">
       <aside class="app-rail" aria-label="Navigation principale">
@@ -140,10 +139,9 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
       <main><router-outlet /></main>
     </div>
     <app-toasts />
-    <app-demo-notice />
   `
 })
-/** Coquille applicative : navigation latérale, toasts et popup de mode démo sont montés ici une seule fois. */
+/** Coquille applicative : navigation latérale et toasts sont montés ici une seule fois. */
 export class AppComponent {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);

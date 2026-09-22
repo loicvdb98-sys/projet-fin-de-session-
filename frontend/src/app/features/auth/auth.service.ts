@@ -37,8 +37,6 @@ export class AuthService {
       tap((response) => {
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('refresh_token', response.refresh_token);
-        // Utilisé uniquement par les données visuelles locales de démonstration.
-        localStorage.setItem('demo_user_email', email.trim().toLowerCase());
         this.isAuthenticated.set(true);
       }),
       // Le rôle vient toujours du profil renvoyé par le serveur, jamais d'une supposition côté client.
@@ -63,7 +61,6 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('demo_user_email');
     localStorage.removeItem('user_role');
     this.isAuthenticated.set(false);
     void this.router.navigate(['/login']);
