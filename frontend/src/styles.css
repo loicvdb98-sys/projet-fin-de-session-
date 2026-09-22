@@ -279,6 +279,22 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .coach-note { padding: .7rem; background: rgb(0 170 159 / 10%); border-radius: .5rem; }
 .security-card p { max-width: 65ch; }
 .workout-builder { margin-bottom: 1.5rem; }
+.builder-toggle { display: flex; width: 100%; background: none; border: none; padding: 0; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+.builder-toggle-chevron { align-self: flex-start; margin-left: .75rem; font-size: 1.1rem; color: var(--text-secondary); transition: transform .15s ease; }
+.builder-toggle-chevron.open { transform: rotate(180deg); }
+.workout-builder.collapsed .builder-heading { margin-bottom: 0; }
+
+/* Page Séances : tient sur un seul écran (pas de défilement de page), le rail et le
+   détail de la séance défilent en interne si leur contenu dépasse l'espace disponible. */
+@media (min-width: 761px) {
+  main:has(.sessions-page) { padding-block: 1.5rem; }
+  .sessions-page { height: calc(100vh - 3rem); display: flex; flex-direction: column; overflow: hidden; }
+  .sessions-page .page-heading, .sessions-page .workout-builder, .sessions-page .timer-card { flex: 0 0 auto; }
+  .sessions-page .module-shell { flex: 1; min-height: 0; align-items: stretch; margin-top: 1rem; }
+  .sessions-page .module-rail { overflow-y: auto; }
+  .sessions-page .module-detail { min-height: 0; }
+  .sessions-page .module-detail-card { height: 100%; min-height: 0; overflow-y: auto; }
+}
 .workout-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(360px, 1fr); gap: 1rem; align-items: start; }
 .workout-form-card, .exercise-library { min-width: 0; }
 .exercise-library h2 { margin: .25rem 0 .35rem; }

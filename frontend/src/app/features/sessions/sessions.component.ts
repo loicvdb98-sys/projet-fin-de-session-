@@ -44,36 +44,42 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
   standalone: true,
   imports: [DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
-    <section class="page">
+    <section class="page sessions-page">
       <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez toutes vos séances à venir.</p></div><a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a></div>
       @if (canManage) {
-        <mat-card class="workout-builder">
-          <div class="builder-heading"><div><p class="eyebrow">ÉDITEUR MUSCULATION</p><h2>Créer une séance</h2><p class="text-secondary">Ajoutez autant d'exercices que nécessaire.</p></div><span class="status-badge info">{{ exercises.length }} exercice(s)</span></div>
-          <form [formGroup]="form" (ngSubmit)="create()">
-            <div class="workout-session-fields">
-              <mat-form-field appearance="outline"><mat-label>Nom de la séance</mat-label><input matInput formControlName="title"></mat-form-field>
-              <mat-form-field appearance="outline"><mat-label>Date et heure</mat-label><input matInput type="datetime-local" formControlName="starts_at"></mat-form-field>
-              <mat-form-field appearance="outline"><mat-label>Durée (min)</mat-label><input matInput type="number" formControlName="duration_minutes"></mat-form-field>
-              <mat-form-field appearance="outline"><mat-label>Places</mat-label><input matInput type="number" formControlName="capacity"></mat-form-field>
-            </div>
-            <div class="exercise-list" formArrayName="exercises">
-              @for (exercise of exercises.controls; track exercise; let index = $index) {
-                <div class="exercise-row" [formGroupName]="index">
-                  <span class="exercise-number">{{ index + 1 }}</span>
-                  <mat-form-field appearance="outline"><mat-label>Exercice</mat-label><input matInput formControlName="name" placeholder="Ex. Squat"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Séries</mat-label><input matInput type="number" formControlName="sets"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Répétitions</mat-label><input matInput type="number" formControlName="repetitions"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Repos (sec)</mat-label><input matInput type="number" formControlName="rest_seconds"></mat-form-field>
-                  <button mat-icon-button type="button" class="danger-action" (click)="removeExercise(index)" aria-label="Supprimer cet exercice">×</button>
-                </div>
-              }
-            </div>
-            <div class="builder-actions">
-              @if (createError) { <p class="error" role="alert">{{ createError }}</p> }
-              <button mat-stroked-button type="button" class="teal-outline" (click)="addExercise()">+ Ajouter un exercice</button>
-              <button mat-flat-button class="primary-action" type="submit" [disabled]="form.invalid || exercises.length === 0">Créer la séance</button>
-            </div>
-          </form>
+        <mat-card class="workout-builder" [class.collapsed]="!builderExpanded">
+          <button type="button" class="builder-heading builder-toggle" (click)="builderExpanded = !builderExpanded" [attr.aria-expanded]="builderExpanded">
+            <div><p class="eyebrow">ÉDITEUR MUSCULATION</p><h2>Créer une séance</h2><p class="text-secondary">Ajoutez autant d'exercices que nécessaire.</p></div>
+            <span class="status-badge info">{{ exercises.length }} exercice(s)</span>
+            <span class="builder-toggle-chevron" [class.open]="builderExpanded" aria-hidden="true">▾</span>
+          </button>
+          @if (builderExpanded) {
+            <form [formGroup]="form" (ngSubmit)="create()">
+              <div class="workout-session-fields">
+                <mat-form-field appearance="outline"><mat-label>Nom de la séance</mat-label><input matInput formControlName="title"></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Date et heure</mat-label><input matInput type="datetime-local" formControlName="starts_at"></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Durée (min)</mat-label><input matInput type="number" formControlName="duration_minutes"></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Places</mat-label><input matInput type="number" formControlName="capacity"></mat-form-field>
+              </div>
+              <div class="exercise-list" formArrayName="exercises">
+                @for (exercise of exercises.controls; track exercise; let index = $index) {
+                  <div class="exercise-row" [formGroupName]="index">
+                    <span class="exercise-number">{{ index + 1 }}</span>
+                    <mat-form-field appearance="outline"><mat-label>Exercice</mat-label><input matInput formControlName="name" placeholder="Ex. Squat"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Séries</mat-label><input matInput type="number" formControlName="sets"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Répétitions</mat-label><input matInput type="number" formControlName="repetitions"></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Repos (sec)</mat-label><input matInput type="number" formControlName="rest_seconds"></mat-form-field>
+                    <button mat-icon-button type="button" class="danger-action" (click)="removeExercise(index)" aria-label="Supprimer cet exercice">×</button>
+                  </div>
+                }
+              </div>
+              <div class="builder-actions">
+                @if (createError) { <p class="error" role="alert">{{ createError }}</p> }
+                <button mat-stroked-button type="button" class="teal-outline" (click)="addExercise()">+ Ajouter un exercice</button>
+                <button mat-flat-button class="primary-action" type="submit" [disabled]="form.invalid || exercises.length === 0">Créer la séance</button>
+              </div>
+            </form>
+          }
         </mat-card>
       }
       @if (timerExercise) {
@@ -260,6 +266,7 @@ export class SessionsComponent implements OnDestroy {
     capacity: [20, [Validators.required, Validators.min(1)]],
   });
   canManage = false;
+  builderExpanded = false;
   isAdmin = false;
   currentUserId?: number;
   createError = '';
