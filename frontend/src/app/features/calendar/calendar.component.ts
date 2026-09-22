@@ -2,7 +2,7 @@
  * Écran calendrier : vue mensuelle des séances, avec navigation entre mois,
  * sélection d'un jour et détail des séances de ce jour (inscription incluse).
  */
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { SessionService, SportSession } from '@features/sessions/session.service
 import { ParticipationService, Participation } from '@features/participations/participation.service';
 import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 interface CalendarDay {
   date: Date;
@@ -107,6 +108,7 @@ export class CalendarComponent {
   private readonly participationService = inject(ParticipationService);
   private readonly users = inject(UserService);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
 
   readonly weekdayLabels = WEEKDAY_LABELS;
 
@@ -124,10 +126,10 @@ export class CalendarComponent {
   constructor() {
     this.loadSessions();
     // Connaître l'utilisateur courant et ses inscriptions pour afficher le badge "Inscrit".
-    this.users.me().subscribe({
+    this.users.me().pipe(markForCheck(this.cd)).subscribe({
       next: (user) => {
         this.currentUserId = user.id;
-        this.participationService.list().subscribe({
+        this.participationService.list().pipe(markForCheck(this.cd)).subscribe({
           next: (participations) => { this.participations = participations; this.rebuild(); },
           error: () => this.toast.error('Impossible de charger vos inscriptions.')
         });
@@ -139,7 +141,7 @@ export class CalendarComponent {
 
   loadSessions(): void {
     this.sessionsLoadError = false;
-    this.sessionService.list().subscribe({
+    this.sessionService.list().pipe(markForCheck(this.cd)).subscribe({
       next: (sessions) => { this.sessions = sessions; this.rebuild(); },
       error: () => { this.sessionsLoadError = true; }
     });
@@ -181,7 +183,7 @@ export class CalendarComponent {
   /** Inscrit l'utilisateur connecté à une séance depuis le calendrier, sans quitter la page. */
   register(sessionId: number): void {
     if (!this.currentUserId) return;
-    this.participationService.create(this.currentUserId, sessionId).subscribe({
+    this.participationService.create(this.currentUserId, sessionId).pipe(markForCheck(this.cd)).subscribe({
       next: (participation) => {
         this.participations = [...this.participations, participation];
         const session = this.sessions.find((item) => item.id === sessionId);

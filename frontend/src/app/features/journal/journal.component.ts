@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { JournalService, TrainingJournal } from './journal.service';
 import { SessionService, SportSession } from '@features/sessions/session.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /**
  * Écran du journal d'entraînement : formulaire de bilan post-séance
@@ -53,6 +54,7 @@ export class JournalComponent {
   private readonly sessionService = inject(SessionService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
   sessions: SportSession[] = [];
   journals: TrainingJournal[] = [];
   loading = true;
@@ -63,14 +65,14 @@ export class JournalComponent {
   constructor() {
     // N'empêche pas l'affichage de l'historique si la liste des séances échoue :
     // le formulaire de création aura juste moins de choix.
-    this.sessionService.list().subscribe({ next: (sessions) => { this.sessions = sessions; } });
+    this.sessionService.list().pipe(markForCheck(this.cd)).subscribe({ next: (sessions) => { this.sessions = sessions; } });
     this.load();
   }
 
   load(): void {
     this.loading = true;
     this.loadError = false;
-    this.service.list().subscribe({
+    this.service.list().pipe(markForCheck(this.cd)).subscribe({
       next: (journals) => { this.journals = journals; this.loading = false; },
       error: () => { this.loadError = true; this.loading = false; }
     });
@@ -85,7 +87,7 @@ export class JournalComponent {
   create(): void {
     if (this.form.invalid) return;
     this.error = '';
-    this.service.create(this.form.getRawValue()).subscribe({
+    this.service.create(this.form.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
       next: (entry) => {
         this.journals = [entry, ...this.journals];
         this.form.reset({ session_id: 0, fatigue: 5, mood: 'bien', notes: '', pain: '' });

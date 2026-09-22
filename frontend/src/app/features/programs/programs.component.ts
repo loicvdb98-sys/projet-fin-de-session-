@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ProgramService, WorkoutProgram } from './program.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /** Écran des programmes d'entraînement : création de modèles et liste des programmes existants. */
 @Component({
@@ -42,6 +43,7 @@ export class ProgramsComponent {
   private readonly service = inject(ProgramService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
   programs: WorkoutProgram[] = [];
   loading = true;
   loadError = false;
@@ -53,7 +55,7 @@ export class ProgramsComponent {
   load(): void {
     this.loading = true;
     this.loadError = false;
-    this.service.list().subscribe({
+    this.service.list().pipe(markForCheck(this.cd)).subscribe({
       next: (programs) => { this.programs = programs; this.loading = false; },
       error: () => { this.loadError = true; this.loading = false; }
     });
@@ -63,7 +65,7 @@ export class ProgramsComponent {
   create(): void {
     if (this.form.invalid) return;
     this.createError = '';
-    this.service.create({ ...this.form.getRawValue(), sessions: [] }).subscribe({
+    this.service.create({ ...this.form.getRawValue(), sessions: [] }).pipe(markForCheck(this.cd)).subscribe({
       next: (program) => {
         this.programs = [program, ...this.programs];
         this.form.reset({ name: '', description: '', weeks: 4 });
@@ -75,7 +77,7 @@ export class ProgramsComponent {
 
   /** Supprime un programme et le retire directement de la liste. */
   remove(id: number): void {
-    this.service.delete(id).subscribe({
+    this.service.delete(id).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.programs = this.programs.filter((program) => program.id !== id); this.toast.success('Programme supprimé.'); },
       error: () => this.toast.error('Impossible de supprimer ce programme.')
     });

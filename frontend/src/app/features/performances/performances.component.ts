@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Performance, PerformanceService } from './performance.service';
@@ -7,6 +7,7 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { UserService } from '@features/athletes/user.service';
 import { combineLatest, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 Chart.register(...registerables);
 
@@ -108,6 +109,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private readonly users = inject(UserService);
   private readonly sessionService = inject(SessionService);
   private readonly participationService = inject(ParticipationService);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly performances$ = inject(PerformanceService).list();
   // Partagé entre ngAfterViewInit (rôle/id courant) et enrichedPerformances$ (noms des sportifs) :
   // une seule requête /users/me même si les deux le consomment.
@@ -145,7 +147,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
       this.latestPerformances = performances;
       if (performances.length) this.afterRender(() => this.renderChart(performances));
     });
-    this.me$.subscribe((user) => {
+    this.me$.pipe(markForCheck(this.cd)).subscribe((user) => {
       this.isCoach = user.role === 'coach' || user.role === 'admin';
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
@@ -197,7 +199,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
    * chronologiquement, puis dessine le graphique correspondant.
    */
   private loadAttendance(): void {
-    forkJoin([this.sessionService.list(), this.participationService.list()]).subscribe(([sessions, participations]) => {
+    forkJoin([this.sessionService.list(), this.participationService.list()]).pipe(markForCheck(this.cd)).subscribe(([sessions, participations]) => {
       const now = new Date();
       const managed = sessions.filter((session) => (this.isAdmin || session.coach_id === this.currentUserId) && new Date(session.starts_at) < now);
       this.attendancePoints = managed

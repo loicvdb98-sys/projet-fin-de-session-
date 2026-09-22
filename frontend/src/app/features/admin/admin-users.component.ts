@@ -4,7 +4,7 @@
  * admin (voir adminGuard) — l'admin ne peut pas modifier son propre compte
  * depuis cet écran, pour éviter de se retirer ses propres droits par erreur.
  */
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +13,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { shareReplay, switchMap } from 'rxjs';
 import { User, UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 const ROLES: { value: string; label: string }[] = [
   { value: 'sportif', label: 'Sportif' },
@@ -74,6 +75,7 @@ const ROLES: { value: string; label: string }[] = [
 export class AdminUsersComponent {
   private readonly service = inject(UserService);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly roles = ROLES;
   currentUserId?: number;
 
@@ -97,14 +99,14 @@ export class AdminUsersComponent {
 
   changeRole(user: User, role: string): void {
     if (role === user.role) return;
-    this.service.update(user.id, { role }).subscribe({
+    this.service.update(user.id, { role }).pipe(markForCheck(this.cd)).subscribe({
       next: () => { user.role = role; this.toast.success(`${user.full_name} est maintenant ${this.roleLabel(role).toLowerCase()}.`); },
       error: () => this.toast.error('Impossible de changer le rôle de ce compte.')
     });
   }
 
   toggleActive(user: User, isActive: boolean): void {
-    this.service.update(user.id, { is_active: isActive }).subscribe({
+    this.service.update(user.id, { is_active: isActive }).pipe(markForCheck(this.cd)).subscribe({
       next: () => { user.is_active = isActive; this.toast.success(isActive ? `${user.full_name} réactivé.` : `${user.full_name} désactivé.`); },
       error: () => this.toast.error('Impossible de modifier le statut de ce compte.')
     });

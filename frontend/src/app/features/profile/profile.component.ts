@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +13,7 @@ import { UserService } from '@features/athletes/user.service';
 import { Statistics, StatisticsService } from '@shared/services/statistics.service';
 import { ThemeService } from '@shared/services/theme.service';
 import { AuthService } from '@features/auth/auth.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 /**
  * Écran de profil utilisateur : informations personnelles, statistiques
  * d'activité, préférence de thème et changement de mot de passe.
@@ -85,6 +86,7 @@ export class ProfileComponent {
   private readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
   private readonly statistics = inject(StatisticsService);
+  private readonly cd = inject(ChangeDetectorRef);
   readonly user$ = this.service.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly stats$ = this.statistics.mine().pipe(catchError(() => of<Statistics | null>(null)), shareReplay({ bufferSize: 1, refCount: true }));
   readonly form = this.fb.nonNullable.group({ full_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]] });
@@ -100,7 +102,7 @@ export class ProfileComponent {
   save(id: number): void {
     if (this.form.invalid) return;
     this.saving = true; this.message = '';
-    this.service.update(id, this.form.getRawValue()).subscribe({
+    this.service.update(id, this.form.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.saving = false; this.message = 'Profil mis à jour.'; },
       error: () => { this.saving = false; this.message = 'La mise à jour a échoué. Réessayez.'; }
     });
@@ -110,7 +112,7 @@ export class ProfileComponent {
   changePassword(): void {
     if (this.passwordForm.invalid) return;
     const { current_password, new_password } = this.passwordForm.getRawValue();
-    this.auth.changePassword(current_password, new_password).subscribe({
+    this.auth.changePassword(current_password, new_password).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.passwordForm.reset(); this.passwordMessage = 'Mot de passe modifié avec succès.'; },
       error: (error) => { this.passwordMessage = error?.error?.detail || 'Impossible de modifier le mot de passe.'; }
     });

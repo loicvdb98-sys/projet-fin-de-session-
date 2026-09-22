@@ -1,4 +1,4 @@
-import { ApplicationRef, Component, NgZone, OnDestroy, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,6 +11,7 @@ import { UserService } from '@features/athletes/user.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { ToastService } from '@shared/services/toast.service';
 import { forkJoin } from 'rxjs';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /**
  * Écran des séances : liste des séances disponibles, inscription, consultation
@@ -164,7 +165,7 @@ export class SessionsComponent implements OnDestroy {
   private readonly participation = inject(ParticipationService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
-  private readonly appRef = inject(ApplicationRef);
+  private readonly cd = inject(ChangeDetectorRef);
 
   sessions: SportSession[] = [];
   sessionsLoading = true;
@@ -203,7 +204,7 @@ export class SessionsComponent implements OnDestroy {
   // Le rôle n'est pas dans le token JWT décodable côté client : on le récupère via le profil
   // pour savoir si l'éditeur de création de séance et les actions de gestion doivent s'afficher.
   constructor() {
-    this.users.me().subscribe(user => {
+    this.users.me().pipe(markForCheck(this.cd)).subscribe(user => {
       this.canManage = user.role === 'coach' || user.role === 'admin';
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
@@ -214,7 +215,7 @@ export class SessionsComponent implements OnDestroy {
   refreshSessions(): void {
     this.sessionsLoading = true;
     this.sessionsLoadError = false;
-    this.service.list().subscribe({
+    this.service.list().pipe(markForCheck(this.cd)).subscribe({
       next: (list) => { this.sessions = list; this.sessionsLoading = false; },
       error: () => { this.sessionsLoadError = true; this.sessionsLoading = false; }
     });
@@ -255,9 +256,9 @@ export class SessionsComponent implements OnDestroy {
       duration_minutes: this.form.controls.duration_minutes.value || 60,
       capacity: this.form.controls.capacity.value || 20,
       coach_id: user.id, description: 'Séance de musculation'
-    }).subscribe({ next: session => {
+    }).pipe(markForCheck(this.cd)).subscribe({ next: session => {
       const items = this.exercises.getRawValue();
-      forkJoin(items.map(exercise => this.service.addExercise(session.id, { ...exercise, name: exercise.name || '', sets: exercise.sets || 1, repetitions: exercise.repetitions || undefined, rest_seconds: exercise.rest_seconds || 0 }))).subscribe({
+      forkJoin(items.map(exercise => this.service.addExercise(session.id, { ...exercise, name: exercise.name || '', sets: exercise.sets || 1, repetitions: exercise.repetitions || undefined, rest_seconds: exercise.rest_seconds || 0 }))).pipe(markForCheck(this.cd)).subscribe({
         next: () => { this.form.reset({ title: '', starts_at: '', duration_minutes: 60, capacity: 20 }); this.exercises.clear(); this.refreshSessions(); },
         error: () => { this.createError = 'La séance a été créée, mais au moins un exercice n’a pas pu être enregistré.'; }
       });
@@ -266,12 +267,12 @@ export class SessionsComponent implements OnDestroy {
 
   /** Inscrit l'utilisateur connecté à une séance. */
   register(session_id: number): void {
-    this.users.me().subscribe(user => this.participation.create(user.id, session_id).subscribe({
+    this.users.me().subscribe(user => this.participation.create(user.id, session_id).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.toast.success('Inscription confirmée.'); this.refreshSessions(); },
       error: () => this.toast.error('Impossible de vous inscrire à cette séance.')
     }));
   }
-  loadExercises(sessionId: number): void { this.service.exercises(sessionId).subscribe(exercises => this.selectedExercises = exercises); }
+  loadExercises(sessionId: number): void { this.service.exercises(sessionId).pipe(markForCheck(this.cd)).subscribe(exercises => this.selectedExercises = exercises); }
 
   /** Ouvre le formulaire d'édition d'une séance, pré-rempli avec ses valeurs actuelles. */
   startEdit(session: SportSession): void {
@@ -298,7 +299,7 @@ export class SessionsComponent implements OnDestroy {
       starts_at: value.starts_at || '',
       duration_minutes: value.duration_minutes || 60,
       capacity: value.capacity || 20,
-    }).subscribe({
+    }).pipe(markForCheck(this.cd)).subscribe({
       next: (updated) => {
         Object.assign(session, updated);
         this.editingSessionId = undefined;
@@ -311,7 +312,7 @@ export class SessionsComponent implements OnDestroy {
   /** Annule (supprime) une séance après confirmation, réservé au coach responsable ou à un admin. */
   cancelSession(session: SportSession): void {
     if (!confirm(`Annuler la séance « ${session.title} » ? Cette action est irréversible.`)) return;
-    this.service.delete(session.id).subscribe({
+    this.service.delete(session.id).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.sessions = this.sessions.filter(s => s.id !== session.id); this.toast.success('Séance annulée.'); },
       error: () => this.toast.error('Impossible d’annuler cette séance (déjà passée, ou droits insuffisants).')
     });
@@ -323,7 +324,7 @@ export class SessionsComponent implements OnDestroy {
     this.attendanceSessionId = session.id;
     this.attendanceRows = [];
     this.attendanceLoading = true;
-    forkJoin([this.participation.list(), this.users.list()]).subscribe({
+    forkJoin([this.participation.list(), this.users.list()]).pipe(markForCheck(this.cd)).subscribe({
       next: ([participations, users]) => {
         const names = new Map(users.map(user => [user.id, user.full_name]));
         this.attendanceRows = participations
@@ -345,7 +346,7 @@ export class SessionsComponent implements OnDestroy {
     if (row.status === status) return;
     const previous = row.status;
     row.status = status;
-    this.participation.update(row.participationId, status).subscribe({
+    this.participation.update(row.participationId, status).pipe(markForCheck(this.cd)).subscribe({
       error: () => { row.status = previous; this.toast.error('Impossible de mettre à jour la présence.'); }
     });
   }
@@ -365,7 +366,7 @@ export class SessionsComponent implements OnDestroy {
     this.timerRunning = !this.timerRunning;
     if (this.timerRunning) this.timer = this.zone.runOutsideAngular(() => setInterval(() => this.zone.run(() => {
       if (this.timerSeconds > 0) this.timerSeconds--; else { this.timerRunning = false; this.clearTimer(); }
-      try { this.appRef.tick(); } catch { /* un tick est déjà en cours */ }
+      this.cd.markForCheck();
     }), 1000));
     else this.clearTimer();
   }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { SessionService } from '@features/sessions/session.service';
 import { UserService } from '@features/athletes/user.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /**
  * Écran (réservé coach) de création d'une séance de musculation : formulaire
@@ -162,6 +163,7 @@ export class WorkoutCreateComponent {
   private readonly sessions = inject(SessionService);
   private readonly users = inject(UserService);
   private readonly router = inject(Router);
+  private readonly cd = inject(ChangeDetectorRef);
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
@@ -295,7 +297,7 @@ export class WorkoutCreateComponent {
    */
   save(): void {
     this.error = '';
-    this.users.me().subscribe({
+    this.users.me().pipe(markForCheck(this.cd)).subscribe({
       next: (user) => {
         const value = this.form.getRawValue();
         this.sessions.create({
@@ -305,7 +307,7 @@ export class WorkoutCreateComponent {
           capacity: value.capacity || 20,
           coach_id: user.id,
           description: 'Séance de musculation'
-        }).subscribe({
+        }).pipe(markForCheck(this.cd)).subscribe({
           next: (session) => {
             const requests = this.exercises.getRawValue().map((exercise) =>
               this.sessions.addExercise(session.id, {
@@ -316,7 +318,7 @@ export class WorkoutCreateComponent {
               })
             );
             let completed = 0;
-            requests.forEach((request) => request.subscribe({
+            requests.forEach((request) => request.pipe(markForCheck(this.cd)).subscribe({
               next: () => {
                 completed++;
                 if (completed === requests.length) void this.router.navigate(['/sessions']);

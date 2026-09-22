@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Goal, GoalService, PersonalRecord } from './goal.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /**
  * Écran des objectifs et records personnels : formulaires de création et
@@ -56,6 +57,7 @@ export class GoalsComponent {
   private readonly service = inject(GoalService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
   goals: Goal[] = [];
   records: PersonalRecord[] = [];
   loading = true;
@@ -70,10 +72,10 @@ export class GoalsComponent {
   load(): void {
     this.loading = true;
     this.loadError = false;
-    this.service.goals().subscribe({
+    this.service.goals().pipe(markForCheck(this.cd)).subscribe({
       next: (goals) => {
         this.goals = goals;
-        this.service.records().subscribe({
+        this.service.records().pipe(markForCheck(this.cd)).subscribe({
           next: (records) => { this.records = records; this.loading = false; },
           error: () => { this.loadError = true; this.loading = false; }
         });
@@ -86,7 +88,7 @@ export class GoalsComponent {
   addGoal(): void {
     if (this.goalForm.invalid) return;
     this.goalError = '';
-    this.service.createGoal(this.goalForm.getRawValue()).subscribe({
+    this.service.createGoal(this.goalForm.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
       next: (goal) => {
         this.goals = [goal, ...this.goals];
         this.goalForm.reset({ title: '', metric: 'progression', target_value: 1, current_value: 0, unit: 'séances', due_date: '', notes: '' });
@@ -100,7 +102,7 @@ export class GoalsComponent {
   addRecord(): void {
     if (this.recordForm.invalid) return;
     this.recordError = '';
-    this.service.createRecord(this.recordForm.getRawValue()).subscribe({
+    this.service.createRecord(this.recordForm.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
       next: (record) => {
         this.records = [record, ...this.records];
         this.recordForm.reset({ exercise_name: '', value: 1, unit: 'kg', notes: '' });
@@ -112,7 +114,7 @@ export class GoalsComponent {
 
   /** Supprime un objectif et le retire directement de la liste. */
   removeGoal(id: number): void {
-    this.service.deleteGoal(id).subscribe({
+    this.service.deleteGoal(id).pipe(markForCheck(this.cd)).subscribe({
       next: () => { this.goals = this.goals.filter((goal) => goal.id !== id); this.toast.success('Objectif supprimé.'); },
       error: () => this.toast.error('Impossible de supprimer cet objectif.')
     });

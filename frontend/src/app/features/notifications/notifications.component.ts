@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { AppNotification, NotificationService } from './notification.service';
 import { ToastService } from '@shared/services/toast.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 /** Centre de notifications : liste les alertes de l'utilisateur et permet de les marquer comme lues. */
 @Component({
@@ -29,6 +30,7 @@ import { ToastService } from '@shared/services/toast.service';
 export class NotificationsComponent {
   private readonly service = inject(NotificationService);
   private readonly toast = inject(ToastService);
+  private readonly cd = inject(ChangeDetectorRef);
   notifications: AppNotification[] = [];
   loading = true;
   loadError = false;
@@ -38,7 +40,7 @@ export class NotificationsComponent {
   load(): void {
     this.loading = true;
     this.loadError = false;
-    this.service.list().subscribe({
+    this.service.list().pipe(markForCheck(this.cd)).subscribe({
       next: (notifications) => { this.notifications = notifications; this.loading = false; },
       error: () => { this.loadError = true; this.loading = false; }
     });
@@ -46,7 +48,7 @@ export class NotificationsComponent {
 
   /** Marque la notification comme lue côté serveur et met à jour la liste en place, sans recharger la page. */
   read(notification: AppNotification): void {
-    this.service.markRead(notification.id).subscribe({
+    this.service.markRead(notification.id).pipe(markForCheck(this.cd)).subscribe({
       next: (updated) => {
         notification.is_read = updated.is_read;
         this.toast.success('Notification marquée comme lue.');

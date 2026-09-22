@@ -1,27 +1,19 @@
 /**
  * Intercepteur HTTP global : ajoute le token Bearer à chaque requête sortante,
- * déconnecte automatiquement l'utilisateur sur une réponse 401, affiche un toast
- * d'erreur générique pour les échecs de chargement (GET) silencieux, et force
- * un rafraîchissement de la vue après chaque réponse (voir runInZone) via un
- * appel explicite à ApplicationRef.tick(), sans dépendre de la notification
- * automatique de zone.js qui n'arrive pas jusqu'à Angular dans le navigateur
- * de cet utilisateur.
+ * déconnecte automatiquement l'utilisateur sur une réponse 401, et affiche un
+ * toast d'erreur générique pour les échecs de chargement (GET) silencieux.
  */
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { ApplicationRef, NgZone, inject } from '@angular/core';
+import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { ToastService } from '@shared/services/toast.service';
-import { runInZone } from '@core/run-in-zone.operator';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const token = localStorage.getItem('access_token');
   const auth = inject(AuthService);
   const toast = inject(ToastService);
-  const zone = inject(NgZone);
-  const appRef = inject(ApplicationRef);
   return next(token ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : request).pipe(
-    runInZone(zone, appRef),
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse) {
         if (token && error.status === 401) {

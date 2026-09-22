@@ -3,7 +3,7 @@
  * calculées à partir de ses participations et performances réelles (visibles par
  * le coach car limitées aux séances qu'il encadre).
  */
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -12,6 +12,7 @@ import { User, UserService } from './user.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { PerformanceService } from '@features/performances/performance.service';
 import { SessionService } from '@features/sessions/session.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 @Component({
   standalone: true,
@@ -63,6 +64,7 @@ export class AthleteDetailComponent {
   private readonly participationService = inject(ParticipationService);
   private readonly performanceService = inject(PerformanceService);
   private readonly sessionService = inject(SessionService);
+  private readonly cd = inject(ChangeDetectorRef);
 
   loaded = false;
   athlete?: User;
@@ -79,7 +81,7 @@ export class AthleteDetailComponent {
       this.participationService.list(),
       this.performanceService.list(),
       this.sessionService.list(),
-    ]).subscribe(([athletes, participations, performances, sessions]) => {
+    ]).pipe(markForCheck(this.cd)).subscribe(([athletes, participations, performances, sessions]) => {
       this.athlete = athletes.find((item) => item.id === athleteId);
       this.loaded = true;
       if (!this.athlete) return;

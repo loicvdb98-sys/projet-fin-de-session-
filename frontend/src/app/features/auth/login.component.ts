@@ -2,7 +2,7 @@
  * Écran de connexion/inscription : formulaire unique basculant entre les deux
  * modes, avec validation et gestion des messages d'erreur du serveur.
  */
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from './auth.service';
+import { markForCheck } from '@core/mark-for-check.operator';
 
 @Component({
   standalone: true,
@@ -71,6 +72,7 @@ export class LoginComponent {
   readonly passwordPattern = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[^\\s]{12,128}$';
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cd = inject(ChangeDetectorRef);
 
   /** Bascule entre le formulaire de connexion et celui d'inscription, en réinitialisant les messages. */
   toggleMode(): void {
@@ -85,10 +87,10 @@ export class LoginComponent {
     this.success = '';
     const email = this.email.trim().toLowerCase();
     if (this.registerMode) {
-      this.auth.register({ email, full_name: this.fullName.trim(), password: this.password, role: 'sportif' }).subscribe({
+      this.auth.register({ email, full_name: this.fullName.trim(), password: this.password, role: 'sportif' }).pipe(markForCheck(this.cd)).subscribe({
         next: () => {
           this.success = 'Compte créé. Connexion en cours…';
-          this.auth.login(email, this.password).subscribe({
+          this.auth.login(email, this.password).pipe(markForCheck(this.cd)).subscribe({
             next: () => void this.router.navigate(['/dashboard']),
             error: (response: { status: number }) => {
               this.error = response.status === 0
@@ -103,7 +105,7 @@ export class LoginComponent {
       });
       return;
     }
-    this.auth.login(email, this.password).subscribe({
+    this.auth.login(email, this.password).pipe(markForCheck(this.cd)).subscribe({
       next: () => void this.router.navigate(['/dashboard']),
       error: (response: { status: number }) => {
         this.error = response.status === 0
