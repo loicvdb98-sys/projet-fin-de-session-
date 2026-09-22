@@ -17,24 +17,25 @@ html[data-theme='dark'] {
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: radial-gradient(circle at 85% -10%, rgb(var(--accent-secondary-rgb) / 8%), transparent 28rem), radial-gradient(circle at 0% 25%, rgb(var(--accent-rgb) / 7%), transparent 24rem), var(--bg-body); color: var(--text-primary); transition: background .2s ease, color .2s ease; line-height: 1.5; }
 .app-shell { display: flex; align-items: flex-start; min-height: 100vh; }
-.app-rail { position: sticky; top: 0; align-self: flex-start; flex: 0 0 15.5rem; width: 15.5rem; height: 100vh; display: flex; flex-direction: column; gap: .85rem; padding: 1.1rem .85rem; background: color-mix(in srgb, var(--bg-surface) 94%, transparent); backdrop-filter: blur(16px); border-right: 1px solid var(--border-default); overflow-y: auto; }
-.app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: -.02em; padding: 0 .3rem; }
-.brand-mark { display: grid; place-items: center; flex: 0 0 2rem; width: 2rem; height: 2rem; border-radius: .65rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
-.brand-mark svg { width: 1.1rem; height: 1.1rem; }
-.app-rail-user { display: flex; align-items: center; gap: .6rem; padding: 0 .3rem .6rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
-.profile-avatar.rail-avatar { flex: 0 0 auto; width: 2rem; height: 2rem; margin: 0; border-radius: .65rem; font-size: .68rem; }
-.app-rail-user-info { min-width: 0; display: flex; flex-direction: column; gap: .05rem; line-height: 1.15; }
-.app-rail-user-info strong { font-size: .78rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-rail-user-info .role-badge { padding: 0; background: none !important; font-size: .62rem; font-weight: 700; }
-.app-rail-nav { display: flex; flex-direction: column; gap: .18rem; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-.app-rail-item { position: relative; display: flex; align-items: center; gap: .7rem; width: 100%; padding: .48rem .6rem; background: transparent; border: none; border-radius: .8rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .82rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
-.app-rail-item:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
-.app-rail-item.active { background: color-mix(in srgb, var(--accent-primary) 15%, transparent); color: var(--text-primary); }
-.app-rail-item.active .app-rail-icon { background: var(--accent-primary); color: #fff; }
-.app-rail-icon { display: grid; place-items: center; flex: 0 0 1.9rem; width: 1.9rem; height: 1.9rem; border-radius: .65rem; background: var(--bg-surface-alt); color: var(--text-secondary); transition: background .15s ease, color .15s ease; }
-.app-rail-icon svg { width: 1rem; height: 1rem; }
+.app-rail { position: sticky; top: 0; align-self: flex-start; flex: 0 0 17.5rem; width: 17.5rem; height: 100vh; display: flex; flex-direction: column; gap: 1rem; padding: 1.35rem 1rem; background: color-mix(in srgb, var(--bg-surface) 94%, transparent); backdrop-filter: blur(16px); border-right: 1px solid var(--border-default); overflow-y: auto; }
+.app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .7rem; font-weight: 800; font-size: 1.05rem; letter-spacing: -.02em; padding: 0 .3rem; }
+.brand-mark { display: grid; place-items: center; flex: 0 0 2.3rem; width: 2.3rem; height: 2.3rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
+.brand-mark svg { width: 1.25rem; height: 1.25rem; }
+.app-rail-user { display: flex; align-items: center; gap: .7rem; padding: .65rem .7rem; margin-bottom: .1rem; border-radius: .9rem; background: var(--bg-surface-alt); }
+.profile-avatar.rail-avatar { flex: 0 0 auto; width: 2.3rem; height: 2.3rem; margin: 0; border-radius: .7rem; font-size: .74rem; }
+.app-rail-user-info { min-width: 0; display: flex; flex-direction: column; gap: .1rem; line-height: 1.2; }
+.app-rail-user-info strong { font-size: .86rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-rail-user-info .role-badge { padding: 0; background: none !important; font-size: .68rem; font-weight: 700; }
+.app-rail-nav { display: flex; flex-direction: column; gap: .22rem; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.app-rail-item { position: relative; display: flex; align-items: center; gap: .8rem; width: 100%; padding: .6rem .7rem; background: transparent; border: none; border-radius: .8rem; color: var(--text-secondary); text-decoration: none; font: inherit; font-weight: 600; font-size: .88rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.app-rail-item:hover { background: color-mix(in srgb, var(--accent-primary) 9%, transparent); color: var(--text-primary); }
+.app-rail-item:hover .app-rail-icon { color: var(--accent-primary); }
+.app-rail-item.active { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); color: var(--text-primary); box-shadow: inset 2px 0 0 var(--accent-primary); }
+.app-rail-item.active .app-rail-icon { background: var(--accent-primary); color: #fff; box-shadow: 0 4px 10px rgb(var(--accent-rgb) / 32%); }
+.app-rail-icon { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: color-mix(in srgb, var(--accent-secondary) 16%, var(--bg-surface-alt)); color: var(--accent-secondary); transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+.app-rail-icon svg { width: 1.1rem; height: 1.1rem; }
 .app-rail-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-rail-section { margin: .7rem 0 .1rem; padding: 0 .6rem; font-size: .64rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); opacity: .65; }
+.app-rail-section { margin: 1rem 0 .2rem; padding: 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); opacity: .8; }
 .app-rail-section:first-child { margin-top: 0; }
 .app-rail-footer { display: flex; flex-direction: column; gap: .18rem; flex: 0 0 auto; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); padding-top: .6rem; }
 main { flex: 1; min-width: 0; max-width: 1160px; margin: 0 auto; padding: clamp(2rem, 5vw, 4rem) 1.25rem; }
