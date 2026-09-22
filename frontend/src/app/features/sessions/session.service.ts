@@ -23,7 +23,10 @@ export class SessionService {
   private readonly apiUrl = `${API_URL}/sessions`;
   constructor(private readonly http: HttpClient) {}
 
-  list(): Observable<SportSession[]> { return this.http.get<SportSession[]>(this.apiUrl); }
+  // Avec le slash final : la route backend est déclarée "/", sans lui le serveur répond
+  // par une redirection 307 que les navigateurs ne suivent pas toujours de façon fiable
+  // pour une requête cross-origin avec en-tête Authorization.
+  list(): Observable<SportSession[]> { return this.http.get<SportSession[]>(`${this.apiUrl}/`); }
   // coach_name et registered_count sont calculés par le serveur : jamais envoyés à la création.
   create(data: Omit<SportSession, 'id' | 'coach_name' | 'registered_count'>): Observable<SportSession> { return this.http.post<SportSession>(`${this.apiUrl}/`, data); }
   /** Modifie une séance existante (réservé au coach responsable ou à un admin). */
