@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { BehaviorSubject, combineLatest, map, switchMap } from 'rxjs';
 import { SessionService } from '@features/sessions/session.service';
@@ -30,7 +30,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
 
 @Component({
   standalone: true,
-  imports: [DatePipe, MatButtonModule],
+  imports: [DatePipe, NgTemplateOutlet, MatButtonModule],
   template: `
     <section class="page participations-page">
       <div class="page-heading">
@@ -47,23 +47,17 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
         } @else {
           <div class="module-shell">
             <nav class="module-rail" aria-label="Participations">
-              @for (item of list; track item.id) {
-                <button
-                  type="button"
-                  class="module-rail-item"
-                  [class]="'c-' + statusMeta(item.status).badge"
-                  [class.active]="item.id === selectedId"
-                  [attr.aria-current]="item.id === selectedId ? 'true' : null"
-                  (click)="selectedId = item.id">
-                  <span class="module-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 15l2.5 2.5L16 13"/></svg>
-                  </span>
-                  <span class="module-rail-text">
-                    <span class="module-rail-label">{{ item.sessionTitle }}</span>
-                    <small class="module-rail-sublabel">{{ item.startsAt ? (item.startsAt | date:'dd/MM HH:mm') : 'Séance supprimée' }}</small>
-                  </span>
-                  @if (!item.upcoming) { <span class="module-rail-dot" title="Terminée"></span> }
-                </button>
+              @if (upcomingItems.length) {
+                <p class="app-rail-section">À venir</p>
+                @for (item of upcomingItems; track item.id) {
+                  <ng-container *ngTemplateOutlet="railItemTpl; context: { item: item }"></ng-container>
+                }
+              }
+              @if (pastItems.length) {
+                <p class="app-rail-section">Terminées</p>
+                @for (item of pastItems; track item.id) {
+                  <ng-container *ngTemplateOutlet="railItemTpl; context: { item: item }"></ng-container>
+                }
               }
             </nav>
 
@@ -96,6 +90,24 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
               }
             </div>
           </div>
+
+          <ng-template #railItemTpl let-item="item">
+            <button
+              type="button"
+              class="module-rail-item"
+              [class]="'c-' + statusMeta(item.status).badge"
+              [class.active]="item.id === selectedId"
+              [attr.aria-current]="item.id === selectedId ? 'true' : null"
+              (click)="selectedId = item.id">
+              <span class="module-rail-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 15l2.5 2.5L16 13"/></svg>
+              </span>
+              <span class="module-rail-text">
+                <span class="module-rail-label">{{ item.sessionTitle }}</span>
+                <small class="module-rail-sublabel">{{ item.startsAt ? (item.startsAt | date:'dd/MM HH:mm') : 'Séance supprimée' }}</small>
+              </span>
+            </button>
+          </ng-template>
         }
       }
     </section>
@@ -109,6 +121,8 @@ export class ParticipationsComponent {
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
   items: EnrichedParticipation[] = [];
+  upcomingItems: EnrichedParticipation[] = [];
+  pastItems: EnrichedParticipation[] = [];
   selectedId?: number;
 
   constructor() {
@@ -133,10 +147,14 @@ export class ParticipationsComponent {
         });
         const upcoming = enriched.filter((item) => item.upcoming).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
         const past = enriched.filter((item) => !item.upcoming).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
-        return [...upcoming, ...past];
+        return { upcoming, past };
       }),
       markForCheck(this.cd)
-    ).subscribe((list) => { this.items = list; });
+    ).subscribe(({ upcoming, past }) => {
+      this.upcomingItems = upcoming;
+      this.pastItems = past;
+      this.items = [...upcoming, ...past];
+    });
   }
 
   get selectedItem(): EnrichedParticipation | undefined {

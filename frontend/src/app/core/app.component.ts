@@ -52,6 +52,8 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l8-8 8 8"/><path d="M6 10v10h5v-6h2v6h5V10"/></svg></span>
             <span class="app-rail-label">Tableau de bord</span>
           </a>
+
+          <p class="app-rail-section">Planning</p>
           <a class="app-rail-item" routerLink="/sessions" routerLinkActive="active">
             <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
             <span class="app-rail-label">Séances</span>
@@ -66,7 +68,9 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
             <span class="app-rail-label">Calendrier</span>
           </a>
+
           @if (auth.isAuthenticated()) {
+            <p class="app-rail-section">Suivi</p>
             <a class="app-rail-item" routerLink="/participations" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
               <span class="app-rail-label">Participations</span>
@@ -79,6 +83,12 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span>
               <span class="app-rail-label">Objectifs</span>
             </a>
+            <a class="app-rail-item" routerLink="/journal" routerLinkActive="active">
+              <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/></svg></span>
+              <span class="app-rail-label">Journal</span>
+            </a>
+
+            <p class="app-rail-section">Ressources</p>
             <a class="app-rail-item" routerLink="/programs" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M8 11h8M8 15h8M8 19h4"/></svg></span>
               <span class="app-rail-label">Programmes</span>
@@ -87,22 +97,22 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
               <span class="app-rail-label">Alertes</span>
             </a>
+
             @if (auth.isCoachOrAdmin()) {
+              <p class="app-rail-section">Équipe</p>
               <a class="app-rail-item" routerLink="/athletes" routerLinkActive="active">
                 <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.9-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.2 20c.2-2.4 1.9-4.5 4.8-4.5"/></svg></span>
                 <span class="app-rail-label">Sportifs</span>
               </a>
+              @if (auth.isAdmin()) {
+                <a class="app-rail-item" routerLink="/admin/users" routerLinkActive="active">
+                  <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/></svg></span>
+                  <span class="app-rail-label">Comptes</span>
+                </a>
+              }
             }
-            @if (auth.isAdmin()) {
-              <a class="app-rail-item" routerLink="/admin/users" routerLinkActive="active">
-                <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/></svg></span>
-                <span class="app-rail-label">Comptes</span>
-              </a>
-            }
-            <a class="app-rail-item" routerLink="/journal" routerLinkActive="active">
-              <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/></svg></span>
-              <span class="app-rail-label">Journal</span>
-            </a>
+
+            <p class="app-rail-section">Compte</p>
             <a class="app-rail-item" routerLink="/profile" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></span>
               <span class="app-rail-label">Profil</span>
