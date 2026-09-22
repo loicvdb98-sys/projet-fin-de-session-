@@ -84,97 +84,103 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
       } @else if (sessionsLoadError) {
         <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="refreshSessions()">Réessayer</button></p>
       } @else if (sessions.length) {
-        <div class="view-toggle" role="group" aria-label="Type d'affichage">
-          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">▦ Grille</button>
-          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">☰ Tableau</button>
-          <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'agenda'" (click)="viewMode = 'agenda'">📅 Chronologique</button>
-        </div>
+        <div class="module-shell">
+          <nav class="module-rail" aria-label="Séances">
+            @for (session of sortedSessions(); track session.id) {
+              <button
+                type="button"
+                class="module-rail-item"
+                [class]="'c-' + sessionTint(session)"
+                [class.active]="session.id === selectedModuleSessionId"
+                [attr.aria-current]="session.id === selectedModuleSessionId ? 'true' : null"
+                (click)="selectedModuleSessionId = session.id">
+                <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
+                <span class="module-rail-text">
+                  <span class="module-rail-label">{{ session.title }}</span>
+                  <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}</small>
+                </span>
+                @if (remainingSpots(session) <= 0) { <span class="module-rail-dot" title="Complet"></span> }
+              </button>
+            }
+          </nav>
 
-        @if (viewMode === 'grid') {
-          <div class="cards">
-            @for (session of sessions; track session.id) {
-              <mat-card class="session-card">
-                <div class="session-card-top">
-                  <span class="session-icon" aria-hidden="true">⚡</span>
-                  <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
+          <div class="module-detail">
+            @if (selectedModuleSession; as session) {
+              <div class="module-detail-card" [class]="'c-' + sessionTint(session)">
+                <div class="module-detail-header">
+                  <span class="module-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
+                  <div>
+                    <p class="eyebrow">SÉANCE{{ isNextSession(session) ? ' · À VENIR' : '' }}</p>
+                    <h2>{{ session.title }}</h2>
+                  </div>
+                  <span class="module-badge">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
                 </div>
+
                 @if (editingSessionId === session.id) {
                   <ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container>
                 } @else {
-                  <mat-card-title>{{ session.title }}</mat-card-title>
-                  <mat-card-content>
-                    <p class="session-date">{{ session.starts_at | date:'dd/MM/yyyy à HH:mm' }}</p>
-                    <p class="text-secondary">{{ session.duration_minutes }} min · {{ session.registered_count }}/{{ session.capacity }} inscrits</p>
-                    <p class="session-coach">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</p>
-                  </mat-card-content>
-                  <mat-card-actions>
+                  <p class="text-secondary">{{ formatFullDate(session.starts_at) }} · {{ session.duration_minutes }} min</p>
+                  <span class="module-stat-line text-secondary">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</span>
+
+                  <div class="module-capacity">
+                    <div class="module-mini-progress" aria-hidden="true"><span [style.width.%]="capacityPercent(session)"></span></div>
+                    <span class="text-secondary">{{ session.registered_count }}/{{ session.capacity }} inscrit(s)</span>
+                  </div>
+
+                  <div class="module-detail-actions">
                     <ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container>
-                  </mat-card-actions>
+                  </div>
+
                   @if (attendanceSessionId === session.id) {
                     <ng-container *ngTemplateOutlet="attendanceTpl"></ng-container>
                   }
+
+                  @if (selectedExercisesSessionId === session.id) {
+                    <div class="exercise-summary">
+                      <h3>Exercices de la séance</h3>
+                      @if (selectedExercises.length) {
+                        @for (exercise of selectedExercises; track exercise.id) {
+                          <div class="exercise-summary-row">
+                            <span><strong>{{ exercise.name }}</strong><small>{{ exercise.sets }} séries × {{ exercise.repetitions || '—' }} reps · {{ exercise.rest_seconds }} sec de repos</small></span>
+                            <button type="button" class="action-chip" (click)="startTimer(exercise)">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+                              Lancer le repos
+                            </button>
+                          </div>
+                        }
+                      } @else {
+                        <p class="text-secondary">Aucun exercice pour cette séance.</p>
+                      }
+                    </div>
+                  }
                 }
-              </mat-card>
+              </div>
             }
           </div>
-        }
-
-        @if (viewMode === 'table') {
-          <div class="session-table-wrap">
-            <table class="session-table">
-              <thead><tr><th>Séance</th><th>Date</th><th>Durée</th><th>Places</th><th>Coach</th><th>Actions</th></tr></thead>
-              <tbody>
-                @for (session of sessions; track session.id) {
-                  <tr>
-                    <td class="session-table-title">{{ session.title }}</td>
-                    <td>{{ session.starts_at | date:'dd/MM/yy HH:mm' }}</td>
-                    <td>{{ session.duration_minutes }} min</td>
-                    <td><span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span></td>
-                    <td>{{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</td>
-                    <td class="session-table-actions"><ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container></td>
-                  </tr>
-                  @if (editingSessionId === session.id) {
-                    <tr class="session-table-expanded"><td colspan="6"><ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container></td></tr>
-                  }
-                  @if (attendanceSessionId === session.id) {
-                    <tr class="session-table-expanded"><td colspan="6"><ng-container *ngTemplateOutlet="attendanceTpl"></ng-container></td></tr>
-                  }
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-
-        @if (viewMode === 'agenda') {
-          @for (group of groupedByDate(); track group.label) {
-            <h3 class="agenda-date-heading">{{ group.label }}</h3>
-            <div class="agenda-list">
-              @for (session of group.sessions; track session.id) {
-                <div class="agenda-row">
-                  <span class="agenda-time">{{ session.starts_at | date:'HH:mm' }}</span>
-                  <span class="agenda-title">{{ session.title }}</span>
-                  <span class="text-secondary agenda-coach">{{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</span>
-                  <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
-                  <div class="agenda-actions"><ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container></div>
-                </div>
-                @if (editingSessionId === session.id) {
-                  <div class="agenda-expanded"><ng-container *ngTemplateOutlet="editTpl; context: { session: session }"></ng-container></div>
-                }
-                @if (attendanceSessionId === session.id) {
-                  <div class="agenda-expanded"><ng-container *ngTemplateOutlet="attendanceTpl"></ng-container></div>
-                }
-              }
-            </div>
-          }
-        }
+        </div>
 
         <ng-template #actionsTpl let-session="session">
-          <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
-          <button mat-button (click)="loadExercises(session.id)">Exercices</button>
+          <button type="button" class="action-chip primary" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
+            S'inscrire
+          </button>
+          <button type="button" class="action-chip" [class.active]="selectedExercisesSessionId === session.id" (click)="loadExercises(session.id)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            Exercices
+          </button>
           @if (canManageSession(session)) {
-            <button mat-button (click)="toggleAttendance(session)">Présences</button>
-            <button mat-button (click)="startEdit(session)">Modifier</button>
-            <button mat-button class="danger-action" (click)="cancelSession(session)">Annuler</button>
+            <button type="button" class="action-chip" [class.active]="attendanceSessionId === session.id" (click)="toggleAttendance(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.9-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.2 20c.2-2.4 1.9-4.5 4.8-4.5"/></svg>
+              Présences
+            </button>
+            <button type="button" class="action-chip" (click)="startEdit(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Modifier
+            </button>
+            <button type="button" class="action-chip danger" (click)="cancelSession(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+              Annuler
+            </button>
           }
         </ng-template>
 
@@ -218,9 +224,6 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
           </div>
         </ng-template>
       } @else { <p>Aucune séance disponible.</p> }
-      @if (selectedExercises.length) {
-        <mat-card class="exercise-summary"><h2>Exercices de la séance</h2>@for (exercise of selectedExercises; track exercise.id) { <div class="exercise-summary-row"><span><strong>{{ exercise.name }}</strong><small>{{ exercise.sets }} séries × {{ exercise.repetitions || '—' }} reps · {{ exercise.rest_seconds }} sec de repos</small></span><button mat-button class="teal-action" (click)="startTimer(exercise)">Lancer le repos</button></div> }</mat-card>
-      }
     </section>
   `
 })
@@ -237,7 +240,12 @@ export class SessionsComponent implements OnDestroy {
   sessions: SportSession[] = [];
   sessionsLoading = true;
   sessionsLoadError = false;
-  viewMode: 'grid' | 'table' | 'agenda' = 'grid';
+  selectedModuleSessionId?: number;
+
+  /** Séance affichée dans le panneau de détail : celle sélectionnée dans le rail, sinon la plus proche à venir. */
+  get selectedModuleSession(): SportSession | undefined {
+    return this.sessions.find((session) => session.id === this.selectedModuleSessionId) ?? this.sortedSessions()[0];
+  }
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
     starts_at: ['', Validators.required],
@@ -259,6 +267,7 @@ export class SessionsComponent implements OnDestroy {
   editingSessionId?: number;
   exercises = this.form.controls.exercises;
   selectedExercises: Exercise[] = [];
+  selectedExercisesSessionId?: number;
   timerExercise?: Exercise;
   timerSeconds = 0;
   timerRunning = false;
@@ -294,20 +303,32 @@ export class SessionsComponent implements OnDestroy {
     return Math.max(0, session.capacity - session.registered_count);
   }
 
-  /** Regroupe les séances par jour civil, triées chronologiquement, pour la vue « Chronologique ». */
-  groupedByDate(): { label: string; sessions: SportSession[] }[] {
-    const groups = new Map<string, SportSession[]>();
-    for (const session of [...this.sessions].sort((a, b) => a.starts_at.localeCompare(b.starts_at))) {
-      const date = new Date(session.starts_at);
-      const key = date.toDateString();
-      const list = groups.get(key) ?? [];
-      list.push(session);
-      groups.set(key, list);
-    }
-    return Array.from(groups.entries()).map(([key, sessions]) => ({
-      label: new Date(key).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }),
-      sessions
-    }));
+  /** Séances triées chronologiquement (les plus proches d'abord), pour le rail de la vue « Modules ». */
+  sortedSessions(): SportSession[] {
+    return [...this.sessions].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }
+
+  /** Couleur associée au remplissage de la séance : places nombreuses, rares, ou complet. */
+  sessionTint(session: SportSession): 'success' | 'warning' | 'danger' {
+    const remaining = this.remainingSpots(session);
+    if (remaining <= 0) return 'danger';
+    return session.capacity && remaining / session.capacity <= 0.25 ? 'warning' : 'success';
+  }
+
+  /** Taux de remplissage (%) d'une séance, pour la barre de progression. */
+  capacityPercent(session: SportSession): number {
+    return session.capacity ? Math.min(100, Math.round((session.registered_count / session.capacity) * 100)) : 0;
+  }
+
+  /** Vrai si la séance est la prochaine à venir chronologiquement. */
+  isNextSession(session: SportSession): boolean {
+    return this.sortedSessions()[0]?.id === session.id;
+  }
+
+  /** Date complète en français avec majuscule initiale (ex. "Dimanche 06 septembre à 11:47"). */
+  formatFullDate(iso: string): string {
+    const formatted = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
   /** Un admin gère toutes les séances ; un coach ne gère que les siennes. */
@@ -356,7 +377,12 @@ export class SessionsComponent implements OnDestroy {
       error: () => this.toast.error('Impossible de vous inscrire à cette séance.')
     }));
   }
-  loadExercises(sessionId: number): void { this.service.exercises(sessionId).pipe(markForCheck(this.cd)).subscribe(exercises => this.selectedExercises = exercises); }
+  /** Affiche ou masque la liste des exercices d'une séance. */
+  loadExercises(sessionId: number): void {
+    if (this.selectedExercisesSessionId === sessionId) { this.selectedExercisesSessionId = undefined; this.selectedExercises = []; return; }
+    this.selectedExercisesSessionId = sessionId;
+    this.service.exercises(sessionId).pipe(markForCheck(this.cd)).subscribe(exercises => this.selectedExercises = exercises);
+  }
 
   /** Ouvre le formulaire d'édition d'une séance, pré-rempli avec ses valeurs actuelles. */
   startEdit(session: SportSession): void {
