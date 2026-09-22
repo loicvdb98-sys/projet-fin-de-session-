@@ -5,13 +5,13 @@ import { Performance, PerformanceService } from './performance.service';
 import { SessionService } from '@features/sessions/session.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { UserService } from '@features/athletes/user.service';
-import { combineLatest, forkJoin, map, shareReplay } from 'rxjs';
+import { combineLatest, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
 interface AttendancePoint { title: string; date: string; rate: number; present: number; total: number; }
-interface EnrichedPerformance extends Performance { sessionTitle: string; }
+interface EnrichedPerformance extends Performance { sessionTitle: string; athleteName: string | null; }
 
 /**
  * Écran des performances : score moyen, meilleur score, graphique
@@ -28,7 +28,7 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; }
         <div>
           <p class="eyebrow">SUIVI</p>
           <h1>Statistiques</h1>
-          <p class="text-secondary">{{ isCoach ? 'Assiduité de vos séances et évolution de vos performances.' : 'Analysez vos résultats au fil des séances.' }}</p>
+          <p class="text-secondary">{{ isCoach ? 'Assiduité à vos séances et performances de vos sportifs.' : 'Analysez vos résultats au fil des séances.' }}</p>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; }
             </button>
             <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'performance'" (click)="selectSection('performance')">
               <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></span>
-              <span class="module-rail-label">Mes performances</span>
+              <span class="module-rail-label">Performances</span>
             </button>
           </nav>
 
@@ -85,17 +85,17 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; }
       @if (performances$ | async; as performances) {
         <div class="cards">
           <mat-card class="stat-card accent"><mat-card-title>Score moyen</mat-card-title><strong class="stat-value">{{ average(performances) | number:'1.0-1' }}</strong><p class="text-secondary">sur {{ performances.length }} performance(s)</p></mat-card>
-          <mat-card class="stat-card"><mat-card-title>Meilleur score</mat-card-title><strong class="stat-value">{{ best(performances) | number:'1.0-1' }}</strong><p class="text-secondary">Votre record actuel</p></mat-card>
+          <mat-card class="stat-card"><mat-card-title>Meilleur score</mat-card-title><strong class="stat-value">{{ best(performances) | number:'1.0-1' }}</strong><p class="text-secondary">{{ isCoach ? 'Meilleur score enregistré' : 'Votre record actuel' }}</p></mat-card>
         </div>
         @if (performances.length) {
           <mat-card class="chart-card"><mat-card-title>Évolution des performances</mat-card-title><mat-card-content><div class="performance-chart"><canvas #performanceChart aria-label="Graphique de progression des performances"></canvas></div></mat-card-content></mat-card>
           <mat-card class="exercise-summary"><h2>Historique</h2>
             @for (item of (enrichedPerformances$ | async) ?? []; track item.id) {
-              <div class="exercise-summary-row"><span><strong>{{ item.sessionTitle }}</strong><small>{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
+              <div class="exercise-summary-row"><span><strong>{{ item.sessionTitle }}</strong><small>{{ item.athleteName ? item.athleteName + ' · ' : '' }}{{ item.notes || 'Performance enregistrée' }}</small></span><span><strong class="score-value">{{ item.score | number:'1.0-1' }}</strong><small>{{ item.recorded_at | date:'dd/MM/yyyy' }}</small></span></div>
             }
           </mat-card>
         } @else {
-          <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">Enregistrez vos premiers résultats pour voir votre progression.</p></mat-card>
+          <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">{{ isCoach ? 'Aucune performance enregistrée par vos sportifs pour le moment.' : 'Enregistrez vos premiers résultats pour voir votre progression.' }}</p></mat-card>
         }
       }
     </ng-template>
@@ -109,14 +109,23 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private readonly sessionService = inject(SessionService);
   private readonly participationService = inject(ParticipationService);
   readonly performances$ = inject(PerformanceService).list();
-  // Associe chaque performance au titre de sa séance (au lieu d'afficher un simple id) pour l'historique.
+  // Partagé entre ngAfterViewInit (rôle/id courant) et enrichedPerformances$ (noms des sportifs) :
+  // une seule requête /users/me même si les deux le consomment.
+  private readonly me$ = this.users.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  private readonly role$ = this.me$.pipe(map((user) => user.role));
+  // Associe chaque performance au titre de sa séance (au lieu d'un simple id) et, pour un coach/admin,
+  // au nom du sportif concerné — la liste contient les performances de leurs sportifs, pas les leurs.
   readonly enrichedPerformances$ = combineLatest([
     this.performances$,
-    this.sessionService.list().pipe(map((sessions) => new Map(sessions.map((session) => [session.id, session.title]))))
+    this.sessionService.list().pipe(map((sessions) => new Map(sessions.map((session) => [session.id, session.title])))),
+    this.role$.pipe(switchMap((role) => (role === 'coach' || role === 'admin')
+      ? this.users.list().pipe(map((users) => new Map(users.map((user) => [user.id, user.full_name]))))
+      : of(new Map<number, string>())))
   ]).pipe(
-    map(([performances, titles]): EnrichedPerformance[] => performances.map((item) => ({
+    map(([performances, sessionTitles, athleteNames]): EnrichedPerformance[] => performances.map((item) => ({
       ...item,
-      sessionTitle: titles.get(item.session_id) ?? `Séance #${item.session_id}`
+      sessionTitle: sessionTitles.get(item.session_id) ?? `Séance #${item.session_id}`,
+      athleteName: athleteNames.get(item.user_id) ?? null
     }))),
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -136,7 +145,7 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
       this.latestPerformances = performances;
       if (performances.length) setTimeout(() => this.renderChart(performances));
     });
-    this.users.me().subscribe((user) => {
+    this.me$.subscribe((user) => {
       this.isCoach = user.role === 'coach' || user.role === 'admin';
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
