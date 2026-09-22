@@ -56,6 +56,7 @@ mat-card { padding: 1.4rem; background: linear-gradient(145deg, var(--surface-gl
 mat-card:hover { border-color: color-mix(in srgb, var(--accent-secondary) 45%, var(--border-default)); box-shadow: 0 14px 34px rgb(12 13 16 / 12%) !important; }
 html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !important; }
 .mat-mdc-button, .mat-mdc-unelevated-button, .mat-mdc-outlined-button { border-radius: .7rem !important; font-weight: 700 !important; }
+.mat-mdc-card-actions { display: flex !important; flex-wrap: wrap; gap: .35rem; }
 .mat-mdc-form-field { width: 100%; }
 .mat-mdc-text-field-wrapper { border-radius: .75rem !important; }
 .stat-card { min-height: 190px; position: relative; overflow: hidden; }
