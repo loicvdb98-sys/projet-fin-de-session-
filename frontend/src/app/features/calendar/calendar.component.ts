@@ -40,6 +40,9 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
         </div>
       </div>
 
+      @if (sessionsLoadError) {
+        <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="loadSessions()">Réessayer</button></p>
+      }
       <div class="calendar-grid">
         @for (label of weekdayLabels; track label) { <span class="calendar-weekday">{{ label }}</span> }
         @for (day of days; track day.date.getTime()) {
@@ -110,6 +113,7 @@ export class CalendarComponent {
   private sessions: SportSession[] = [];
   private participations: Participation[] = [];
   private currentUserId?: number;
+  sessionsLoadError = false;
 
   /** Premier jour (à minuit) du mois actuellement affiché par la grille. */
   viewDate = this.startOfMonth(new Date());
@@ -118,19 +122,27 @@ export class CalendarComponent {
   selectedDaySessions: SportSession[] = [];
 
   constructor() {
-    this.sessionService.list().subscribe((sessions) => {
-      this.sessions = sessions;
-      this.rebuild();
-    });
+    this.loadSessions();
     // Connaître l'utilisateur courant et ses inscriptions pour afficher le badge "Inscrit".
-    this.users.me().subscribe((user) => {
-      this.currentUserId = user.id;
-      this.participationService.list().subscribe((participations) => {
-        this.participations = participations;
-        this.rebuild();
-      });
+    this.users.me().subscribe({
+      next: (user) => {
+        this.currentUserId = user.id;
+        this.participationService.list().subscribe({
+          next: (participations) => { this.participations = participations; this.rebuild(); },
+          error: () => this.toast.error('Impossible de charger vos inscriptions.')
+        });
+      },
+      error: () => this.toast.error('Impossible de charger votre profil.')
     });
     this.rebuild();
+  }
+
+  loadSessions(): void {
+    this.sessionsLoadError = false;
+    this.sessionService.list().subscribe({
+      next: (sessions) => { this.sessions = sessions; this.rebuild(); },
+      error: () => { this.sessionsLoadError = true; }
+    });
   }
 
   previousMonth(): void {

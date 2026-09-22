@@ -78,7 +78,11 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
       @if (timerExercise) {
         <mat-card class="timer-card"><div><p class="eyebrow">CHRONOMÈTRE DE REPOS</p><h2>{{ timerExercise.name }}</h2><p class="text-secondary">Récupérez avant votre prochaine série.</p></div><strong class="timer-value">{{ formattedTimer }}</strong><div class="timer-actions"><button mat-flat-button class="primary-action" (click)="toggleTimer()">{{ timerRunning ? 'Pause' : 'Démarrer' }}</button><button mat-stroked-button (click)="resetTimer()">Réinitialiser</button><button mat-button (click)="timerExercise = undefined">Fermer</button></div></mat-card>
       }
-      @if (sessions.length) {
+      @if (sessionsLoading) {
+        <p class="text-secondary">Chargement des séances…</p>
+      } @else if (sessionsLoadError) {
+        <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="refreshSessions()">Réessayer</button></p>
+      } @else if (sessions.length) {
         <div class="cards">
           @for (session of sessions; track session.id) {
             <mat-card class="session-card">
@@ -161,6 +165,8 @@ export class SessionsComponent implements OnDestroy {
   private readonly toast = inject(ToastService);
 
   sessions: SportSession[] = [];
+  sessionsLoading = true;
+  sessionsLoadError = false;
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
     starts_at: ['', Validators.required],
@@ -203,8 +209,13 @@ export class SessionsComponent implements OnDestroy {
     this.refreshSessions();
   }
 
-  private refreshSessions(): void {
-    this.service.list().subscribe(list => this.sessions = list);
+  refreshSessions(): void {
+    this.sessionsLoading = true;
+    this.sessionsLoadError = false;
+    this.service.list().subscribe({
+      next: (list) => { this.sessions = list; this.sessionsLoading = false; },
+      error: () => { this.sessionsLoadError = true; this.sessionsLoading = false; }
+    });
   }
 
   /** Places encore disponibles pour une séance (jamais négatif). */
