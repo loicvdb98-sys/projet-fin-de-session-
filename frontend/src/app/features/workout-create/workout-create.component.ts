@@ -12,8 +12,8 @@ import { markForCheck } from '@core/mark-for-check.operator';
 
 /**
  * Écran (réservé coach) de création d'une séance de musculation : formulaire
- * de séance, bibliothèque d'exercices filtrable par mouvement/recherche, et
- * enregistrement de la séance avec tous ses exercices.
+ * de séance, bibliothèque d'exercices filtrable par groupe musculaire/recherche,
+ * et enregistrement de la séance avec tous ses exercices.
  */
 
 interface WorkoutExerciseForm {
@@ -23,14 +23,19 @@ interface WorkoutExerciseForm {
   rest_seconds: FormControl<number>;
 }
 
-type MovementPattern = 'squat' | 'hinge' | 'push' | 'pull' | 'core' | 'carry' | 'conditioning' | 'mobility';
-interface LibraryExercise { name: string; category: string; pattern: MovementPattern; }
+type MuscleGroup = 'legs' | 'glutesHams' | 'back' | 'chest' | 'shoulders' | 'arms' | 'core' | 'cardio';
+interface LibraryExercise { name: string; category: string; muscle: MuscleGroup; }
 
-const PATTERN_LABELS: Record<MovementPattern, string> = {
-  squat: 'Squat', hinge: 'Hinge', push: 'Poussée', pull: 'Tirage',
-  core: 'Gainage', carry: 'Port de charge', conditioning: 'Cardio', mobility: 'Mobilité',
+const MUSCLE_LABELS: Record<MuscleGroup, string> = {
+  legs: 'Jambes', glutesHams: 'Fessiers & Ischios', back: 'Dos', chest: 'Pectoraux',
+  shoulders: 'Épaules', arms: 'Bras', core: 'Abdominaux', cardio: 'Cardio & Mobilité',
 };
-const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'core', 'carry', 'conditioning', 'mobility'];
+const MUSCLE_ORDER: MuscleGroup[] = ['legs', 'glutesHams', 'back', 'chest', 'shoulders', 'arms', 'core', 'cardio'];
+type Tint = 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'danger';
+const MUSCLE_TINTS: Record<MuscleGroup, Tint> = {
+  legs: 'primary', glutesHams: 'warning', back: 'info', chest: 'danger',
+  shoulders: 'secondary', arms: 'success', core: 'primary', cardio: 'warning',
+};
 
 @Component({
   standalone: true,
@@ -61,17 +66,17 @@ const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'cor
             <div class="exercise-list" formArrayName="exercises">
               @for (exercise of exercises.controls; track exercise; let index = $index) {
                 <div class="exercise-row" [formGroupName]="index">
-                  <span class="exercise-pictogram" [attr.aria-label]="exercise.controls.name.value" aria-hidden="true">
+                  <span class="exercise-pictogram" [class]="'c-' + muscleTint(muscleOf(exercise.controls.name.value))" [attr.aria-label]="exercise.controls.name.value" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      @switch (patternOf(exercise.controls.name.value)) {
-                        @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
-                        @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
-                        @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
-                        @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
-                        @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
-                        @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
-                        @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
-                        @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
+                      @switch (muscleOf(exercise.controls.name.value)) {
+                        @case ('legs') { <path d="M8 4h8"/><path d="M10 4l-1.5 16"/><path d="M14 4l1.5 16"/><path d="M6.8 20h3"/><path d="M14.2 20h3"/> }
+                        @case ('glutesHams') { <path d="M12 3v4"/><path d="M7 9c0-2 2-3 5-3s5 1 5 3-2 8-5 8-5-6-5-8z"/><path d="M9 17l-1 4"/><path d="M15 17l1 4"/> }
+                        @case ('back') { <path d="M12 3v4"/><path d="M8 7l-3 13h4l3-8 3 8h4L16 7"/><path d="M8 7c1.5 1 2.7 1.3 4 1.3S14.5 8 16 7"/> }
+                        @case ('chest') { <circle cx="9" cy="10" r="3.4"/><circle cx="15" cy="10" r="3.4"/><path d="M12 8v9"/> }
+                        @case ('shoulders') { <path d="M12 6v13"/><path d="M12 6c-2.5-2.5-7-1.5-7 2s3 3.5 3 3.5"/><path d="M12 6c2.5-2.5 7-1.5 7 2s-3 3.5-3 3.5"/> }
+                        @case ('arms') { <circle cx="7" cy="5" r="1.8"/><path d="M7 7v6"/><path d="M7 13l4 3"/><circle cx="13" cy="17" r="1.8"/> }
+                        @case ('core') { <rect x="8" y="4" width="3.2" height="4" rx="1"/><rect x="12.8" y="4" width="3.2" height="4" rx="1"/><rect x="8" y="9" width="3.2" height="4" rx="1"/><rect x="12.8" y="9" width="3.2" height="4" rx="1"/><rect x="8" y="14" width="3.2" height="4" rx="1"/><rect x="12.8" y="14" width="3.2" height="4" rx="1"/> }
+                        @case ('cardio') { <path d="M12 19.5S3.5 14.8 3.5 8.8A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 1.8c0 6-8.5 10.7-8.5 10.7z"/><path d="M5.5 11h2.8l1.5-3 2.2 6 1.5-3h3.5"/> }
                       }
                     </svg>
                   </span>
@@ -96,51 +101,51 @@ const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'cor
         <mat-card class="exercise-library">
           <p class="eyebrow">BIBLIOTHÈQUE</p>
           <h2>Choisir un exercice</h2>
-          <p class="text-secondary">Parcourez par mouvement et ajoutez-le à votre séance.</p>
+          <p class="text-secondary">Parcourez par groupe musculaire et ajoutez-le à votre séance.</p>
           <mat-form-field appearance="outline" class="library-search">
             <mat-label>Rechercher un exercice</mat-label>
             <input matInput [(ngModel)]="searchTerm" [ngModelOptions]="{ standalone: true }" placeholder="Ex. épaules">
           </mat-form-field>
 
           <div class="pattern-shell">
-            <nav class="pattern-rail" aria-label="Filtrer par mouvement">
-              @for (pattern of patterns; track pattern) {
-                <button type="button" class="pattern-rail-item" [class.active]="pattern === selectedPattern" (click)="selectPattern(pattern)">
+            <nav class="pattern-rail" aria-label="Filtrer par groupe musculaire">
+              @for (muscle of muscles; track muscle) {
+                <button type="button" class="pattern-rail-item" [class]="'c-' + muscleTint(muscle)" [class.active]="muscle === selectedMuscle" (click)="selectMuscle(muscle)">
                   <span class="pattern-rail-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      @switch (pattern) {
-                        @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
-                        @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
-                        @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
-                        @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
-                        @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
-                        @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
-                        @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
-                        @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
+                      @switch (muscle) {
+                        @case ('legs') { <path d="M8 4h8"/><path d="M10 4l-1.5 16"/><path d="M14 4l1.5 16"/><path d="M6.8 20h3"/><path d="M14.2 20h3"/> }
+                        @case ('glutesHams') { <path d="M12 3v4"/><path d="M7 9c0-2 2-3 5-3s5 1 5 3-2 8-5 8-5-6-5-8z"/><path d="M9 17l-1 4"/><path d="M15 17l1 4"/> }
+                        @case ('back') { <path d="M12 3v4"/><path d="M8 7l-3 13h4l3-8 3 8h4L16 7"/><path d="M8 7c1.5 1 2.7 1.3 4 1.3S14.5 8 16 7"/> }
+                        @case ('chest') { <circle cx="9" cy="10" r="3.4"/><circle cx="15" cy="10" r="3.4"/><path d="M12 8v9"/> }
+                        @case ('shoulders') { <path d="M12 6v13"/><path d="M12 6c-2.5-2.5-7-1.5-7 2s3 3.5 3 3.5"/><path d="M12 6c2.5-2.5 7-1.5 7 2s-3 3.5-3 3.5"/> }
+                        @case ('arms') { <circle cx="7" cy="5" r="1.8"/><path d="M7 7v6"/><path d="M7 13l4 3"/><circle cx="13" cy="17" r="1.8"/> }
+                        @case ('core') { <rect x="8" y="4" width="3.2" height="4" rx="1"/><rect x="12.8" y="4" width="3.2" height="4" rx="1"/><rect x="8" y="9" width="3.2" height="4" rx="1"/><rect x="12.8" y="9" width="3.2" height="4" rx="1"/><rect x="8" y="14" width="3.2" height="4" rx="1"/><rect x="12.8" y="14" width="3.2" height="4" rx="1"/> }
+                        @case ('cardio') { <path d="M12 19.5S3.5 14.8 3.5 8.8A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 1.8c0 6-8.5 10.7-8.5 10.7z"/><path d="M5.5 11h2.8l1.5-3 2.2 6 1.5-3h3.5"/> }
                       }
                     </svg>
                   </span>
-                  <span class="pattern-rail-label">{{ patternLabel(pattern) }}</span>
-                  <span class="pattern-rail-count">{{ patternCount(pattern) }}</span>
+                  <span class="pattern-rail-label">{{ muscleLabel(muscle) }}</span>
+                  <span class="pattern-rail-count">{{ muscleCount(muscle) }}</span>
                 </button>
               }
             </nav>
 
             <div class="library-grid">
-              @for (exercise of patternExercises; track exercise.name) {
-                <button type="button" class="library-item" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
+              @for (exercise of muscleExercises; track exercise.name) {
+                <button type="button" class="library-item" [class]="'c-' + muscleTint(exercise.muscle)" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
                   @if (isAdded(exercise.name)) { <span class="library-added-badge" aria-hidden="true">✓</span> }
                   <span class="library-pictogram" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      @switch (exercise.pattern) {
-                        @case ('squat') { <circle cx="12" cy="4.2" r="1.6" fill="currentColor" stroke="none"/><path d="M12 6v5.5"/><path d="M12 8.3l4-1.3"/><path d="M12 11.5l-4.5 2.5"/><path d="M7.5 14l1 6"/><path d="M12 11.5l4.5 2.5"/><path d="M16.5 14l-1.5 6"/> }
-                        @case ('hinge') { <circle cx="16" cy="5.6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.1l-4.8 5"/><path d="M12.6 9.4v6.2"/><path d="M10.5 12.1l6.5-2.6"/><path d="M10.5 12.1l-1 7.9"/> }
-                        @case ('push') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v7.4"/><path d="M12 7l-3-4"/><path d="M12 7l3-4"/><path d="M12 13l-2 7"/><path d="M12 13l2 7"/> }
-                        @case ('pull') { <circle cx="13" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M12.6 6.6l-1.6 5.4"/><path d="M16 7.5l2.5 2"/><path d="M18.5 9.5l-4-.5"/><path d="M11 12l-1.5 8"/><path d="M11 12l2.5 7.5"/> }
-                        @case ('core') { <circle cx="7" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M8.3 11l4.7 2"/><path d="M9.5 11.5l3.5 1"/><path d="M13 13l5-2"/><path d="M18 11l2 4"/> }
-                        @case ('carry') { <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/><path d="M12 5.6v6.4"/><path d="M10 7l-.7 6"/><path d="M14 7l.7 6"/><path d="M12 12l-3 4 1 4"/><path d="M12 12l3 3-.5 5"/> }
-                        @case ('conditioning') { <circle cx="10" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M10.6 6.5l2.4 4.5"/><path d="M12 8l4-4"/><path d="M13 11l-3 3 1 5"/><path d="M13 11l3 2 2 4"/> }
-                        @case ('mobility') { <circle cx="16" cy="6" r="1.6" fill="currentColor" stroke="none"/><path d="M15.3 7.4l-4.3 3.1"/><path d="M13 9l-4-1"/><path d="M11 10.5v4.5l4 1"/><path d="M11 10.5l-4 1.5-1 4"/> }
+                      @switch (exercise.muscle) {
+                        @case ('legs') { <path d="M8 4h8"/><path d="M10 4l-1.5 16"/><path d="M14 4l1.5 16"/><path d="M6.8 20h3"/><path d="M14.2 20h3"/> }
+                        @case ('glutesHams') { <path d="M12 3v4"/><path d="M7 9c0-2 2-3 5-3s5 1 5 3-2 8-5 8-5-6-5-8z"/><path d="M9 17l-1 4"/><path d="M15 17l1 4"/> }
+                        @case ('back') { <path d="M12 3v4"/><path d="M8 7l-3 13h4l3-8 3 8h4L16 7"/><path d="M8 7c1.5 1 2.7 1.3 4 1.3S14.5 8 16 7"/> }
+                        @case ('chest') { <circle cx="9" cy="10" r="3.4"/><circle cx="15" cy="10" r="3.4"/><path d="M12 8v9"/> }
+                        @case ('shoulders') { <path d="M12 6v13"/><path d="M12 6c-2.5-2.5-7-1.5-7 2s3 3.5 3 3.5"/><path d="M12 6c2.5-2.5 7-1.5 7 2s-3 3.5-3 3.5"/> }
+                        @case ('arms') { <circle cx="7" cy="5" r="1.8"/><path d="M7 7v6"/><path d="M7 13l4 3"/><circle cx="13" cy="17" r="1.8"/> }
+                        @case ('core') { <rect x="8" y="4" width="3.2" height="4" rx="1"/><rect x="12.8" y="4" width="3.2" height="4" rx="1"/><rect x="8" y="9" width="3.2" height="4" rx="1"/><rect x="12.8" y="9" width="3.2" height="4" rx="1"/><rect x="8" y="14" width="3.2" height="4" rx="1"/><rect x="12.8" y="14" width="3.2" height="4" rx="1"/> }
+                        @case ('cardio') { <path d="M12 19.5S3.5 14.8 3.5 8.8A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 1.8c0 6-8.5 10.7-8.5 10.7z"/><path d="M5.5 11h2.8l1.5-3 2.2 6 1.5-3h3.5"/> }
                       }
                     </svg>
                   </span>
@@ -157,7 +162,7 @@ const PATTERN_ORDER: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'cor
     </section>
   `
 })
-/** Compose une nouvelle séance à partir d'une bibliothèque d'exercices classés par mouvement. */
+/** Compose une nouvelle séance à partir d'une bibliothèque d'exercices classés par groupe musculaire. */
 export class WorkoutCreateComponent {
   private readonly fb = inject(FormBuilder);
   private readonly sessions = inject(SessionService);
@@ -174,92 +179,92 @@ export class WorkoutCreateComponent {
   });
   readonly exercises = this.form.controls.exercises;
   readonly library: LibraryExercise[] = [
-    { name: 'Squat', category: 'Jambes', pattern: 'squat' },
-    { name: 'Développé couché', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Soulevé de terre', category: 'Dos · chaîne postérieure', pattern: 'hinge' },
-    { name: 'Tractions', category: 'Dos', pattern: 'pull' },
-    { name: 'Développé militaire', category: 'Épaules', pattern: 'push' },
-    { name: 'Fentes', category: 'Jambes', pattern: 'squat' },
-    { name: 'Rowing barre', category: 'Dos', pattern: 'pull' },
-    { name: 'Gainage', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Presse à cuisses', category: 'Jambes', pattern: 'squat' },
-    { name: 'Leg extension', category: 'Jambes', pattern: 'squat' },
-    { name: 'Leg curl', category: 'Ischio-jambiers', pattern: 'hinge' },
-    { name: 'Hip thrust', category: 'Fessiers', pattern: 'hinge' },
-    { name: 'Glute kickback', category: 'Fessiers', pattern: 'hinge' },
-    { name: 'Mollets debout', category: 'Mollets', pattern: 'squat' },
-    { name: 'Mollets assis', category: 'Mollets', pattern: 'squat' },
-    { name: 'Goblet squat', category: 'Jambes', pattern: 'squat' },
-    { name: 'Bulgarian split squat', category: 'Jambes', pattern: 'squat' },
-    { name: 'Soulevé de terre roumain', category: 'Ischio-jambiers', pattern: 'hinge' },
-    { name: 'Good morning', category: 'Ischio-jambiers', pattern: 'hinge' },
-    { name: 'Hip hinge', category: 'Chaîne postérieure', pattern: 'hinge' },
-    { name: 'Développé incliné haltères', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Développé décliné', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Écarté haltères', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Écarté poulie', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Pompes', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Dips', category: 'Triceps', pattern: 'push' },
-    { name: 'Pull-over', category: 'Pectoraux', pattern: 'push' },
-    { name: 'Tirage vertical', category: 'Dos', pattern: 'pull' },
-    { name: 'Tirage horizontal', category: 'Dos', pattern: 'pull' },
-    { name: 'Rowing haltère', category: 'Dos', pattern: 'pull' },
-    { name: 'Rowing poulie basse', category: 'Dos', pattern: 'pull' },
-    { name: 'T-bar row', category: 'Dos', pattern: 'pull' },
-    { name: 'Pull-up prise supination', category: 'Dos', pattern: 'pull' },
-    { name: 'Oiseau haltères', category: 'Épaules', pattern: 'pull' },
-    { name: 'Élévations latérales', category: 'Épaules', pattern: 'pull' },
-    { name: 'Élévations frontales', category: 'Épaules', pattern: 'push' },
-    { name: 'Arnold press', category: 'Épaules', pattern: 'push' },
-    { name: 'Face pull', category: 'Épaules', pattern: 'pull' },
-    { name: 'Shrugs', category: 'Trapèzes', pattern: 'pull' },
-    { name: 'Curl barre', category: 'Biceps', pattern: 'pull' },
-    { name: 'Curl incliné', category: 'Biceps', pattern: 'pull' },
-    { name: 'Curl marteau', category: 'Biceps', pattern: 'pull' },
-    { name: 'Curl pupitre', category: 'Biceps', pattern: 'pull' },
-    { name: 'Extension triceps poulie', category: 'Triceps', pattern: 'push' },
-    { name: 'Barre au front', category: 'Triceps', pattern: 'push' },
-    { name: 'Extension triceps haltère', category: 'Triceps', pattern: 'push' },
-    { name: 'Crunch', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Crunch poulie', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Relevé de jambes', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Russian twist', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Dead bug', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Ab wheel', category: 'Abdominaux', pattern: 'core' },
-    { name: 'Planche latérale', category: 'Gainage', pattern: 'core' },
-    { name: 'Farmer walk', category: 'Conditionnement', pattern: 'carry' },
-    { name: 'Kettlebell swing', category: 'Conditionnement', pattern: 'hinge' },
-    { name: 'Battle rope', category: 'Conditionnement', pattern: 'conditioning' },
-    { name: 'Burpees', category: 'Conditionnement', pattern: 'conditioning' },
-    { name: 'Box jump', category: 'Pliométrie', pattern: 'squat' },
-    { name: 'Sauts à la corde', category: 'Cardio', pattern: 'conditioning' },
-    { name: 'Course tapis', category: 'Cardio', pattern: 'conditioning' },
-    { name: 'Vélo', category: 'Cardio', pattern: 'conditioning' },
-    { name: 'Rameur', category: 'Cardio', pattern: 'conditioning' },
-    { name: 'Mobilité hanches', category: 'Mobilité', pattern: 'mobility' },
-    { name: 'Étirement ischio-jambiers', category: 'Mobilité', pattern: 'mobility' },
-    { name: 'Rotation thoracique', category: 'Mobilité', pattern: 'mobility' }
+    { name: 'Squat', category: 'Jambes', muscle: 'legs' },
+    { name: 'Développé couché', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Soulevé de terre', category: 'Dos · chaîne postérieure', muscle: 'glutesHams' },
+    { name: 'Tractions', category: 'Dos', muscle: 'back' },
+    { name: 'Développé militaire', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Fentes', category: 'Jambes', muscle: 'legs' },
+    { name: 'Rowing barre', category: 'Dos', muscle: 'back' },
+    { name: 'Gainage', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Presse à cuisses', category: 'Jambes', muscle: 'legs' },
+    { name: 'Leg extension', category: 'Jambes', muscle: 'legs' },
+    { name: 'Leg curl', category: 'Ischio-jambiers', muscle: 'glutesHams' },
+    { name: 'Hip thrust', category: 'Fessiers', muscle: 'glutesHams' },
+    { name: 'Glute kickback', category: 'Fessiers', muscle: 'glutesHams' },
+    { name: 'Mollets debout', category: 'Mollets', muscle: 'legs' },
+    { name: 'Mollets assis', category: 'Mollets', muscle: 'legs' },
+    { name: 'Goblet squat', category: 'Jambes', muscle: 'legs' },
+    { name: 'Bulgarian split squat', category: 'Jambes', muscle: 'legs' },
+    { name: 'Soulevé de terre roumain', category: 'Ischio-jambiers', muscle: 'glutesHams' },
+    { name: 'Good morning', category: 'Ischio-jambiers', muscle: 'glutesHams' },
+    { name: 'Hip hinge', category: 'Chaîne postérieure', muscle: 'glutesHams' },
+    { name: 'Développé incliné haltères', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Développé décliné', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Écarté haltères', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Écarté poulie', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Pompes', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Dips', category: 'Triceps', muscle: 'arms' },
+    { name: 'Pull-over', category: 'Pectoraux', muscle: 'chest' },
+    { name: 'Tirage vertical', category: 'Dos', muscle: 'back' },
+    { name: 'Tirage horizontal', category: 'Dos', muscle: 'back' },
+    { name: 'Rowing haltère', category: 'Dos', muscle: 'back' },
+    { name: 'Rowing poulie basse', category: 'Dos', muscle: 'back' },
+    { name: 'T-bar row', category: 'Dos', muscle: 'back' },
+    { name: 'Pull-up prise supination', category: 'Dos', muscle: 'back' },
+    { name: 'Oiseau haltères', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Élévations latérales', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Élévations frontales', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Arnold press', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Face pull', category: 'Épaules', muscle: 'shoulders' },
+    { name: 'Shrugs', category: 'Trapèzes', muscle: 'shoulders' },
+    { name: 'Curl barre', category: 'Biceps', muscle: 'arms' },
+    { name: 'Curl incliné', category: 'Biceps', muscle: 'arms' },
+    { name: 'Curl marteau', category: 'Biceps', muscle: 'arms' },
+    { name: 'Curl pupitre', category: 'Biceps', muscle: 'arms' },
+    { name: 'Extension triceps poulie', category: 'Triceps', muscle: 'arms' },
+    { name: 'Barre au front', category: 'Triceps', muscle: 'arms' },
+    { name: 'Extension triceps haltère', category: 'Triceps', muscle: 'arms' },
+    { name: 'Crunch', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Crunch poulie', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Relevé de jambes', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Russian twist', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Dead bug', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Ab wheel', category: 'Abdominaux', muscle: 'core' },
+    { name: 'Planche latérale', category: 'Gainage', muscle: 'core' },
+    { name: 'Farmer walk', category: 'Conditionnement', muscle: 'cardio' },
+    { name: 'Kettlebell swing', category: 'Conditionnement', muscle: 'glutesHams' },
+    { name: 'Battle rope', category: 'Conditionnement', muscle: 'cardio' },
+    { name: 'Burpees', category: 'Conditionnement', muscle: 'cardio' },
+    { name: 'Box jump', category: 'Pliométrie', muscle: 'legs' },
+    { name: 'Sauts à la corde', category: 'Cardio', muscle: 'cardio' },
+    { name: 'Course tapis', category: 'Cardio', muscle: 'cardio' },
+    { name: 'Vélo', category: 'Cardio', muscle: 'cardio' },
+    { name: 'Rameur', category: 'Cardio', muscle: 'cardio' },
+    { name: 'Mobilité hanches', category: 'Mobilité', muscle: 'cardio' },
+    { name: 'Étirement ischio-jambiers', category: 'Mobilité', muscle: 'cardio' },
+    { name: 'Rotation thoracique', category: 'Mobilité', muscle: 'cardio' }
   ];
-  readonly patterns = PATTERN_ORDER;
+  readonly muscles = MUSCLE_ORDER;
   searchTerm = '';
-  selectedPattern: MovementPattern = 'squat';
+  selectedMuscle: MuscleGroup = 'legs';
   error = '';
 
-  /** Exercices de la bibliothèque pour le mouvement sélectionné, filtrés par le terme de recherche. */
-  get patternExercises(): LibraryExercise[] {
+  /** Exercices de la bibliothèque pour le groupe musculaire sélectionné, filtrés par le terme de recherche. */
+  get muscleExercises(): LibraryExercise[] {
     const term = this.searchTerm.trim().toLocaleLowerCase();
     return this.library.filter((exercise) =>
-      exercise.pattern === this.selectedPattern &&
+      exercise.muscle === this.selectedMuscle &&
       (!term || `${exercise.name} ${exercise.category}`.toLocaleLowerCase().includes(term))
     );
   }
 
-  patternCount(pattern: MovementPattern): number {
-    return this.library.filter((exercise) => exercise.pattern === pattern).length;
+  muscleCount(muscle: MuscleGroup): number {
+    return this.library.filter((exercise) => exercise.muscle === muscle).length;
   }
 
-  selectPattern(pattern: MovementPattern): void {
-    this.selectedPattern = pattern;
+  selectMuscle(muscle: MuscleGroup): void {
+    this.selectedMuscle = muscle;
   }
 
   /** Indique si un exercice de la bibliothèque a déjà été ajouté au formulaire de séance. */
@@ -267,13 +272,18 @@ export class WorkoutCreateComponent {
     return this.exercises.controls.some((control) => control.controls.name.value === name);
   }
 
-  /** Retrouve le mouvement (pattern) d'un exercice nommé, pour choisir son pictogramme. */
-  patternOf(name: string): MovementPattern | undefined {
-    return this.library.find((exercise) => exercise.name === name)?.pattern;
+  /** Retrouve le groupe musculaire d'un exercice nommé, pour choisir son pictogramme. */
+  muscleOf(name: string): MuscleGroup | undefined {
+    return this.library.find((exercise) => exercise.name === name)?.muscle;
   }
 
-  patternLabel(pattern: MovementPattern): string {
-    return PATTERN_LABELS[pattern];
+  muscleLabel(muscle: MuscleGroup): string {
+    return MUSCLE_LABELS[muscle];
+  }
+
+  /** Couleur associée à un groupe musculaire, pour teinter son icône (rail, carte, pictogramme). */
+  muscleTint(muscle: MuscleGroup | undefined): Tint {
+    return muscle ? MUSCLE_TINTS[muscle] : 'secondary';
   }
 
   /** Ajoute un exercice de la bibliothèque au formulaire de séance, avec des valeurs par défaut. */

@@ -135,12 +135,12 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .module-icon { display: grid; place-items: center; flex: 0 0 3.1rem; width: 3.1rem; height: 3.1rem; border-radius: 1rem; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 16%, var(--bg-surface)); color: var(--module-tint, var(--accent-secondary)); }
 .module-icon svg { width: 1.5rem; height: 1.5rem; }
 .module-badge { font-size: .66rem; font-weight: 800; letter-spacing: .02em; white-space: nowrap; padding: .22rem .55rem; border-radius: 999px; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 16%, var(--bg-surface)); color: var(--module-tint, var(--accent-secondary)); }
-.module-rail-item.c-primary, .module-detail-card.c-primary { --module-tint: var(--accent-primary); }
-.module-rail-item.c-secondary, .module-detail-card.c-secondary { --module-tint: var(--accent-secondary); }
-.module-rail-item.c-success, .module-detail-card.c-success { --module-tint: var(--color-success-500); }
-.module-rail-item.c-warning, .module-detail-card.c-warning { --module-tint: var(--color-warning-500); }
-.module-rail-item.c-info, .module-detail-card.c-info { --module-tint: var(--color-info-500); }
-.module-rail-item.c-danger, .module-detail-card.c-danger { --module-tint: var(--color-danger-500); }
+.module-rail-item.c-primary, .module-detail-card.c-primary, .pattern-rail-item.c-primary, .library-item.c-primary, .exercise-pictogram.c-primary { --module-tint: var(--accent-primary); }
+.module-rail-item.c-secondary, .module-detail-card.c-secondary, .pattern-rail-item.c-secondary, .library-item.c-secondary, .exercise-pictogram.c-secondary { --module-tint: var(--accent-secondary); }
+.module-rail-item.c-success, .module-detail-card.c-success, .pattern-rail-item.c-success, .library-item.c-success, .exercise-pictogram.c-success { --module-tint: var(--color-success-500); }
+.module-rail-item.c-warning, .module-detail-card.c-warning, .pattern-rail-item.c-warning, .library-item.c-warning, .exercise-pictogram.c-warning { --module-tint: var(--color-warning-500); }
+.module-rail-item.c-info, .module-detail-card.c-info, .pattern-rail-item.c-info, .library-item.c-info, .exercise-pictogram.c-info { --module-tint: var(--color-info-500); }
+.module-rail-item.c-danger, .module-detail-card.c-danger, .pattern-rail-item.c-danger, .library-item.c-danger, .exercise-pictogram.c-danger { --module-tint: var(--color-danger-500); }
 .module-preview-list { display: flex; flex-direction: column; gap: .55rem; margin-top: .9rem; padding-top: .9rem; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
 .module-preview-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; font-size: .8rem; font-weight: 600; }
 .module-preview-row .text-secondary { font-weight: 500; white-space: nowrap; }
@@ -307,10 +307,10 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .pattern-shell { display: flex; gap: .8rem; align-items: flex-start; margin-top: 1rem; }
 .pattern-rail { display: flex; flex-direction: column; gap: .2rem; flex: 0 0 7.4rem; }
 .pattern-rail-item { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .4rem .45rem; background: transparent; border: none; border-radius: .6rem; color: var(--text-secondary); font: inherit; font-weight: 700; font-size: .74rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
-.pattern-rail-item:hover { background: var(--bg-surface-alt); color: var(--text-primary); }
-.pattern-rail-item.active { background: color-mix(in srgb, var(--accent-secondary) 16%, transparent); color: var(--text-primary); }
-.pattern-rail-item.active .pattern-rail-icon { background: var(--accent-secondary); color: #fff; }
-.pattern-rail-icon { display: grid; place-items: center; flex: 0 0 1.9rem; width: 1.9rem; height: 1.9rem; border-radius: .55rem; background: color-mix(in srgb, var(--accent-secondary) 14%, var(--bg-surface-alt)); color: var(--accent-secondary); transition: background .15s ease, color .15s ease; }
+.pattern-rail-item:hover { background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 10%, transparent); color: var(--text-primary); }
+.pattern-rail-item.active { background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 17%, transparent); color: var(--text-primary); box-shadow: inset 2px 0 0 var(--module-tint, var(--accent-secondary)); }
+.pattern-rail-item.active .pattern-rail-icon { background: var(--module-tint, var(--accent-secondary)); color: #fff; box-shadow: 0 3px 8px color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 40%, transparent); }
+.pattern-rail-icon { display: grid; place-items: center; flex: 0 0 1.9rem; width: 1.9rem; height: 1.9rem; border-radius: .55rem; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 14%, var(--bg-surface-alt)); color: var(--module-tint, var(--accent-secondary)); transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
 .pattern-rail-icon svg { width: 1.05rem; height: 1.05rem; }
 .pattern-rail-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pattern-rail-count { font-size: .66rem; font-weight: 700; color: var(--text-secondary); }
@@ -322,10 +322,10 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .library-grid .library-pattern-tag { display: none; }
 .library-grid .library-added-badge { position: static; order: 3; flex: 0 0 auto; margin-left: auto; }
 .library-item { position: relative; width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; border: 1px solid var(--border-default); border-radius: .9rem; padding: .75rem .8rem; background: var(--bg-surface); color: var(--text-primary); text-align: left; cursor: pointer; transition: border-color .2s, transform .2s, background .2s; }
-.library-item:hover { border-color: var(--accent-secondary); transform: translateY(-1px); }
+.library-item:hover { border-color: var(--module-tint, var(--accent-secondary)); box-shadow: 0 6px 16px color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 18%, transparent); transform: translateY(-2px); }
 .library-item.added { border-color: color-mix(in srgb, var(--color-success-500) 45%, var(--border-default)); background: color-mix(in srgb, var(--color-success-500) 7%, var(--bg-surface)); }
 .library-item strong { display: block; font-size: .82rem; line-height: 1.25; }
-.library-pictogram { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: .65rem; background: color-mix(in srgb, var(--accent-secondary) 14%, var(--bg-surface-alt)); color: var(--accent-secondary); }
+.library-pictogram { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: .65rem; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 15%, var(--bg-surface-alt)); color: var(--module-tint, var(--accent-secondary)); transition: background .2s ease, color .2s ease; }
 .library-pictogram svg { width: 1.3rem; height: 1.3rem; }
 .library-pattern-tag { font-size: .64rem; font-weight: 700; letter-spacing: .02em; color: var(--text-secondary); }
 .library-added-badge { position: absolute; top: .5rem; right: .5rem; display: grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--color-success-500); color: #fff; font-size: .68rem; font-weight: 700; }
@@ -339,7 +339,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .exercise-row { grid-template-columns: 2.3rem 2fr 1fr 1fr 1fr auto; align-items: center; }
 .exercise-row .mat-mdc-form-field { width: 100%; }
 .exercise-number { color: var(--accent-secondary); font-weight: 800; text-align: center; }
-.exercise-pictogram { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: .6rem; background: color-mix(in srgb, var(--accent-secondary) 14%, var(--bg-surface-alt)); color: var(--accent-secondary); }
+.exercise-pictogram { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: .6rem; background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 14%, var(--bg-surface-alt)); color: var(--module-tint, var(--accent-secondary)); }
 .exercise-pictogram svg { width: 1.15rem; height: 1.15rem; }
 .builder-actions, .timer-actions { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
 .teal-outline { color: var(--accent-secondary) !important; border-color: var(--accent-secondary) !important; margin-right: auto; }
