@@ -31,11 +31,6 @@ const MUSCLE_LABELS: Record<MuscleGroup, string> = {
   shoulders: 'Épaules', arms: 'Bras', core: 'Abdominaux', cardio: 'Cardio & Mobilité',
 };
 const MUSCLE_ORDER: MuscleGroup[] = ['legs', 'glutesHams', 'back', 'chest', 'shoulders', 'arms', 'core', 'cardio'];
-type Tint = 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'danger';
-const MUSCLE_TINTS: Record<MuscleGroup, Tint> = {
-  legs: 'primary', glutesHams: 'warning', back: 'info', chest: 'danger',
-  shoulders: 'secondary', arms: 'success', core: 'primary', cardio: 'warning',
-};
 
 @Component({
   standalone: true,
@@ -66,7 +61,7 @@ const MUSCLE_TINTS: Record<MuscleGroup, Tint> = {
             <div class="exercise-list" formArrayName="exercises">
               @for (exercise of exercises.controls; track exercise; let index = $index) {
                 <div class="exercise-row" [formGroupName]="index">
-                  <span class="exercise-pictogram" [class]="'c-' + muscleTint(muscleOf(exercise.controls.name.value))" [attr.aria-label]="exercise.controls.name.value" aria-hidden="true">
+                  <span class="exercise-pictogram" [attr.aria-label]="exercise.controls.name.value" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                       @switch (muscleOf(exercise.controls.name.value)) {
                         @case ('legs') { <path d="M8 4h8"/><path d="M10 4l-1.5 16"/><path d="M14 4l1.5 16"/><path d="M6.8 20h3"/><path d="M14.2 20h3"/> }
@@ -110,7 +105,7 @@ const MUSCLE_TINTS: Record<MuscleGroup, Tint> = {
           <div class="pattern-shell">
             <nav class="pattern-rail" aria-label="Filtrer par groupe musculaire">
               @for (muscle of muscles; track muscle) {
-                <button type="button" class="pattern-rail-item" [class]="'c-' + muscleTint(muscle)" [class.active]="muscle === selectedMuscle" (click)="selectMuscle(muscle)">
+                <button type="button" class="pattern-rail-item" [class.active]="muscle === selectedMuscle" (click)="selectMuscle(muscle)">
                   <span class="pattern-rail-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                       @switch (muscle) {
@@ -133,7 +128,7 @@ const MUSCLE_TINTS: Record<MuscleGroup, Tint> = {
 
             <div class="library-grid">
               @for (exercise of muscleExercises; track exercise.name) {
-                <button type="button" class="library-item" [class]="'c-' + muscleTint(exercise.muscle)" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
+                <button type="button" class="library-item" [class.added]="isAdded(exercise.name)" (click)="addExercise(exercise.name)">
                   @if (isAdded(exercise.name)) { <span class="library-added-badge" aria-hidden="true">✓</span> }
                   <span class="library-pictogram" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -279,11 +274,6 @@ export class WorkoutCreateComponent {
 
   muscleLabel(muscle: MuscleGroup): string {
     return MUSCLE_LABELS[muscle];
-  }
-
-  /** Couleur associée à un groupe musculaire, pour teinter son icône (rail, carte, pictogramme). */
-  muscleTint(muscle: MuscleGroup | undefined): Tint {
-    return muscle ? MUSCLE_TINTS[muscle] : 'secondary';
   }
 
   /** Ajoute un exercice de la bibliothèque au formulaire de séance, avec des valeurs par défaut. */
