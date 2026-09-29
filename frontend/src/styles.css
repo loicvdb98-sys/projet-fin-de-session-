@@ -289,6 +289,19 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .exercise-number { color: var(--accent-secondary); font-weight: 800; text-align: center; }
 .exercise-pictogram { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: .6rem; background: color-mix(in srgb, var(--accent-secondary) 14%, var(--bg-surface-alt)); color: var(--accent-secondary); }
 .exercise-pictogram svg { width: 1.15rem; height: 1.15rem; }
+/* Page « Créer une séance » : la carte du formulaire est étroite (bibliothèque à côté),
+   les champs passent donc sur deux lignes pour que dates et libellés ne soient pas tronqués. */
+.workout-page .workout-session-fields { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
+.workout-page .workout-session-fields > :first-child { grid-column: 1 / -1; }
+.workout-page .exercise-row { grid-template-columns: 2.3rem repeat(3, minmax(0, 1fr)) auto; grid-template-areas: "icon name name name remove" ". sets reps rest ."; row-gap: .15rem; padding-bottom: .6rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 70%, transparent); }
+.workout-page .exercise-row:last-child { border-bottom: 0; }
+.workout-page .exercise-row { --mat-form-field-container-height: 46px; --mat-form-field-container-vertical-padding: 11px; row-gap: .7rem; }
+.workout-page .exercise-row > :nth-child(1) { grid-area: icon; }
+.workout-page .exercise-row > :nth-child(2) { grid-area: name; }
+.workout-page .exercise-row > :nth-child(3) { grid-area: sets; }
+.workout-page .exercise-row > :nth-child(4) { grid-area: reps; }
+.workout-page .exercise-row > :nth-child(5) { grid-area: rest; }
+.workout-page .exercise-row > :nth-child(6) { grid-area: remove; }
 .builder-actions, .timer-actions { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
 .teal-outline { color: var(--accent-secondary) !important; border-color: var(--accent-secondary) !important; margin-right: auto; }
 .danger-action { color: var(--color-danger-600) !important; font-size: 1.4rem; }
@@ -380,15 +393,17 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
 :focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 3px; }
 @media (max-width: 800px) { .workout-session-fields, .exercise-row { grid-template-columns: 1fr 1fr; } .exercise-row .exercise-number, .exercise-row .exercise-pictogram { display: none; } .timer-card { flex-wrap: wrap; gap: 1rem; } .timer-value { margin-left: 0; } }
 @media (max-width: 560px) { .library-grid { grid-template-columns: 1fr; } .pattern-shell { flex-direction: column; align-items: stretch; } .pattern-rail { flex-direction: row; flex: 0 0 auto; width: 100%; overflow-x: auto; gap: .3rem; } .pattern-rail-item { flex: 0 0 auto; width: auto; } .pattern-rail-label { white-space: nowrap; } }
-@media (max-width: 800px) { .workout-layout { grid-template-columns: 1fr; } }
+@media (max-width: 800px) { .workout-layout { grid-template-columns: 1fr; } .workout-page .exercise-row { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; grid-template-areas: "name name name remove" "sets reps rest ."; } }
 @media (min-width: 901px) {
   .workout-page { height: calc(100vh - 2 * clamp(2rem, 5vw, 4rem)); display: flex; flex-direction: column; overflow: hidden; }
   .workout-page .page-heading { flex: 0 0 auto; }
   .workout-page .workout-layout { flex: 1; min-height: 0; }
   .workout-form-card, .workout-page .exercise-library { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-  .workout-form-card form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  .workout-form-card .exercise-list { flex: 1; min-height: 0; max-height: none; }
-  .workout-form-card .builder-actions { flex: 0 0 auto; }
+  /* Tout le formulaire défile dans sa carte (et pas seulement la liste d'exercices, qui
+     n'avait presque plus de place sur un écran de portable) ; le bouton reste visible en bas. */
+  .workout-form-card form { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; margin-right: -.5rem; padding-right: .5rem; }
+  .workout-form-card .exercise-list { flex: 0 0 auto; max-height: none; overflow: visible; }
+  .workout-form-card .builder-actions { flex: 0 0 auto; position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding-top: .9rem; background: linear-gradient(to top, var(--bg-surface-alt) 75%, transparent); }
   .workout-page .pattern-shell { flex: 1; min-height: 0; align-items: stretch; }
   .workout-page .pattern-rail { overflow-y: auto; }
   .workout-page .library-grid { flex: 1; min-height: 0; max-height: none; }
@@ -450,7 +465,8 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
 /* Petits écrans : le badge d'une fiche passe sous le titre (qui garde toute la largeur),
    et la carte « Prochaine séance » place son lien sous le texte. */
 @media (max-width: 560px) {
-  .workout-session-fields { grid-template-columns: 1fr; }
+  .workout-session-fields, .workout-page .workout-session-fields { grid-template-columns: 1fr; }
+  .workout-page .exercise-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "name name remove" "sets reps ." "rest . ."; }
   .module-detail-card { padding: 1.35rem 1.1rem; }
   .module-detail-header { flex-wrap: wrap; gap: .5rem .8rem; }
   .module-detail-header > div { flex: 1 1 calc(100% - 3.6rem); min-width: 0; }

@@ -75,10 +75,10 @@ const MUSCLE_ORDER: MuscleGroup[] = ['legs', 'glutesHams', 'back', 'chest', 'sho
                       }
                     </svg>
                   </span>
-                  <mat-form-field appearance="outline"><mat-label>Exercice</mat-label><input matInput formControlName="name"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Séries</mat-label><input matInput type="number" formControlName="sets"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Répétitions</mat-label><input matInput type="number" formControlName="repetitions"></mat-form-field>
-                  <mat-form-field appearance="outline"><mat-label>Repos (sec)</mat-label><input matInput type="number" formControlName="rest_seconds"></mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Exercice</mat-label><input matInput formControlName="name"></mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Séries</mat-label><input matInput type="number" formControlName="sets"></mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Répétitions</mat-label><input matInput type="number" formControlName="repetitions"></mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Repos (sec)</mat-label><input matInput type="number" formControlName="rest_seconds"></mat-form-field>
                   <button mat-icon-button type="button" class="danger-action" (click)="removeExercise(index)" aria-label="Supprimer l’exercice">×</button>
                 </div>
               } @empty {
