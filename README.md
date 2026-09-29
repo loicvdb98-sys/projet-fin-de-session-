@@ -58,8 +58,9 @@ L'application est servie sur `http://localhost:4200`.
 ## Tests
 
 ```powershell
-# Backend
+# Backend (tests unitaires et tests d'API sur une base SQLite en mémoire)
 cd backend
+py -m pip install -r requirements-dev.txt
 py -m pytest
 
 # Frontend

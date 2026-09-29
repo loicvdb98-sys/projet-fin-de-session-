@@ -24,13 +24,14 @@ backend/app/
 ├── rate_limit.py     Limitation du nombre de requêtes
 ├── models/           Modèles SQLAlchemy (une classe = une table)
 ├── schemas/          Schémas Pydantic (validation des requêtes/réponses HTTP)
-├── routers/           Endpoints REST regroupés par domaine métier
-└── services/          Logique métier réutilisable, indépendante de FastAPI
+├── routers/           Endpoints REST regroupés par domaine métier, avec leurs règles métier
+└── services/          Utilitaires partagés indépendants de FastAPI (ex. comparaison de dates)
 ```
 
-Flux typique d'une requête : `router` reçoit la requête → valide l'entrée avec un
-`schema` → délègue à un `service` ou manipule directement un `model` via la
-session SQLAlchemy → renvoie un `schema` de réponse.
+Flux typique d'une requête : `router` reçoit la requête → l'entrée est validée par
+un `schema` Pydantic → le routeur vérifie les droits (`require_roles`, propriétaire
+de la ressource) et les règles métier (capacité, dates, statuts) → il lit ou écrit
+les `models` via la session SQLAlchemy → il renvoie un `schema` de réponse.
 
 ## Frontend (`frontend/src/app/`)
 
@@ -40,9 +41,8 @@ Organisation par fonctionnalité (feature-based), plutôt que par type de fichie
 frontend/src/app/
 ├── core/         Bootstrap de l'application : app.component, app.config, routes, guard d'authentification
 ├── shared/        Code transverse réutilisé par plusieurs fonctionnalités
-│   ├── components/  Composants UI génériques (toasts, bandeau démo)
-│   ├── services/    Services transverses (toast, thème, statistiques)
-│   └── data/        Données de démonstration (mode DEMO_MODE)
+│   ├── components/  Composants UI génériques (conteneur des toasts)
+│   └── services/    Services transverses (toast, thème, statistiques)
 └── features/       Un dossier par domaine métier, page + service co-localisés
     ├── auth/            login, auth.service, auth.interceptor
     ├── dashboard/       tableau de bord
@@ -66,6 +66,23 @@ Angular qui lui est propre (ex: `features/goals/goals.component.ts` et
 fonctionnalités (ex: le tableau de bord agrège des données de plusieurs
 domaines), il reste dans le dossier de la fonctionnalité qui en est
 responsable et les autres l'importent via les alias TypeScript.
+
+### Présentation des pages (style « module »)
+
+Les écrans de liste (Séances, Participations, Statistiques, Objectifs, Journal,
+Programmes, Notifications, Sportifs, Comptes, Profil) partagent la même structure,
+définie dans `styles.css` :
+
+- un éventuel résumé chiffré (`.cards` / `.stat-card`) ;
+- un rail à gauche (`.module-rail`, un bouton `.module-rail-item` par élément, groupés
+  par `.app-rail-section`) ;
+- la fiche de l'élément sélectionné (`.module-detail-card`), qui contient aussi les
+  formulaires de création (`.module-form`) et les actions (`.action-chip`).
+
+La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info`,
+`c-success`, `c-warning` ou `c-danger`. Sur ordinateur, une page portant la classe
+`module-page` tient sur un seul écran (le rail et la fiche défilent en interne) ; sous
+900 px, la navigation passe dans un menu burger et le rail devient une bande horizontale.
 
 ### Alias d'imports
 
@@ -98,3 +115,13 @@ transverse utilise l'alias correspondant.
 
 Voir [ROLES.md](ROLES.md) pour le détail de ce que chaque rôle (sportif, coach,
 admin) peut voir et faire dans l'application.
+
+## Tests
+
+- **Backend** (`backend/tests/`, Pytest) : tests unitaires (sécurité, schémas, dates)
+  et tests d'API avec le `TestClient` de FastAPI. Les tests d'API tournent sur une base
+  SQLite en mémoire recréée pour chaque test (`tests/conftest.py`), jamais sur la base
+  SQL Server : inscription, permissions sur les comptes, séances et inscriptions,
+  statistiques, objectifs, records et journal.
+- **Frontend** (`*.spec.ts`, Vitest) : services (authentification, thème, toasts) et
+  logique des composants (tableau de bord, séances à venir/passées, objectifs).

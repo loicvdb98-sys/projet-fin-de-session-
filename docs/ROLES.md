@@ -1,9 +1,11 @@
 # Rôles et permissions
 
 SportPlan distingue trois rôles, stockés dans `users.role` (`sportif`,
-`coach`, `admin`). Le rôle est fixé à l'inscription (toujours `sportif`,
-voir [`POST /auth/register`](../backend/app/routers/auth.py)) et ne peut être
-changé ensuite que par un admin, depuis [Gestion des comptes](#admin).
+`coach`, `admin`). Le rôle est fixé à l'inscription (toujours `sportif` :
+[`POST /auth/register`](../backend/app/routers/auth.py) refuse tout autre rôle
+avec une 403) et ne peut être changé ensuite que par un admin, depuis
+[Gestion des comptes](#admin). Personne ne peut changer son propre rôle ni
+désactiver son propre compte, même via l'API.
 
 Le frontend ne fait jamais confiance à une valeur de rôle mise en cache côté
 client pour la sécurité : chaque écran protégé correspond à un endpoint qui
@@ -23,18 +25,23 @@ Rôle par défaut. Peut :
 - Voir ses participations passées/à venir et se désinscrire
   (page **Mes participations**), avec un résumé (à venir, terminées, taux
   de présence).
-- Recevoir un rappel (toast) quand une séance à laquelle il est inscrit
-  commence dans moins de 3h (voir `AppComponent.checkUpcomingReminders`).
+- Recevoir un rappel (toast), à l'ouverture de l'application, quand une séance
+  à laquelle il est inscrit commence dans moins de 3h (voir
+  `AppComponent.checkUpcomingReminders`).
 - Suivre ses performances, objectifs, programmes et son journal
   d'entraînement — toujours restreints à ses propres données côté backend
-  (`WHERE user_id = current_user.id`).
+  (`WHERE user_id = current_user.id`) : mettre à jour la progression d'un
+  objectif (avec, pour un objectif en séances, le nombre de séances suivies
+  depuis le 1er du mois), supprimer un record, modifier ou supprimer un bilan
+  de son journal.
 - Sur la page **Statistiques**, consulter en plus son propre historique
   d'assiduité (module **Assiduité**), calculé sur ses participations aux
   séances passées.
 - Modifier son propre profil et mot de passe.
 
 Ne peut pas : créer/modifier/supprimer une séance, voir la liste des
-sportifs suivis, gérer les comptes.
+sportifs suivis, gérer les comptes, ni modifier son statut de présence (un
+sportif marqué absent ne peut pas se remettre « inscrit »).
 
 ## Coach
 
@@ -48,7 +55,10 @@ Tout ce qu'un sportif peut faire, plus :
 - Suivre les présences : depuis **Vos séances**, le bouton **Présences**
   liste les inscrits d'une séance et permet de les marquer
   Inscrit / Présent / Absent.
-- Voir la liste de ses sportifs suivis (page **Sportifs**) et leur détail.
+- Voir la liste des sportifs (page **Sportifs**) et leur suivi détaillé.
+- Lire les bilans de journal écrits après ses séances (avec le nom du
+  sportif) et y ajouter son commentaire — sans pouvoir modifier ni supprimer
+  le bilan lui-même.
 - Sur la page **Participations**, voir toutes les inscriptions des séances
   qu'il anime (nom du sportif, statut), et sur **Statistiques**, le taux de
   présence par séance (module **Assiduité**) et les performances de ses
@@ -67,8 +77,9 @@ restriction de propriété :
 - Marquer les présences sur n'importe quelle séance.
 - **Gestion des comptes** (`/admin/users`, page réservée via `adminGuard`) :
   liste tous les comptes, change leur rôle (sportif/coach/admin) et
-  active/désactive un compte. L'admin ne peut pas modifier sa propre ligne
-  depuis cet écran, pour éviter de se retirer ses propres droits par erreur.
+  active/désactive un compte. L'admin ne peut pas modifier son propre rôle ni
+  désactiver son propre compte (ni depuis cet écran, ni via l'API), pour
+  éviter de se retirer ses propres droits par erreur.
 
 ## Tableau récapitulatif
 
@@ -78,6 +89,7 @@ restriction de propriété :
 | Créer une séance | ❌ | ✅ (les siennes) | ✅ |
 | Modifier/annuler une séance | ❌ | ✅ (les siennes) | ✅ (toutes) |
 | Marquer une présence | ❌ | ✅ (ses séances) | ✅ (toutes) |
+| Commenter un bilan de journal | ❌ | ✅ (ses séances) | ✅ |
 | Voir la liste des sportifs | ❌ | ✅ | ✅ |
 | Gérer les comptes (rôle, actif/inactif) | ❌ | ❌ | ✅ |
 
@@ -88,3 +100,9 @@ restriction de propriété :
 | Écrans coach | `coachGuard`, `AuthService.isCoachOrAdmin()` | `require_roles("coach", "admin")` |
 | Écran admin | `adminGuard`, `AuthService.isAdmin()` | vérifications `current.role == "admin"` dans `routers/users.py` |
 | Propriété d'une séance | `SessionsComponent.canManageSession()` | `if user.role == "coach" and item.coach_id != user.id` dans `routers/sessions.py` |
+| Inscription toujours « sportif » | le formulaire envoie `role: 'sportif'` | 403 si un autre rôle est demandé dans `routers/auth.py` |
+| Pas de modification de son propre rôle / statut | ligne « Votre compte » non modifiable dans Comptes | 403 dans `update_user` (`routers/users.py`) |
+| Présence réservée au coach de la séance | bouton **Présences** visible pour le coach | 403 dans `update_participation` (`routers/participations.py`) |
+| Bilan : l'auteur modifie/supprime, le coach commente | actions de la fiche dans `JournalComponent` | `update_journal` / `delete_journal` (`routers/journal.py`) |
+
+Ces règles sont couvertes par les tests d'API de `backend/tests/` (`test_api_*.py`).

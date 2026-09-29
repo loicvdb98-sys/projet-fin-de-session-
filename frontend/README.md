@@ -18,7 +18,7 @@ npm test          # exécute les tests unitaires (Vitest)
 ```text
 src/app/
 ├── core/        bootstrap de l'application, routes, guard d'authentification
-├── shared/      composants, services et données réutilisés par plusieurs fonctionnalités
+├── shared/      composants et services réutilisés par plusieurs fonctionnalités
 └── features/    un dossier par domaine métier (page + service co-localisés)
 ```
 
@@ -29,11 +29,3 @@ Alias TypeScript disponibles (voir `tsconfig.json`) : `@core/*`, `@shared/*`,
 
 L'URL de l'API backend est définie dans [`src/app/core/api.config.ts`](src/app/core/api.config.ts).
 Par défaut elle pointe vers `http://localhost:8000`.
-
-## Mode démonstration
-
-Certains services (`user.service.ts`, `goal.service.ts`, `performance.service.ts`,
-`statistics.service.ts`) peuvent servir des données statiques définies dans
-[`src/app/shared/data/demo-data.ts`](src/app/shared/data/demo-data.ts) lorsque
-`DEMO_MODE` est actif, ce qui permet de faire fonctionner l'interface sans API
-backend disponible (démonstration, développement isolé).
