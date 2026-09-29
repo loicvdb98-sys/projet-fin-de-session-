@@ -15,9 +15,10 @@ import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angul
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { TitleStrategy, provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
+import { SportPlanTitleStrategy } from './title.strategy';
 import { authInterceptor } from '@features/auth/auth.interceptor';
 
 registerLocaleData(localeFr);
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    { provide: TitleStrategy, useClass: SportPlanTitleStrategy },
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimationsAsync()
   ]
