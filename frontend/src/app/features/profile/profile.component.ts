@@ -64,7 +64,7 @@ type Section = 'info' | 'activity' | 'appearance' | 'security';
               <form class="module-form" [formGroup]="form" (ngSubmit)="save(user.id)">
                 <mat-form-field appearance="outline"><mat-label>Nom complet</mat-label><input matInput formControlName="full_name"><mat-error>Le nom est obligatoire.</mat-error></mat-form-field>
                 <mat-form-field appearance="outline"><mat-label>Adresse email</mat-label><input matInput [value]="user.email" disabled><mat-hint>L’adresse email ne peut pas être modifiée ici.</mat-hint></mat-form-field>
-                <div class="form-actions"><button mat-flat-button class="primary-action" type="submit" [disabled]="form.invalid || saving">Enregistrer les modifications</button>@if (message) { <span class="success-message inline-message">{{ message }}</span> }</div>
+                <div class="form-actions"><button mat-flat-button class="primary-action" type="submit" [disabled]="form.invalid || saving">Enregistrer les modifications</button>@if (message) { <span class="inline-message" [class]="saveFailed ? 'error' : 'success-message'" role="status">{{ message }}</span> }</div>
               </form>
             </div>
           }
@@ -76,9 +76,15 @@ type Section = 'info' | 'activity' | 'appearance' | 'security';
               </div>
               @if (stats$ | async; as stats) {
                 <div class="profile-stats">
-                  <div><strong>{{ stats.total_sessions }}</strong><span>Séances créées</span></div>
-                  <div><strong>{{ stats.total_participations }}</strong><span>Participations</span></div>
-                  <div><strong>{{ stats.attended_sessions }}</strong><span>Séances suivies</span></div>
+                  @if (user.role === 'sportif') {
+                    <div><strong>{{ stats.total_participations }}</strong><span>Inscriptions</span></div>
+                    <div><strong>{{ stats.attended_sessions }}</strong><span>Séances suivies</span></div>
+                    <div><strong>{{ stats.upcoming_sessions }}</strong><span>À venir</span></div>
+                  } @else {
+                    <div><strong>{{ stats.total_sessions }}</strong><span>Séances animées</span></div>
+                    <div><strong>{{ stats.total_participations }}</strong><span>Participations</span></div>
+                    <div><strong>{{ stats.attended_sessions }}</strong><span>Présences</span></div>
+                  }
                   <div><strong>{{ stats.total_performances }}</strong><span>Performances</span></div>
                 </div>
               } @else { <p class="text-secondary">Les statistiques seront disponibles après votre première activité.</p> }
@@ -104,7 +110,7 @@ type Section = 'info' | 'activity' | 'appearance' | 'security';
               <form class="module-form" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
                 <mat-form-field appearance="outline"><mat-label>Mot de passe actuel</mat-label><input matInput type="password" formControlName="current_password"></mat-form-field>
                 <mat-form-field appearance="outline"><mat-label>Nouveau mot de passe</mat-label><input matInput type="password" formControlName="new_password"><mat-hint>Minimum 12 caractères.</mat-hint></mat-form-field>
-                <div class="form-actions"><button mat-flat-button class="primary-action" type="submit" [disabled]="passwordForm.invalid">Modifier le mot de passe</button>@if (passwordMessage) { <span class="success-message inline-message">{{ passwordMessage }}</span> }</div>
+                <div class="form-actions"><button mat-flat-button class="primary-action" type="submit" [disabled]="passwordForm.invalid">Modifier le mot de passe</button>@if (passwordMessage) { <span class="inline-message" [class]="passwordFailed ? 'error' : 'success-message'" role="status">{{ passwordMessage }}</span> }</div>
               </form>
               <div class="module-detail-actions">
                 <a class="action-chip" routerLink="/login">
@@ -136,6 +142,8 @@ export class ProfileComponent {
   saving = false;
   message = '';
   passwordMessage = '';
+  saveFailed = false;
+  passwordFailed = false;
   constructor() { this.user$.subscribe(user => this.form.patchValue({ full_name: user.full_name })); }
   initials(name: string): string { return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join(''); }
   roleLabel(role: string): string { return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif'; }
@@ -145,8 +153,8 @@ export class ProfileComponent {
     if (this.form.invalid) return;
     this.saving = true; this.message = '';
     this.service.update(id, this.form.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
-      next: () => { this.saving = false; this.message = 'Profil mis à jour.'; },
-      error: () => { this.saving = false; this.message = 'La mise à jour a échoué. Réessayez.'; }
+      next: () => { this.saving = false; this.saveFailed = false; this.message = 'Profil mis à jour.'; },
+      error: () => { this.saving = false; this.saveFailed = true; this.message = 'La mise à jour a échoué. Réessayez.'; }
     });
   }
 
@@ -155,8 +163,14 @@ export class ProfileComponent {
     if (this.passwordForm.invalid) return;
     const { current_password, new_password } = this.passwordForm.getRawValue();
     this.auth.changePassword(current_password, new_password).pipe(markForCheck(this.cd)).subscribe({
-      next: () => { this.passwordForm.reset(); this.passwordMessage = 'Mot de passe modifié avec succès.'; },
-      error: (error) => { this.passwordMessage = error?.error?.detail || 'Impossible de modifier le mot de passe.'; }
+      next: () => { this.passwordForm.reset(); this.passwordFailed = false; this.passwordMessage = 'Mot de passe modifié avec succès.'; },
+      error: (error) => {
+        this.passwordFailed = true;
+        // detail est une chaîne pour les erreurs métier (ex. mot de passe actuel incorrect),
+        // une liste pour les erreurs de validation (422) : on n'affiche alors qu'un message générique.
+        const detail = error?.error?.detail;
+        this.passwordMessage = typeof detail === 'string' ? detail : 'Impossible de modifier le mot de passe.';
+      }
     });
   }
 }
