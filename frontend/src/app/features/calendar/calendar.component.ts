@@ -18,6 +18,8 @@ interface CalendarDay {
   isToday: boolean;
   isSelected: boolean;
   sessions: SportSession[];
+  /** Vrai si l'utilisateur est inscrit à au moins une séance ce jour-là. */
+  mine: boolean;
 }
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -53,6 +55,8 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
             [class.outside]="!day.inCurrentMonth"
             [class.today]="day.isToday"
             [class.selected]="day.isSelected"
+            [class.mine]="day.mine"
+            [attr.aria-label]="(day.date | date:'EEEE d MMMM') + (day.sessions.length ? ' : ' + day.sessions.length + ' séance(s)' : '') + (day.mine ? ', vous êtes inscrit' : '')"
             (click)="selectDay(day)"
           >
             <span class="calendar-day-number">{{ day.date.getDate() }}</span>
@@ -62,6 +66,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
           </button>
         }
       </div>
+      <p class="calendar-legend text-secondary"><span class="calendar-legend-mark" aria-hidden="true"></span> Jour où vous êtes inscrit à une séance</p>
 
       <h2 class="section-title">
         Séances du {{ selectedDate | date:'EEEE dd MMMM' }}
@@ -78,6 +83,8 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                 </span>
                 @if (isRegistered(session.id)) {
                   <span class="status-badge success">Inscrit</span>
+                } @else if (isPast(session)) {
+                  <span class="status-badge">Terminée</span>
                 } @else {
                   <span class="status-badge" [class]="remainingSpots(session) > 0 ? 'info' : 'danger'">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
                 }
@@ -89,7 +96,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                 <p class="session-coach">Coach : {{ session.coach_name }}</p>
                 @if (session.description) { <p class="text-secondary">{{ session.description }}</p> }
               </mat-card-content>
-              @if (!isRegistered(session.id)) {
+              @if (!isRegistered(session.id) && !isPast(session)) {
                 <mat-card-actions>
                   <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
                 </mat-card-actions>
@@ -175,6 +182,11 @@ export class CalendarComponent {
     return this.participations.some((p) => p.session_id === sessionId && p.user_id === this.currentUserId);
   }
 
+  /** Vrai si la séance a déjà commencé (inscription impossible). */
+  isPast(session: SportSession): boolean {
+    return new Date(session.starts_at).getTime() <= Date.now();
+  }
+
   /** Places encore disponibles pour une séance (jamais négatif). */
   remainingSpots(session: SportSession): number {
     return Math.max(0, session.capacity - session.registered_count);
@@ -191,7 +203,7 @@ export class CalendarComponent {
         this.toast.success('Inscription confirmée.');
         this.rebuild();
       },
-      error: () => this.toast.error('Impossible de vous inscrire à cette séance.')
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de vous inscrire à cette séance.')
     });
   }
 
@@ -236,6 +248,7 @@ export class CalendarComponent {
         isToday: this.sameDay(date, today),
         isSelected: this.sameDay(date, this.selectedDate),
         sessions: byDay.get(this.dayKey(date)) ?? [],
+        mine: (byDay.get(this.dayKey(date)) ?? []).some((session) => this.isRegistered(session.id)),
       };
     });
     this.selectedDaySessions = byDay.get(this.dayKey(this.selectedDate)) ?? [];

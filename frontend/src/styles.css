@@ -379,6 +379,10 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .calendar-day-number { font-size: .85rem; font-weight: 600; }
 .calendar-day-badge { position: absolute; top: .4rem; right: .4rem; display: grid; place-items: center; min-width: 1.15rem; height: 1.15rem; padding: 0 .3rem; border-radius: 999px; background: rgb(14 165 233 / 15%); color: var(--color-info-500); font-size: .66rem; font-weight: 800; }
 .calendar-day-badge.many { background: color-mix(in srgb, var(--accent-secondary) 18%, transparent); color: var(--accent-secondary); }
+.calendar-day.mine { border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-default)); }
+.calendar-day.mine .calendar-day-badge { background: var(--accent-primary); color: #fff; }
+.calendar-legend { display: flex; align-items: center; gap: .45rem; margin: .7rem 0 0; font-size: .78rem; }
+.calendar-legend-mark { width: .8rem; height: .8rem; border-radius: 999px; background: var(--accent-primary); }
 @media (max-width: 700px) { .calendar-day { min-height: 2.75rem; padding: .3rem .35rem; } .calendar-month-label { min-width: 7rem; } }
 .auth-card .mat-mdc-form-field { width: 100%; }
 .auth-card .mat-mdc-text-field-wrapper { background: var(--bg-surface-alt); }
