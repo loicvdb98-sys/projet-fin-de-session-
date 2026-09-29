@@ -239,13 +239,17 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
     const textColor = styles.getPropertyValue('--text-secondary').trim();
     const gridColor = styles.getPropertyValue('--border-default').trim();
     const accent = styles.getPropertyValue('--accent-primary').trim();
+    // L'API renvoie les performances de la plus récente à la plus ancienne (utile pour
+    // l'historique) : on les remet dans l'ordre chronologique pour que la courbe se lise
+    // de gauche à droite, sinon une progression apparaît comme une baisse.
+    const chronological = [...items].sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
     const config: ChartConfiguration<'line'> = {
       type: 'line',
       data: {
-        labels: items.map((item) => new Date(item.recorded_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })),
+        labels: chronological.map((item) => new Date(item.recorded_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })),
         datasets: [{
           label: 'Score',
-          data: items.map((item) => item.score),
+          data: chronological.map((item) => item.score),
           borderColor: accent,
           backgroundColor: `${accent}22`,
           pointBackgroundColor: accent,
