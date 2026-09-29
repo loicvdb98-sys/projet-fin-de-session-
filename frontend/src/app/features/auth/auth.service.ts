@@ -11,7 +11,8 @@ import { API_URL } from '@core/api.config';
 import { UserService } from '@features/athletes/user.service';
 
 export interface LoginResponse { access_token: string; refresh_token: string; token_type: string; }
-export interface RegisterRequest { email: string; full_name: string; password: string; role: 'sportif' | 'coach'; }
+/** L'inscription publique ne crée que des comptes sportif (le serveur refuse tout autre rôle). */
+export interface RegisterRequest { email: string; full_name: string; password: string; role: 'sportif'; }
 
 /** Source de vérité pour l'état de connexion et le rôle de l'utilisateur courant. */
 @Injectable({ providedIn: 'root' })

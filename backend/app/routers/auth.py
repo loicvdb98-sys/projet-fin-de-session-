@@ -46,15 +46,16 @@ def _issue_refresh_token(user_id: int, db: Session) -> str:
 
 @router.post("/register", response_model=UserRead, status_code=201, dependencies=[Depends(login_rate_limit)])
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    """Crée un nouveau compte utilisateur (POST /auth/register). Le rôle doit être
-    "coach" ou "sportif" (le rôle "admin" ne peut pas être créé via cet endpoint).
-    Retourne l'utilisateur créé. Soumis à la limitation de débit anti-brute-force.
+    """Crée un nouveau compte sportif (POST /auth/register). L'inscription publique ne
+    crée que des comptes "sportif" : les rôles coach et admin sont attribués ensuite par
+    un admin, depuis la gestion des comptes (PATCH /users/{id}). Retourne l'utilisateur
+    créé. Soumis à la limitation de débit anti-brute-force.
     """
+    if data.role != "sportif":
+        raise HTTPException(403, "L'inscription crée uniquement des comptes sportif")
     email = str(data.email).lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(409, "Email déjà utilisé")
-    if data.role not in {"coach", "sportif"}:
-        raise HTTPException(400, "Rôle invalide")
     user = User(email=email, full_name=data.full_name, hashed_password=hash_password(data.password), role=data.role)
     db.add(user)
     db.commit()
