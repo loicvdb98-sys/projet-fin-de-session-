@@ -1,6 +1,7 @@
 /**
  * Configuration racine de l'application Angular (bootstrap standalone) :
- * routeur, client HTTP avec intercepteur d'authentification, et animations.
+ * routeur, client HTTP avec intercepteur d'authentification, animations, et
+ * langue française pour les pipes de date et de nombre (« septembre », « 80,6 »).
  *
  * `provideZoneChangeDetection` est requis explicitement : depuis Angular 20+,
  * `bootstrapApplication` démarre en mode zoneless par défaut (NoopNgZone) si
@@ -10,15 +11,20 @@
  * qui provoquait des pages bloquées indéfiniment sur leur état "Chargement…"
  * bien que les données arrivaient correctement.
  */
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { authInterceptor } from '@features/auth/auth.interceptor';
 
+registerLocaleData(localeFr);
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
