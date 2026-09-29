@@ -37,7 +37,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
         </div>
         <div class="calendar-nav">
           <button mat-icon-button type="button" (click)="previousMonth()" aria-label="Mois précédent">‹</button>
-          <span class="calendar-month-label">{{ viewDate | date:'MMMM yyyy' }}</span>
+          <span class="calendar-month-label" aria-live="polite">{{ viewDate | date:'MMMM yyyy' }}</span>
           <button mat-icon-button type="button" (click)="nextMonth()" aria-label="Mois suivant">›</button>
           <button mat-stroked-button type="button" class="teal-outline calendar-today-btn" (click)="goToday()">Aujourd'hui</button>
         </div>

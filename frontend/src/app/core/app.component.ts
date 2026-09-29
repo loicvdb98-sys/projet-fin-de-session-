@@ -2,8 +2,8 @@
  * Composant racine de l'application : affiche la coquille (rail de navigation,
  * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
  */
-import { Component, Injector, afterNextRender, inject, signal } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+import { Component, Injector, afterNextRender, effect, inject, signal } from '@angular/core';
+import { AsyncPipe, DOCUMENT } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { filter, forkJoin, of, shareReplay, switchMap } from 'rxjs';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -23,9 +23,11 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent],
+  host: { '(document:keydown.escape)': 'closeMenu(true)' },
   template: `
+    <a class="skip-link" href="#contenu" (click)="skipToContent($event)">Aller au contenu</a>
     <div class="app-shell">
-      <aside class="app-rail" [class.menu-open]="menuOpen()" [class.dense]="auth.isAuthenticated() && auth.isCoachOrAdmin()" aria-label="Navigation principale">
+      <aside id="app-menu" class="app-rail" [class.menu-open]="menuOpen()" [class.dense]="auth.isAuthenticated() && auth.isCoachOrAdmin()" aria-label="Navigation principale">
         <div class="app-rail-top">
           <a class="app-rail-brand" routerLink="/dashboard" aria-label="SportPlan - tableau de bord">
             <span class="brand-mark" aria-hidden="true">
@@ -39,7 +41,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             <span>SportPlan</span>
           </a>
           <button type="button" class="app-menu-toggle" [class.has-unread]="notifications.unreadCount() > 0" (click)="menuOpen.set(!menuOpen())"
-            [attr.aria-expanded]="menuOpen()" [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'">
+            aria-controls="app-menu" [attr.aria-expanded]="menuOpen()" [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'">
             @if (menuOpen()) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
             } @else {
@@ -158,7 +160,8 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
         </div>
       </aside>
 
-      <main><router-outlet /></main>
+      <!-- Menu mobile ouvert : la page en dessous est retirée du clavier et des lecteurs d'écran (inert). -->
+      <main id="contenu" tabindex="-1" [attr.inert]="menuOpen() ? '' : null"><router-outlet /></main>
     </div>
     <app-toasts />
   `
@@ -173,9 +176,12 @@ export class AppComponent {
   private readonly toast = inject(ToastService);
   readonly notifications = inject(NotificationService);
   private readonly injector = inject(Injector);
+  private readonly document = inject(DOCUMENT);
 
   /** Menu de navigation déplié (affichage mobile uniquement). */
   readonly menuOpen = signal(false);
+  /** Faux jusqu'à la première navigation : le focus n'est pas déplacé au chargement initial. */
+  private hasNavigated = false;
 
   // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois).
   // shareReplay évite un second appel à /users/me pour la vérification des rappels ci-dessous.
@@ -189,14 +195,51 @@ export class AppComponent {
     // notifications non lues (de nouvelles peuvent arriver quand une séance change).
     inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.menuOpen.set(false);
-      // Garde l'entrée active visible dans le menu quand celui-ci doit défiler (petits écrans).
-      afterNextRender(() => document.querySelector('.app-rail-nav .app-rail-item.active')?.scrollIntoView({ block: 'nearest' }), { injector: this.injector });
+      const moveFocus = this.hasNavigated;
+      this.hasNavigated = true;
+      afterNextRender(() => {
+        // Garde l'entrée active visible dans le menu quand celui-ci doit défiler (petits écrans).
+        this.document.querySelector('.app-rail-nav .app-rail-item.active')?.scrollIntoView({ block: 'nearest' });
+        if (moveFocus) this.focusPageHeading();
+      }, { injector: this.injector });
       if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
       else this.notifications.unreadCount.set(0);
     });
     this.currentUser$.subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
+    // Menu ouvert : la page en dessous ne défile plus (classe posée sur <html>).
+    effect(() => this.document.documentElement.classList.toggle('menu-lock', this.menuOpen()));
+    // Passage en affichage large (rotation d'une tablette, dépliage d'un pliable) : le menu
+    // plein écran n'a plus lieu d'être, et <main> ne doit pas rester inerte.
+    window.matchMedia('(min-width: 901px)').addEventListener('change', (query) => { if (query.matches) this.menuOpen.set(false); });
+  }
+
+  /** Touche Échap : referme le menu mobile et rend le focus au bouton qui l'a ouvert. */
+  closeMenu(restoreFocus = false): void {
+    if (!this.menuOpen()) return;
+    this.menuOpen.set(false);
+    if (restoreFocus) this.document.querySelector<HTMLElement>('.app-menu-toggle')?.focus();
+  }
+
+  /** Lien d'évitement : place le focus au début du contenu sans changer l'URL. */
+  skipToContent(event: Event): void {
+    event.preventDefault();
+    this.closeMenu();
+    this.focusPageHeading();
+  }
+
+  /**
+   * Après un changement de page, place le focus sur le titre principal : les lecteurs
+   * d'écran annoncent la nouvelle page, et la touche Tab repart du contenu plutôt que
+   * d'un lien du menu (qui, sur mobile, vient d'être masqué).
+   */
+  private focusPageHeading(): void {
+    const main = this.document.getElementById('contenu');
+    const target = main?.querySelector<HTMLElement>('h1') ?? main;
+    if (!target) return;
+    if (target !== main) target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
   }
 
   initials(name: string): string {

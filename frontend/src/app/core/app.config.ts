@@ -1,6 +1,7 @@
 /**
  * Configuration racine de l'application Angular (bootstrap standalone) :
- * routeur, client HTTP avec intercepteur d'authentification, animations, et
+ * routeur (retour en haut de page à chaque navigation), client HTTP avec
+ * intercepteur d'authentification, animations, et
  * langue française pour les pipes de date et de nombre (« septembre », « 80,6 »).
  *
  * `provideZoneChangeDetection` est requis explicitement : depuis Angular 20+,
@@ -15,7 +16,7 @@ import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angul
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { TitleStrategy, provideRouter } from '@angular/router';
+import { TitleStrategy, provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { SportPlanTitleStrategy } from './title.strategy';
@@ -27,7 +28,8 @@ export const appConfig: ApplicationConfig = {
   providers: [
     { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    // Chaque nouvelle page s'ouvre en haut ; le bouton Retour restaure la position précédente.
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     { provide: TitleStrategy, useClass: SportPlanTitleStrategy },
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimationsAsync()

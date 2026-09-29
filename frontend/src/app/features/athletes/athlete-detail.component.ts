@@ -53,7 +53,7 @@ import { summarizeAttendance } from './attendance';
           }
         </div>
       } @else {
-        <mat-card class="empty-state-card"><h2>Sportif introuvable</h2><a mat-stroked-button routerLink="/athletes">Retour aux sportifs</a></mat-card>
+        <mat-card class="empty-state-card"><h1>Sportif introuvable</h1><a mat-stroked-button routerLink="/athletes">Retour aux sportifs</a></mat-card>
       }
     </section>
   `

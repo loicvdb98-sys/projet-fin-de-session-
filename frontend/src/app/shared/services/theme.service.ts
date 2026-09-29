@@ -36,9 +36,13 @@ export class ThemeService {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
-  /** Répercute le thème sur le DOM (attribut data-theme + color-scheme natif du navigateur). */
+  /**
+   * Répercute le thème sur le DOM (attribut data-theme + color-scheme natif du navigateur),
+   * et colore la barre d'adresse des navigateurs mobiles comme l'en-tête de l'application.
+   */
   private apply(theme: Theme): void {
     this.document.documentElement.dataset['theme'] = theme;
     this.document.documentElement.style.colorScheme = theme;
+    this.document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1b1e26' : '#f8f4f5');
   }
 }

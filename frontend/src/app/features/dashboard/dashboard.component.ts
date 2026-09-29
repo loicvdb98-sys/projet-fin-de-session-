@@ -50,7 +50,9 @@ const STATUS_LABELS: Record<string, string> = {
       <div class="home-hero">
         <div>
           <p class="eyebrow">VOTRE ESPACE SPORTIF</p>
-          @if (user$ | async; as user) { <h1>Bonjour {{ firstName(user.full_name) }}</h1> } @else { <h1>Bonjour</h1> }
+          <!-- Un seul <h1> dont seul le texte change : il garde le focus posé après la connexion. -->
+          @let user = user$ | async;
+          <h1>Bonjour{{ user ? ' ' + firstName(user.full_name) : '' }}</h1>
           <p class="text-secondary">{{ (tagline$ | async) || 'Choisissez un module pour continuer votre entraînement.' }}</p>
         </div>
         <span class="status-badge success"><span aria-hidden="true">●</span> Actif</span>

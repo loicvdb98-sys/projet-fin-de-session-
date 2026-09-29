@@ -113,7 +113,8 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 
 /* Vue « Modules » de la page Séances : rail à deux lignes (titre + date) et barre de remplissage */
 .module-rail-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
-.module-rail-text .module-rail-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Titre d'un élément du rail : jusqu'à deux lignes plutôt qu'un texte coupé par « … ». */
+.module-rail-text .module-rail-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow: hidden; overflow-wrap: anywhere; line-height: 1.3; }
 .module-rail-sublabel { font-size: .7rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .module-capacity { display: flex; flex-direction: column; gap: .4rem; margin-top: 1.1rem; max-width: 20rem; }
 .module-capacity .text-secondary { font-size: .78rem; font-weight: 600; }
@@ -243,7 +244,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .form-grid.three { grid-template-columns: 1fr 1fr 1.3fr; }
 .goal-meter { display: flex; flex-direction: column; gap: .2rem; max-width: 32rem; margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); }
 .goal-meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.goal-meter-value { font-size: 2.4rem; line-height: 1; letter-spacing: -.04em; color: var(--module-tint, var(--accent-primary)); }
+.goal-meter-value { font-size: 2.4rem; line-height: 1; letter-spacing: -.04em; white-space: nowrap; color: var(--module-tint, var(--accent-primary)); }
 .goal-meter .goal-progress { height: .7rem; }
 .goal-meter .goal-progress span { background: var(--module-tint, var(--accent-primary)); }
 .teal-button { background: var(--accent-secondary) !important; color: #fff !important; }
@@ -541,4 +542,37 @@ html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-de
   .cards > .stat-card .stat-value { font-size: 2.1rem; margin-top: .45rem; }
   .cards > .stat-card .text-secondary { margin: .3rem 0 0; }
   .cards > .stat-card::after { width: 5rem; height: 5rem; right: -2rem; bottom: -2.5rem; }
+}
+
+/* ===== Accessibilité : clavier, lecteurs d'écran, mouvements réduits ===== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Lien d'évitement : invisible jusqu'à ce qu'il reçoive le focus au clavier (WCAG 2.4.1). */
+.skip-link { position: fixed; z-index: 1000; top: .75rem; left: .75rem; padding: .75rem 1.1rem; border-radius: .8rem; background: var(--accent-primary); color: #fff; font-weight: 800; text-decoration: none; box-shadow: var(--shadow-soft); transform: translateY(calc(-100% - 1.5rem)); transition: transform .15s ease; }
+.skip-link:focus { transform: none; }
+/* Focus posé par programme après une navigation : pas de contour sur le conteneur ou le titre. */
+main:focus, main h1[tabindex="-1"]:focus { outline: none; }
+.empty-state-card h1 { margin: 0 0 1rem; font-size: 1.5rem; letter-spacing: -.02em; }
+/* Réglage système « Réduire les animations » : transitions et animations quasi instantanées. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+/* Menu mobile ouvert : la page en dessous ne défile pas. */
+@media (max-width: 900px) { html.menu-lock { overflow: hidden; } }
+/* Téléphones, pliables et tablettes (≤ 1180 px) : aucun texte sous 12 px. */
+@media (max-width: 1180px) {
+  .eyebrow, .app-rail-section, .module-rail-sublabel, .calendar-weekday, .app-rail-user-info .role-badge { font-size: .75rem; }
+  .module-badge, .pattern-rail-label, .pattern-rail-count, .calendar-day-badge, .app-rail-badge { font-size: .75rem; }
+  .cards > .stat-card .mat-mdc-card-title { font-size: .8rem; }
+  .cards > .stat-card .text-secondary { font-size: .75rem; }
+}
+/* Écrans tactiles : zones à toucher d'au moins 44 px (WCAG 2.5.5 / recommandations Android et iOS). */
+@media (pointer: coarse) {
+  .action-chip, .app-rail-item, .app-rail-brand, .calendar-today-btn { min-height: 2.75rem; }
+  .action-chip { padding-inline: 1rem; }
+  .module-rail-item { min-height: 3rem; }
+  .app-menu-toggle { width: 2.75rem; height: 2.75rem; }
+  /* Lien dans une phrase : zone tactile agrandie sans décaler le texte. */
+  .link-button { position: relative; }
+  .link-button::after { content: ""; position: absolute; inset: -.75rem -.35rem; }
+  .demo-notice-close { padding: .55rem; margin: -.4rem -.4rem 0 0; }
 }
