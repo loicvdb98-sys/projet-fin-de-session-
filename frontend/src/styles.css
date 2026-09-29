@@ -1,6 +1,7 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 :root {
+  --info-text: #075985; --mat-form-field-outlined-label-text-color: var(--text-secondary);
   --color-danger-50: #fdf0ef; --color-danger-500: #d9432e; --color-danger-600: #b23423;
   --color-violet-50: #f4f1ff; --color-violet-100: #e2d9ff; --color-violet-300: #b7a1ff; --color-violet-400: #9b7dff; --color-violet-500: #7c5cff; --color-violet-600: #6344d6;
   --color-deep-teal-50: #e5fbfa; --color-deep-teal-300: #66e6dd; --color-deep-teal-400: #33ded2; --color-deep-teal-600: #00aa9f; --color-deep-teal-700: #008077;
@@ -11,6 +12,7 @@
 }
 
 html[data-theme='dark'] {
+  --info-text: #7dd3fc;
   --bg-body: #101217; --bg-surface: #1b1e26; --bg-surface-alt: #252a34; --text-primary: #f7f8f9; --text-secondary: #c5ccd7; --border-default: #4a5362; --accent-primary: var(--color-violet-400); --accent-primary-hover: var(--color-violet-300); --accent-secondary: var(--color-deep-teal-300); --accent-secondary-deep: var(--color-deep-teal-700); --accent-rgb: 155 125 255; --accent-hover-rgb: 183 161 255; --accent-secondary-rgb: 102 230 221; --surface-glow: rgb(37 42 52 / 82%); --shadow-soft: 0 20px 50px rgb(0 0 0 / 32%);
 }
 
@@ -41,7 +43,7 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, B
 .app-rail-icon { display: grid; place-items: center; flex: 0 0 2.15rem; width: 2.15rem; height: 2.15rem; border-radius: .7rem; background: color-mix(in srgb, var(--accent-secondary) 16%, var(--bg-surface-alt)); color: var(--accent-secondary); transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
 .app-rail-icon svg { width: 1.1rem; height: 1.1rem; }
 .app-rail-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-rail-section { margin: 1rem 0 .2rem; padding: 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); opacity: .8; }
+.app-rail-section { margin: 1rem 0 .2rem; padding: 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); }
 .app-rail-section:first-child { margin-top: 0; }
 /* Écrans d'ordinateur peu hauts (portables) : menu plus compact pour que toutes les
    entrées restent visibles sans faire défiler la barre latérale. */
@@ -98,7 +100,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .teal-action { color: var(--accent-secondary) !important; font-weight: 700; }
 .status-badge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .35rem .65rem; font-size: .75rem; font-weight: 700; }
 .status-badge.success { background: rgb(22 163 74 / 12%); color: var(--color-success-500); }
-.status-badge.info { background: rgb(14 165 233 / 12%); color: var(--color-info-500); }
+.status-badge.info { background: rgb(14 165 233 / 12%); color: var(--info-text); }
 .status-badge.danger { background: color-mix(in srgb, var(--color-danger-500) 12%, transparent); color: var(--color-danger-500); }
 .session-card.past { opacity: .72; }
 .session-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
@@ -207,7 +209,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .empty-state-card { margin-top: 1rem; text-align: center; padding: 2rem; }
 .profile-avatar { display: grid; place-items: center; width: 5.5rem; height: 5.5rem; margin: .25rem auto 1rem; border-radius: 1.5rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; font-size: 1.7rem; font-weight: 900; }
 .role-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; background: rgb(0 170 159 / 14%); color: var(--accent-secondary); font-size: .78rem; font-weight: 800; }
-.role-badge.role-sportif { background: rgb(14 165 233 / 14%); color: var(--color-info-500); }
+.role-badge.role-sportif { background: rgb(14 165 233 / 14%); color: var(--info-text); }
 .role-badge.role-coach { background: color-mix(in srgb, var(--accent-secondary) 16%, transparent); color: var(--accent-secondary); }
 .role-badge.role-admin { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); color: var(--accent-primary); }
 .admin-role-field { flex: 0 0 10rem; }
@@ -224,6 +226,8 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .module-form { display: grid; gap: .7rem; max-width: 36rem; margin-top: 1.4rem; }
 .module-form > button, .module-form .form-actions { justify-self: start; }
 .module-initials { font-size: .72rem; font-weight: 800; letter-spacing: .02em; }
+.module-rail-icon.module-initials, .module-icon.module-initials { color: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 45%, var(--text-primary)); }
+.module-rail-item.active .module-rail-icon.module-initials { background: color-mix(in srgb, var(--module-tint, var(--accent-secondary)) 55%, #000); color: #fff; }
 .module-detail-header .module-icon.module-initials { font-size: 1.15rem; }
 .module-note { margin: 1rem 0 0; max-width: 32rem; font-size: .9rem; line-height: 1.5; }
 .form-inline { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
