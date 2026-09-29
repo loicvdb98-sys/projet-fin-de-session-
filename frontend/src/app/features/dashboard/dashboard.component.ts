@@ -56,7 +56,8 @@ const STATUS_LABELS: Record<string, string> = {
         <span class="status-badge success"><span aria-hidden="true">●</span> Actif</span>
       </div>
 
-      @if (nextSession$ | async; as next) {
+      @if (nextSession$ | async; as highlight) {
+        @let next = highlight.session;
         <a class="next-session-card" routerLink="/sessions">
           <span class="next-session-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -64,7 +65,7 @@ const STATUS_LABELS: Record<string, string> = {
             </svg>
           </span>
           <span class="next-session-body">
-            <span class="eyebrow">PROCHAINE SÉANCE</span>
+            <span class="eyebrow">{{ highlight.label }}</span>
             <strong>{{ next.title }}</strong>
             <span class="text-secondary">{{ formatSessionDate(next.starts_at) }} · {{ next.duration_minutes }} min · Coach : {{ next.coach_name }} · {{ remainingSpots(next) > 0 ? remainingSpots(next) + ' places restantes' : 'Complet' }}</span>
           </span>
@@ -274,7 +275,7 @@ const STATUS_LABELS: Record<string, string> = {
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   readonly stats$ = inject(StatisticsService).mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
-  readonly user$ = inject(UserService).me();
+  readonly user$ = inject(UserService).me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly goals$ = inject(GoalService).goals().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly notifications$ = inject(NotificationService).list().pipe(
@@ -296,10 +297,24 @@ export class DashboardComponent {
       .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())),
     shareReplay({ bufferSize: 1, refCount: true })
   );
-  readonly nextSession$ = this.sessions$.pipe(map((sessions) => sessions[0]));
+  private readonly allParticipations$ = inject(ParticipationService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  /**
+   * Séance mise en avant : pour un sportif, sa prochaine séance avec inscription ; pour
+   * un coach, la prochaine qu'il anime ; à défaut, la prochaine séance disponible.
+   */
+  readonly nextSession$ = combineLatest([this.sessions$, this.user$, this.allParticipations$]).pipe(
+    map(([sessions, user, participations]) => {
+      const registered = new Set(participations.filter((item) => item.user_id === user.id).map((item) => item.session_id));
+      const mine = sessions.find((session) => registered.has(session.id));
+      if (mine) return { session: mine, label: 'PROCHAINE SÉANCE · VOUS ÊTES INSCRIT' };
+      const coached = user.role !== 'sportif' ? sessions.find((session) => session.coach_id === user.id) : undefined;
+      if (coached) return { session: coached, label: 'PROCHAINE SÉANCE QUE VOUS ANIMEZ' };
+      return sessions[0] ? { session: sessions[0], label: 'PROCHAINE SÉANCE DISPONIBLE' } : null;
+    })
+  );
   readonly upcomingSessions$ = this.sessions$.pipe(map((sessions) => sessions.slice(0, 3)));
 
-  readonly participations$ = combineLatest([inject(ParticipationService).list(), this.allSessions$]).pipe(
+  readonly participations$ = combineLatest([this.allParticipations$, this.allSessions$]).pipe(
     map(([participations, sessions]) => participations
       .slice(-3)
       .reverse()

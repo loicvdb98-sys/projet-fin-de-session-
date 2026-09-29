@@ -13,18 +13,18 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { ProgramService } from '@features/programs/program.service';
 import { JournalService } from '@features/journal/journal.service';
 
-function setup(isCoachOrAdmin = false): DashboardComponent {
+function setup(isCoachOrAdmin = false, sessions: unknown[] = [], participations: unknown[] = [], role = 'sportif'): DashboardComponent {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: AuthService, useValue: { isCoachOrAdmin: () => isCoachOrAdmin } },
       { provide: StatisticsService, useValue: { mine: () => of({ total_sessions: 0, upcoming_sessions: 2, total_participations: 5, attended_sessions: 4, total_performances: 8, average_score: 75 }) } },
-      { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Martin', role: 'sportif', is_active: true }), athletes: () => of([]) } },
-      { provide: SessionService, useValue: { list: () => of([]) } },
+      { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Martin', role, is_active: true }), athletes: () => of([]) } },
+      { provide: SessionService, useValue: { list: () => of(sessions) } },
       { provide: PerformanceService, useValue: { list: () => of([]) } },
       { provide: NotificationService, useValue: { list: () => of([]) } },
       { provide: GoalService, useValue: { goals: () => of([]) } },
-      { provide: ParticipationService, useValue: { list: () => of([]) } },
+      { provide: ParticipationService, useValue: { list: () => of(participations) } },
       { provide: ProgramService, useValue: { list: () => of([]) } },
       { provide: JournalService, useValue: { list: () => of([]) } },
     ]
@@ -94,5 +94,37 @@ describe('DashboardComponent', () => {
     expect(bars.length).toBe(6);
     expect(Math.max(...bars)).toBeLessThanOrEqual(100);
     expect(Math.min(...bars)).toBeGreaterThanOrEqual(8);
+  });
+
+  describe('next session highlight', () => {
+    const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    const sessions = [
+      { id: 1, title: 'Première', starts_at: inDays(1), coach_id: 5, coach_name: 'Autre coach', duration_minutes: 60, capacity: 10, registered_count: 0 },
+      { id: 2, title: 'Deuxième', starts_at: inDays(3), coach_id: 1, coach_name: 'Moi', duration_minutes: 60, capacity: 10, registered_count: 0 },
+      { id: 3, title: 'Passée', starts_at: inDays(-2), coach_id: 5, coach_name: 'Autre coach', duration_minutes: 60, capacity: 10, registered_count: 0 },
+    ];
+    const highlight = (component: DashboardComponent) => {
+      let value: { session: { id: number }; label: string } | null = null;
+      component.nextSession$.subscribe((next) => (value = next));
+      return value as { session: { id: number }; label: string } | null;
+    };
+
+    it('shows the next session the sportif is registered to', () => {
+      const component = setup(false, sessions, [{ id: 9, user_id: 1, session_id: 2, status: 'inscrit' }]);
+      expect(highlight(component)?.session.id).toBe(2);
+      expect(highlight(component)?.label).toContain('INSCRIT');
+    });
+
+    it('shows the next session a coach runs', () => {
+      const component = setup(true, sessions, [], 'coach');
+      expect(highlight(component)?.session.id).toBe(2);
+      expect(highlight(component)?.label).toContain('ANIMEZ');
+    });
+
+    it('falls back to the next available session, never a past one', () => {
+      const component = setup(false, sessions, []);
+      expect(highlight(component)?.session.id).toBe(1);
+      expect(highlight(component)?.label).toContain('DISPONIBLE');
+    });
   });
 });
