@@ -2,7 +2,7 @@
  * Composant racine de l'application : affiche la coquille (rail de navigation,
  * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
  */
-import { Component, inject, signal } from '@angular/core';
+import { Component, Injector, afterNextRender, inject, signal } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { filter, forkJoin, of, shareReplay, switchMap } from 'rxjs';
@@ -25,7 +25,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
   imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent],
   template: `
     <div class="app-shell">
-      <aside class="app-rail" [class.menu-open]="menuOpen()" aria-label="Navigation principale">
+      <aside class="app-rail" [class.menu-open]="menuOpen()" [class.dense]="auth.isAuthenticated() && auth.isCoachOrAdmin()" aria-label="Navigation principale">
         <div class="app-rail-top">
           <a class="app-rail-brand" routerLink="/dashboard" aria-label="SportPlan - tableau de bord">
             <span class="brand-mark" aria-hidden="true">
@@ -172,6 +172,7 @@ export class AppComponent {
   private readonly participations = inject(ParticipationService);
   private readonly toast = inject(ToastService);
   readonly notifications = inject(NotificationService);
+  private readonly injector = inject(Injector);
 
   /** Menu de navigation déplié (affichage mobile uniquement). */
   readonly menuOpen = signal(false);
@@ -188,6 +189,8 @@ export class AppComponent {
     // notifications non lues (de nouvelles peuvent arriver quand une séance change).
     inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.menuOpen.set(false);
+      // Garde l'entrée active visible dans le menu quand celui-ci doit défiler (petits écrans).
+      afterNextRender(() => document.querySelector('.app-rail-nav .app-rail-item.active')?.scrollIntoView({ block: 'nearest' }), { injector: this.injector });
       if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
       else this.notifications.unreadCount.set(0);
     });

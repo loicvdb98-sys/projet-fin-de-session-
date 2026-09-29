@@ -43,6 +43,28 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, B
 .app-rail-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-rail-section { margin: 1rem 0 .2rem; padding: 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); opacity: .8; }
 .app-rail-section:first-child { margin-top: 0; }
+/* Écrans d'ordinateur peu hauts (portables) : menu plus compact pour que toutes les
+   entrées restent visibles sans faire défiler la barre latérale. */
+@media (min-width: 901px) and (max-height: 1100px) {
+  .app-rail { gap: .6rem; padding-block: 1rem; }
+  .app-rail-user { padding: .45rem .6rem; }
+  .app-rail-nav { gap: .08rem; }
+  .app-rail-item { padding: .34rem .7rem; }
+  .app-rail-icon { flex-basis: 1.85rem; width: 1.85rem; height: 1.85rem; border-radius: .6rem; }
+  .app-rail-section { margin: .5rem 0 .08rem; }
+  .app-rail-footer { gap: .08rem; padding-top: .35rem; }
+}
+/* Menu coach/admin (plus d'entrées, classe .dense) sur écran peu haut : la carte
+   d'identité (reprise dans Profil) est masquée, puis, sur les écrans les plus bas
+   (ex. 1366×768), les titres de section deviennent de simples séparateurs. */
+@media (min-width: 901px) and (max-height: 940px) {
+  .app-rail.dense .app-rail-user { display: none; }
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  .app-rail.dense .app-rail-section { height: 1px; margin: .3rem .7rem; padding: 0; overflow: hidden; font-size: 0; background: color-mix(in srgb, var(--border-default) 80%, transparent); }
+  .app-rail.dense .app-rail-section:first-child { display: none; }
+}
+}
 .app-rail-footer { display: flex; flex-direction: column; gap: .18rem; flex: 0 0 auto; border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent); padding-top: .6rem; }
 main { flex: 1; min-width: 0; max-width: 1160px; margin: 0 auto; padding: clamp(2rem, 5vw, 4rem) 1.25rem; }
 .page { animation: page-enter .35s ease-out; }
