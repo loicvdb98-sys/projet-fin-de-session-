@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { SessionService, SportSession, Exercise } from './session.service';
 import { UserService } from '@features/athletes/user.service';
-import { ParticipationService } from '@features/participations/participation.service';
+import { Participation, ParticipationService } from '@features/participations/participation.service';
 import { ToastService } from '@shared/services/toast.service';
 import { forkJoin } from 'rxjs';
 import { markForCheck } from '@core/mark-for-check.operator';
@@ -123,6 +123,9 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
                 } @else {
                   <p class="text-secondary">{{ formatFullDate(session.starts_at) }} · {{ session.duration_minutes }} min</p>
                   <span class="module-stat-line text-secondary">Coach : {{ session.coach_name }}{{ session.coach_id === currentUserId ? ' (vous)' : '' }}</span>
+                  @if (myParticipation(session); as mine) {
+                    <span class="module-stat-line text-secondary">Votre statut : {{ statusLabel(mine.status) }}</span>
+                  }
 
                   <div class="module-capacity">
                     <div class="module-mini-progress" aria-hidden="true"><span [style.width.%]="capacityPercent(session)"></span></div>
@@ -172,17 +175,26 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
             <span class="module-rail-text">
               <span class="module-rail-label">{{ session.title }}</span>
-              <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}</small>
+              <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}{{ myParticipation(session) ? ' · ' + statusLabel(myParticipation(session)!.status) : '' }}</small>
             </span>
             @if (!isPast(session) && remainingSpots(session) <= 0) { <span class="module-rail-dot" title="Complet"></span> }
           </button>
         </ng-template>
 
         <ng-template #actionsTpl let-session="session">
-          <button type="button" class="action-chip primary" [disabled]="isPast(session) || remainingSpots(session) <= 0" (click)="register(session.id)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
-            S'inscrire
-          </button>
+          @if (myParticipation(session); as mine) {
+            @if (!isPast(session)) {
+              <button type="button" class="action-chip danger" (click)="unregister(mine)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+                Se désinscrire
+              </button>
+            }
+          } @else {
+            <button type="button" class="action-chip primary" [disabled]="isPast(session) || remainingSpots(session) <= 0" (click)="register(session.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
+              S'inscrire
+            </button>
+          }
           <button type="button" class="action-chip" [class.active]="selectedExercisesSessionId === session.id" (click)="loadExercises(session.id)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
             Exercices
@@ -300,6 +312,8 @@ export class SessionsComponent implements OnDestroy {
   attendanceSessionId?: number;
   attendanceRows: AttendanceRow[] = [];
   attendanceLoading = false;
+  /** Inscriptions de l'utilisateur connecté, par id de séance. */
+  private myParticipations = new Map<number, Participation>();
 
   // Le rôle n'est pas dans le token JWT décodable côté client : on le récupère via le profil
   // pour savoir si l'éditeur de création de séance et les actions de gestion doivent s'afficher.
@@ -308,9 +322,23 @@ export class SessionsComponent implements OnDestroy {
       this.canManage = user.role === 'coach' || user.role === 'admin';
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
+      this.loadMyParticipations();
     });
     this.refreshSessions();
   }
+
+  /** Charge les inscriptions de l'utilisateur (un coach reçoit celles de ses séances : on ne garde que les siennes). */
+  private loadMyParticipations(): void {
+    this.participation.list().pipe(markForCheck(this.cd)).subscribe({
+      next: (items) => {
+        this.myParticipations = new Map(items.filter((item) => item.user_id === this.currentUserId).map((item) => [item.session_id, item]));
+      }
+    });
+  }
+
+  myParticipation(session: SportSession): Participation | undefined { return this.myParticipations.get(session.id); }
+
+  statusLabel(status: string): string { return ATTENDANCE_STATUSES.find((item) => item.value === status)?.label ?? status; }
 
   refreshSessions(): void {
     this.sessionsLoading = true;
@@ -404,12 +432,34 @@ export class SessionsComponent implements OnDestroy {
     }, error: () => { this.createError = 'Impossible de créer la séance. Vérifiez vos droits et les informations saisies.'; } }));
   }
 
-  /** Inscrit l'utilisateur connecté à une séance. */
+  /** Inscrit l'utilisateur connecté à une séance (le message de l'API est affiché en cas de refus). */
   register(session_id: number): void {
-    this.users.me().subscribe(user => this.participation.create(user.id, session_id).pipe(markForCheck(this.cd)).subscribe({
-      next: () => { this.toast.success('Inscription confirmée.'); this.refreshSessions(); },
-      error: () => this.toast.error('Impossible de vous inscrire à cette séance.')
-    }));
+    if (this.currentUserId === undefined) return;
+    this.participation.create(this.currentUserId, session_id).pipe(markForCheck(this.cd)).subscribe({
+      next: (created) => {
+        this.myParticipations.set(session_id, created);
+        this.adjustRegisteredCount(session_id, 1);
+        this.toast.success('Inscription confirmée.');
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de vous inscrire à cette séance.')
+    });
+  }
+
+  /** Désinscrit l'utilisateur connecté d'une séance à venir. */
+  unregister(mine: Participation): void {
+    this.participation.remove(mine.id).pipe(markForCheck(this.cd)).subscribe({
+      next: () => {
+        this.myParticipations.delete(mine.session_id);
+        this.adjustRegisteredCount(mine.session_id, -1);
+        this.toast.success('Vous êtes désinscrit de cette séance.');
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de vous désinscrire de cette séance.')
+    });
+  }
+
+  /** Met à jour le nombre d'inscrits affiché sans recharger toute la liste des séances. */
+  private adjustRegisteredCount(sessionId: number, delta: number): void {
+    this.sessions = this.sessions.map((session) => (session.id === sessionId ? { ...session, registered_count: Math.max(0, session.registered_count + delta) } : session));
   }
   /** Affiche ou masque la liste des exercices d'une séance. */
   loadExercises(sessionId: number): void {

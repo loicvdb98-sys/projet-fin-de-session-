@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { SessionsComponent } from './sessions.component';
 import { SessionService, SportSession } from './session.service';
 import { UserService } from '@features/athletes/user.service';
-import { ParticipationService } from '@features/participations/participation.service';
+import { Participation, ParticipationService } from '@features/participations/participation.service';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -15,13 +15,13 @@ function session(id: number, daysFromNow: number): SportSession {
   };
 }
 
-function setup(sessions: SportSession[]): SessionsComponent {
+function setup(sessions: SportSession[], participations: Participation[] = []): SessionsComponent {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: SessionService, useValue: { list: () => of(sessions) } },
       { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Sportif', role: 'sportif', is_active: true }) } },
-      { provide: ParticipationService, useValue: { list: () => of([]) } },
+      { provide: ParticipationService, useValue: { list: () => of(participations) } },
     ]
   });
   return TestBed.createComponent(SessionsComponent).componentInstance;
@@ -48,5 +48,16 @@ describe('SessionsComponent', () => {
     expect(component.selectedModuleSession?.id).toBe(3);
     expect(component.isPast(component.selectedModuleSession!)).toBe(true);
     expect(component.sessionTint(component.selectedModuleSession!)).toBe('secondary');
+  });
+
+  it("knows the user's own registrations only", () => {
+    const component = setup([session(1, 2), session(2, 3)], [
+      { id: 7, user_id: 1, session_id: 1, status: 'inscrit' },
+      { id: 8, user_id: 99, session_id: 2, status: 'inscrit' },
+    ]);
+
+    expect(component.myParticipation(session(1, 2))?.id).toBe(7);
+    expect(component.myParticipation(session(2, 3))).toBeUndefined();
+    expect(component.statusLabel('present')).toBe('Présent');
   });
 });
