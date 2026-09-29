@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, JSON, Unicode, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
+from ..services.time import utc_now_naive
 
 
 class WorkoutProgram(Base):
@@ -21,4 +22,4 @@ class WorkoutProgram(Base):
     description: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
     weeks: Mapped[int] = mapped_column(default=4)
     sessions: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)

@@ -7,6 +7,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, Unicode, UnicodeText, Uniq
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
+from ..services.time import utc_now_naive
 
 
 class TrainingJournal(Base):
@@ -25,5 +26,5 @@ class TrainingJournal(Base):
     mood: Mapped[str] = mapped_column(Unicode(30), default="bien")
     pain: Mapped[str | None] = mapped_column(Unicode(255), nullable=True)
     coach_comment: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)

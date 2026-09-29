@@ -1,7 +1,7 @@
 import os
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
-os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789")
 
 # Les imports de l'application viennent après la configuration de l'environnement
 # ci-dessus : les réglages (base, clé JWT) sont lus au premier import.

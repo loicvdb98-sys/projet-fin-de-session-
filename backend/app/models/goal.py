@@ -7,6 +7,7 @@ from sqlalchemy import Date, DateTime, ForeignKey, Unicode, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
+from ..services.time import utc_now_naive
 
 
 class Goal(Base):
@@ -23,4 +24,4 @@ class Goal(Base):
     unit: Mapped[str] = mapped_column(Unicode(20))
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)

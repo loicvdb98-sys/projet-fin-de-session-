@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Unicode
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
+from ..services.time import utc_now_naive
 
 
 class PersonalRecord(Base):
@@ -18,5 +19,5 @@ class PersonalRecord(Base):
     exercise_name: Mapped[str] = mapped_column(Unicode(120))
     value: Mapped[float] = mapped_column()
     unit: Mapped[str] = mapped_column(Unicode(20))
-    achieved_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    achieved_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)
     notes: Mapped[str | None] = mapped_column(Unicode(255), nullable=True)

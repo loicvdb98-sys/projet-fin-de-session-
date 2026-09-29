@@ -6,6 +6,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, Unicode, UnicodeTe
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
+from ..services.time import utc_now_naive
 
 
 class Notification(Base):
@@ -19,4 +20,4 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(UnicodeText)
     kind: Mapped[str] = mapped_column(String(20), default="info")
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)

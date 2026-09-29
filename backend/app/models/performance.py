@@ -7,6 +7,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
+from ..services.time import utc_now
 
 if TYPE_CHECKING:
     from .session import Session
@@ -22,6 +23,6 @@ class Performance(Base):
     session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"))
     score: Mapped[float] = mapped_column(Float)
     notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     user: Mapped["User"] = relationship()
     session: Mapped["Session"] = relationship()

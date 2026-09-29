@@ -9,3 +9,14 @@ def is_past(value: datetime) -> bool:
     """
     normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
     return normalized <= datetime.now(timezone.utc)
+
+
+def utc_now() -> datetime:
+    """Date/heure courante en UTC, avec fuseau (remplace datetime.utcnow(), déprécié)."""
+    return datetime.now(timezone.utc)
+
+
+def utc_now_naive() -> datetime:
+    """Date/heure courante en UTC sans fuseau, pour les colonnes DateTime sans fuseau
+    (même valeur que l'ancien datetime.utcnow())."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
