@@ -33,8 +33,8 @@ def list_participations(db: Session = Depends(get_db), user: User = Depends(get_
 @router.post("/", response_model=ParticipationRead, status_code=201)
 def create_participation(data: ParticipationCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Inscrit un utilisateur à une séance (POST /participations/). Un sportif ne peut
-    s'inscrire que lui-même. Rejette les séances passées, complètes, ou une double
-    inscription.
+    s'inscrire que lui-même. Rejette les séances passées, complètes, une double
+    inscription, ou l'inscription du coach à la séance qu'il anime.
     """
     if user.role == "sportif" and data.user_id != user.id:
         raise HTTPException(403, "Vous ne pouvez inscrire qu'un compte")
@@ -43,6 +43,8 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
     session = db.get(SportSession, data.session_id)
     if is_past(session.starts_at):
         raise HTTPException(409, "Impossible de s'inscrire à une séance passée")
+    if session.coach_id == data.user_id:
+        raise HTTPException(409, "Le coach ne peut pas s'inscrire à la séance qu'il anime")
     registrations = db.scalar(
         select(func.count(Participation.id)).where(Participation.session_id == data.session_id)
     ) or 0

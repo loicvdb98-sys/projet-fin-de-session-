@@ -96,7 +96,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                 <p class="session-coach">Coach : {{ session.coach_name }}</p>
                 @if (session.description) { <p class="text-secondary">{{ session.description }}</p> }
               </mat-card-content>
-              @if (!isRegistered(session.id) && !isPast(session)) {
+              @if (!isRegistered(session.id) && !isPast(session) && session.coach_id !== currentUserId) {
                 <mat-card-actions>
                   <button mat-button class="teal-action" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">S'inscrire</button>
                 </mat-card-actions>
@@ -121,7 +121,7 @@ export class CalendarComponent {
 
   private sessions: SportSession[] = [];
   private participations: Participation[] = [];
-  private currentUserId?: number;
+  currentUserId?: number;
   sessionsLoadError = false;
 
   /** Premier jour (à minuit) du mois actuellement affiché par la grille. */

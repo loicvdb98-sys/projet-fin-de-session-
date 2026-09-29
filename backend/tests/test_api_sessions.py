@@ -125,3 +125,11 @@ def test_cannot_unregister_after_session_started(client, db_factory, people, aut
         participation_id = participation.id
 
     assert client.delete(f"/participations/{participation_id}", headers=auth_headers("sportif@example.com")).status_code == 409
+
+
+def test_coach_cannot_register_to_own_session(client, db_factory, people, auth_headers):
+    session_id = new_session(db_factory, people["coach"].id, days=2)
+
+    response = register(client, auth_headers("coach@example.com"), people["coach"].id, session_id)
+
+    assert response.status_code == 409

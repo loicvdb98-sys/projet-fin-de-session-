@@ -189,7 +189,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
                 Se désinscrire
               </button>
             }
-          } @else {
+          } @else if (session.coach_id !== currentUserId) {
             <button type="button" class="action-chip primary" [disabled]="isPast(session) || remainingSpots(session) <= 0" (click)="register(session.id)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
               S'inscrire
