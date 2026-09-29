@@ -12,7 +12,7 @@ export interface TrainingJournal {
   mood: string; pain?: string; coach_comment?: string; created_at: string; updated_at: string;
 }
 
-/** Lecture et création des entrées de journal du sportif connecté. */
+/** Lecture, création, modification et suppression des entrées de journal. */
 @Injectable({ providedIn: 'root' })
 export class JournalService {
   private readonly api = `${API_URL}/journal`;
@@ -23,4 +23,11 @@ export class JournalService {
   create(data: Omit<TrainingJournal, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Observable<TrainingJournal> {
     return this.http.post<TrainingJournal>(this.api, data);
   }
+
+  /** Modifie une entrée : ses propres champs pour l'auteur, le commentaire pour le coach de la séance. */
+  update(id: number, changes: Partial<Pick<TrainingJournal, 'fatigue' | 'mood' | 'notes' | 'pain' | 'coach_comment'>>): Observable<TrainingJournal> {
+    return this.http.patch<TrainingJournal>(`${this.api}/${id}`, changes);
+  }
+
+  delete(id: number): Observable<void> { return this.http.delete<void>(`${this.api}/${id}`); }
 }

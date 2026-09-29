@@ -143,6 +143,13 @@ type Selection = { kind: 'goal' | 'record'; id: number } | { kind: 'new-goal' | 
                       <strong class="goal-meter-value">{{ record.value | number:'1.0-1' }} {{ record.unit }}</strong>
                     </div>
                     @if (record.notes) { <span class="module-stat-line text-secondary">{{ record.notes }}</span> }
+
+                    <div class="module-detail-actions">
+                      <button type="button" class="action-chip danger" (click)="removeRecord(record.id)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+                        Supprimer le record
+                      </button>
+                    </div>
                   </div>
                 }
               }
@@ -306,6 +313,18 @@ export class GoalsComponent {
         this.toast.success('Objectif supprimé.');
       },
       error: () => this.toast.error('Impossible de supprimer cet objectif.')
+    });
+  }
+
+  /** Supprime un record, le retire de la liste et affiche le suivant (ou le formulaire). */
+  removeRecord(id: number): void {
+    this.service.deleteRecord(id).pipe(markForCheck(this.cd)).subscribe({
+      next: () => {
+        this.records = this.records.filter((record) => record.id !== id);
+        this.selected = this.records.length ? { kind: 'record', id: this.records[0].id } : { kind: 'new-record' };
+        this.toast.success('Record supprimé.');
+      },
+      error: () => this.toast.error('Impossible de supprimer ce record.')
     });
   }
 

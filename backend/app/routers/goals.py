@@ -68,3 +68,13 @@ def create_record(data: RecordCreate, db: Session = Depends(get_db), user: User 
     db.commit()
     db.refresh(item)
     return item
+
+
+@router.delete("/records/{record_id}", status_code=204)
+def delete_record(record_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Supprime un record personnel appartenant à l'utilisateur connecté (DELETE /records/{record_id})."""
+    item = db.get(PersonalRecord, record_id)
+    if not item or item.user_id != user.id:
+        raise HTTPException(404, "Record introuvable")
+    db.delete(item)
+    db.commit()

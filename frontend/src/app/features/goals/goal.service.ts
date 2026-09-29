@@ -24,4 +24,5 @@ export class GoalService {
   deleteGoal(id: number): Observable<void> { return this.http.delete<void>(`${this.api}/goals/${id}`); }
   records(): Observable<PersonalRecord[]> { return this.http.get<PersonalRecord[]>(`${this.api}/records`); }
   createRecord(data: Omit<PersonalRecord, 'id' | 'user_id' | 'achieved_at'>): Observable<PersonalRecord> { return this.http.post<PersonalRecord>(`${this.api}/records`, data); }
+  deleteRecord(id: number): Observable<void> { return this.http.delete<void>(`${this.api}/records/${id}`); }
 }

@@ -1,5 +1,6 @@
 """Routeur FastAPI exposant les endpoints du journal d'entraînement : consultation
-filtrée selon le rôle, création par le sportif participant, et complément par le coach."""
+filtrée selon le rôle, création par le sportif participant, complément par le coach,
+et suppression par son auteur."""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -87,3 +88,17 @@ def update_journal(journal_id: int, data: JournalUpdate, db: Session = Depends(g
     db.commit()
     db.refresh(item)
     return item
+
+
+@router.delete("/{journal_id}", status_code=204)
+def delete_journal(journal_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Supprime une entrée de journal (DELETE /journal/{journal_id}). Seul son auteur
+    (ou un admin) peut la supprimer ; le coach de la séance ne peut que la commenter.
+    """
+    item = db.get(TrainingJournal, journal_id)
+    if not item:
+        raise HTTPException(404, "Entrée de journal introuvable")
+    if user.role != "admin" and item.user_id != user.id:
+        raise HTTPException(403, "Vous ne pouvez supprimer que votre journal")
+    db.delete(item)
+    db.commit()
