@@ -35,7 +35,8 @@ def list_athletes(db: Session = Depends(get_db)):
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     """Met à jour un compte utilisateur (PATCH /users/{user_id}). Un utilisateur peut
     modifier son propre profil ; seul un admin peut modifier un autre compte, changer
-    un rôle, ou activer/désactiver un compte.
+    un rôle, ou activer/désactiver un compte. Personne ne peut changer son propre rôle
+    ni désactiver son propre compte (un admin ne peut pas se retirer ses droits par erreur).
     """
     if current.role != "admin" and current.id != user_id:
         raise HTTPException(403, "Permissions insuffisantes")
@@ -48,6 +49,8 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), c
         raise HTTPException(403, "Seul un admin peut activer ou désactiver un compte")
     if data.role and data.role not in {"coach", "sportif", "admin"}:
         raise HTTPException(400, "Rôle invalide")
+    if user.id == current.id and ((data.role and data.role != user.role) or data.is_active is False):
+        raise HTTPException(403, "Vous ne pouvez pas modifier votre propre rôle ni désactiver votre propre compte")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(user, key, value)
     db.commit()
