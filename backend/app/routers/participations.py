@@ -60,16 +60,13 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
 @router.patch("/{participation_id}", response_model=ParticipationRead)
 def update_participation(participation_id: int, data: ParticipationUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Met à jour le statut d'une participation (PATCH /participations/{participation_id}).
-    Un sportif peut se remettre au statut "inscrit" ; seuls le coach de la séance ou
-    un admin peuvent la marquer présent/absent.
+    Seuls le coach de la séance ou un admin peuvent changer le statut (inscrit, présent,
+    absent) : un sportif ne peut pas effacer une absence en se remettant « inscrit ».
     """
     item = db.get(Participation, participation_id)
     if not item:
         raise HTTPException(404, "Participation introuvable")
-    if user.role == "sportif" and item.user_id != user.id:
-        raise HTTPException(403, "Permissions insuffisantes")
-    is_session_coach = item.session.coach_id == user.id
-    if user.role not in {"admin"} and not is_session_coach and data.status != "inscrit":
+    if user.role != "admin" and item.session.coach_id != user.id:
         raise HTTPException(403, "Seul le coach de la séance ou un admin peut modifier la présence")
     if data.status not in {"inscrit", "present", "absent"}:
         raise HTTPException(400, "Statut invalide")
