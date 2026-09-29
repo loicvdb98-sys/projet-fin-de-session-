@@ -5,7 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { forkJoin } from 'rxjs';
 import { Goal, GoalService, PersonalRecord } from './goal.service';
+import { ParticipationService } from '@features/participations/participation.service';
+import { SessionService } from '@features/sessions/session.service';
+import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
 
@@ -116,6 +120,19 @@ type Selection = { kind: 'goal' | 'record'; id: number } | { kind: 'new-goal' | 
                       <div class="goal-progress"><span [style.width.%]="progress(goal)"></span></div>
                     </div>
                     @if (goal.notes) { <span class="module-stat-line text-secondary">{{ goal.notes }}</span> }
+
+                    <form class="module-form goal-progress-form" [formGroup]="progressForm" (ngSubmit)="saveProgress(goal)">
+                      <div class="form-inline">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Valeur actuelle ({{ goal.unit }})</mat-label><input matInput type="number" min="0" formControlName="current_value"></mat-form-field>
+                        <button mat-flat-button class="primary-action" type="submit" [disabled]="progressForm.invalid || progressForm.pristine">Mettre à jour</button>
+                      </div>
+                      @if (isSessionGoal(goal) && attendedThisMonth !== null) {
+                        <p class="text-secondary goal-suggestion">
+                          Vous avez suivi {{ attendedThisMonth }} séance(s) depuis le 1er {{ monthStart | date:'MMMM' }}.
+                          @if (attendedThisMonth !== goal.current_value) { <button type="button" class="link-button" (click)="useAttendance()">Reprendre ce nombre</button> }
+                        </p>
+                      }
+                    </form>
 
                     <div class="module-detail-actions">
                       <button type="button" class="action-chip danger" (click)="removeGoal(goal.id)">
@@ -232,9 +249,16 @@ export class GoalsComponent {
   goalError = '';
   recordError = '';
   readonly goalForm = this.fb.nonNullable.group({ title: ['', [Validators.required, Validators.minLength(2)]], metric: ['progression'], target_value: [1, [Validators.required, Validators.min(0.01)]], current_value: [0], unit: ['séances', Validators.required], due_date: [''], notes: [''] });
+  readonly progressForm = this.fb.nonNullable.group({ current_value: [0, [Validators.required, Validators.min(0)]] });
+  /** Séances suivies (présent) par l'utilisateur depuis le 1er du mois, ou null si inconnu. */
+  attendedThisMonth: number | null = null;
+  readonly monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  private readonly participations = inject(ParticipationService);
+  private readonly sessionService = inject(SessionService);
+  private readonly users = inject(UserService);
   readonly recordForm = this.fb.nonNullable.group({ exercise_name: ['', Validators.required], value: [1, [Validators.required, Validators.min(0.01)]], unit: ['kg', Validators.required], notes: [''] });
 
-  constructor() { this.load(); }
+  constructor() { this.load(); this.loadAttendance(); }
 
   get reachedCount(): number { return this.goals.filter((goal) => this.isReached(goal)).length; }
 
@@ -248,7 +272,10 @@ export class GoalsComponent {
     return selected.kind === 'record' ? this.records.find((record) => record.id === selected.id) : undefined;
   }
 
-  select(selection: Selection): void { this.selected = selection; }
+  select(selection: Selection): void {
+    this.selected = selection;
+    this.resetProgressForm();
+  }
 
   isSelected(kind: 'goal' | 'record', id: number): boolean {
     return this.selected.kind === kind && 'id' in this.selected && this.selected.id === id;
@@ -264,7 +291,7 @@ export class GoalsComponent {
           next: (records) => {
             this.records = records;
             // Ouvre le premier objectif s'il y en a, sinon le formulaire de création.
-            this.selected = goals.length ? { kind: 'goal', id: goals[0].id } : { kind: 'new-goal' };
+            this.select(goals.length ? { kind: 'goal', id: goals[0].id } : { kind: 'new-goal' });
             this.loading = false;
           },
           error: () => { this.loadError = true; this.loading = false; }
@@ -281,7 +308,7 @@ export class GoalsComponent {
     this.service.createGoal(this.goalForm.getRawValue()).pipe(markForCheck(this.cd)).subscribe({
       next: (goal) => {
         this.goals = [goal, ...this.goals];
-        this.selected = { kind: 'goal', id: goal.id };
+        this.select({ kind: 'goal', id: goal.id });
         this.goalForm.reset({ title: '', metric: 'progression', target_value: 1, current_value: 0, unit: 'séances', due_date: '', notes: '' });
         this.toast.success('Objectif créé.');
       },
@@ -309,7 +336,7 @@ export class GoalsComponent {
     this.service.deleteGoal(id).pipe(markForCheck(this.cd)).subscribe({
       next: () => {
         this.goals = this.goals.filter((goal) => goal.id !== id);
-        this.selected = this.goals.length ? { kind: 'goal', id: this.goals[0].id } : { kind: 'new-goal' };
+        this.select(this.goals.length ? { kind: 'goal', id: this.goals[0].id } : { kind: 'new-goal' });
         this.toast.success('Objectif supprimé.');
       },
       error: () => this.toast.error('Impossible de supprimer cet objectif.')
@@ -328,7 +355,50 @@ export class GoalsComponent {
     });
   }
 
+  /** Enregistre la nouvelle valeur actuelle de l'objectif et met la fiche à jour en place. */
+  saveProgress(goal: Goal): void {
+    if (this.progressForm.invalid) return;
+    const { id, user_id, ...data } = goal;
+    this.service.updateGoal(id, { ...data, current_value: this.progressForm.getRawValue().current_value }).pipe(markForCheck(this.cd)).subscribe({
+      next: (updated) => {
+        this.goals = this.goals.map((item) => (item.id === updated.id ? updated : item));
+        this.resetProgressForm();
+        this.toast.success(this.isReached(updated) ? 'Objectif atteint, bravo !' : 'Progression mise à jour.');
+      },
+      error: () => this.toast.error('Impossible de mettre à jour cet objectif.')
+    });
+  }
+
+  /** Reprend dans le champ le nombre de séances suivies ce mois-ci. */
+  useAttendance(): void {
+    if (this.attendedThisMonth === null) return;
+    this.progressForm.setValue({ current_value: this.attendedThisMonth });
+    this.progressForm.markAsDirty();
+  }
+
+  /** Objectif compté en séances (unité « séance(s) »), pour lequel on peut proposer la présence réelle. */
+  isSessionGoal(goal: Goal): boolean { return goal.unit.trim().toLowerCase().startsWith('séance'); }
+
   progress(goal: Goal): number { return Math.min(100, Math.round((goal.current_value / goal.target_value) * 100)); }
 
   isReached(goal: Goal): boolean { return goal.current_value >= goal.target_value; }
+
+  private resetProgressForm(): void {
+    this.progressForm.reset({ current_value: this.selectedGoal?.current_value ?? 0 });
+  }
+
+  /** Compte les séances où l'utilisateur a été marqué présent depuis le 1er du mois (séances déjà passées). */
+  private loadAttendance(): void {
+    forkJoin([this.users.me(), this.participations.list(), this.sessionService.list()]).pipe(markForCheck(this.cd)).subscribe({
+      next: ([me, participations, sessions]) => {
+        const startsAt = new Map(sessions.map((session) => [session.id, new Date(session.starts_at).getTime()]));
+        const now = Date.now();
+        this.attendedThisMonth = participations.filter((participation) => {
+          const time = startsAt.get(participation.session_id);
+          return participation.user_id === me.id && participation.status === 'present' && time !== undefined && time >= this.monthStart.getTime() && time <= now;
+        }).length;
+      },
+      error: () => { this.attendedThisMonth = null; }
+    });
+  }
 }

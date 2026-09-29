@@ -21,6 +21,8 @@ export class GoalService {
 
   goals(): Observable<Goal[]> { return this.http.get<Goal[]>(`${this.api}/goals`); }
   createGoal(data: Omit<Goal, 'id' | 'user_id'>): Observable<Goal> { return this.http.post<Goal>(`${this.api}/goals`, data); }
+  /** Met à jour un objectif (l'API attend l'objet complet, pas seulement les champs modifiés). */
+  updateGoal(id: number, data: Omit<Goal, 'id' | 'user_id'>): Observable<Goal> { return this.http.patch<Goal>(`${this.api}/goals/${id}`, data); }
   deleteGoal(id: number): Observable<void> { return this.http.delete<void>(`${this.api}/goals/${id}`); }
   records(): Observable<PersonalRecord[]> { return this.http.get<PersonalRecord[]>(`${this.api}/records`); }
   createRecord(data: Omit<PersonalRecord, 'id' | 'user_id' | 'achieved_at'>): Observable<PersonalRecord> { return this.http.post<PersonalRecord>(`${this.api}/records`, data); }
