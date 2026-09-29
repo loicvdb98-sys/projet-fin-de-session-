@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
+    # Origines supplémentaires acceptées par expression régulière, ex. le front ouvert depuis
+    # un téléphone du réseau local : http://192\.168\.\d{1,3}\.\d{1,3}:4200 (vide = aucune).
+    allowed_origin_regex: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

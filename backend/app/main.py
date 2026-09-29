@@ -26,6 +26,7 @@ app = FastAPI(title="Sports Sessions API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().allowed_origins_list,
+    allow_origin_regex=get_settings().allowed_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

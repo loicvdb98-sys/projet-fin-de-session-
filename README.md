@@ -55,6 +55,27 @@ npm start
 
 L'application est servie sur `http://localhost:4200`.
 
+### 4. Tester sur un téléphone (même Wi-Fi)
+
+1. Le PC et le téléphone doivent être sur le même réseau Wi-Fi, déclaré comme
+   réseau **privé** dans Windows (les ports 4200 et 8000 doivent y être autorisés
+   par le pare-feu).
+2. Dans `backend/.env`, autoriser le front servi sur le réseau local :
+   `ALLOWED_ORIGIN_REGEX=http://192\.168\.\d{1,3}\.\d{1,3}:4200`
+3. Lancer l'API et le front en écoutant sur le réseau :
+
+   ```powershell
+   cd backend
+   py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+   cd frontend
+   npm run start:lan
+   ```
+
+4. Sur le téléphone, ouvrir `http://<adresse IP du PC>:4200` (affichée par
+   `npm run start:lan` sur la ligne « Network », ou par `ipconfig`). L'application
+   appelle l'API à la même adresse, sur le port 8000.
+
 ## Tests
 
 ```powershell
