@@ -26,7 +26,7 @@ const MODULES: DashboardModule[] = [
   { key: 'sessions', title: 'Séances', description: 'Consultez et gérez vos séances d’entraînement.', link: '/sessions', color: 'secondary' },
   { key: 'calendar', title: 'Calendrier', description: 'Visualisez votre planning à venir.', link: '/calendar', color: 'info' },
   { key: 'participations', title: 'Participations', description: 'Suivez vos inscriptions aux séances.', link: '/participations', color: 'success' },
-  { key: 'performances', title: 'Performances', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary' },
+  { key: 'performances', title: 'Statistiques', description: 'Analysez vos résultats et votre progression.', link: '/performances', color: 'primary' },
   { key: 'goals', title: 'Objectifs', description: 'Définissez vos cibles et records personnels.', link: '/goals', color: 'warning' },
   { key: 'programs', title: 'Programmes', description: 'Suivez vos programmes d’entraînement.', link: '/programs', color: 'secondary' },
   { key: 'journal', title: 'Journal', description: 'Consignez vos ressentis après chaque séance.', link: '/journal', color: 'info' },

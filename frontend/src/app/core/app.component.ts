@@ -105,7 +105,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             </a>
             <a class="app-rail-item" routerLink="/notifications" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
-              <span class="app-rail-label">Alertes</span>
+              <span class="app-rail-label">Notifications</span>
             </a>
 
             @if (auth.isCoachOrAdmin()) {
