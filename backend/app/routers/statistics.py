@@ -48,9 +48,10 @@ def my_statistics(db: Session = Depends(get_db), user: User = Depends(get_curren
         select(func.count()).select_from(participation_query.where(Participation.status == "present").subquery())
     ) or 0
     total_performances = db.scalar(select(func.count()).select_from(performance_query.subquery())) or 0
-    average_score = db.scalar(select(func.avg(Performance.score)).where(
-        Performance.user_id == user.id if user.role == "sportif" else True
-    ))
+    # Même périmètre que total_performances : ses performances pour un sportif, celles de
+    # ses séances pour un coach, toutes pour un admin (et non toute la plateforme pour un coach).
+    performances = performance_query.subquery()
+    average_score = db.scalar(select(func.avg(performances.c.score)))
     return StatisticsRead(
         total_sessions=total_sessions,
         upcoming_sessions=upcoming_sessions,
