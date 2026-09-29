@@ -13,6 +13,7 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { PerformanceService } from '@features/performances/performance.service';
 import { SessionService } from '@features/sessions/session.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { summarizeAttendance } from './attendance';
 
 @Component({
   standalone: true,
@@ -30,16 +31,16 @@ import { markForCheck } from '@core/mark-for-check.operator';
         </div>
 
         <div class="cards athlete-overview">
-          <mat-card class="stat-card accent"><mat-card-title>Taux de présence</mat-card-title><strong class="stat-value">{{ attendanceRate }} %</strong><p class="text-secondary">sur {{ totalSessions }} séance(s) suivie(s)</p></mat-card>
-          <mat-card class="stat-card"><mat-card-title>Séances présent(e)</mat-card-title><strong class="stat-value">{{ sessionsAttended }}</strong><p class="text-secondary">sur {{ totalSessions }} inscription(s)</p></mat-card>
-          <mat-card class="stat-card"><mat-card-title>Dernière activité</mat-card-title><strong class="activity-value">{{ lastActivity || '—' }}</strong><p class="text-secondary">sportif suivi</p></mat-card>
+          <mat-card class="stat-card accent"><mat-card-title>Taux de présence</mat-card-title><strong class="stat-value">{{ attendanceRate }} %</strong><p class="text-secondary">sur {{ pastSessions }} séance(s) passée(s)</p></mat-card>
+          <mat-card class="stat-card"><mat-card-title>Séances à venir</mat-card-title><strong class="stat-value">{{ upcomingSessions }}</strong><p class="text-secondary">inscription(s) en cours</p></mat-card>
+          <mat-card class="stat-card"><mat-card-title>Dernière présence</mat-card-title><strong class="activity-value">{{ lastActivity || '—' }}</strong><p class="text-secondary">séance passée la plus récente</p></mat-card>
         </div>
 
         <div class="athlete-followup-grid">
           <mat-card>
             <p class="eyebrow">ASSIDUITÉ</p><h2>Présence aux séances</h2>
             <div class="goal-progress large-progress"><span [style.width.%]="attendanceRate"></span></div>
-            <p class="text-secondary">{{ sessionsAttended }} présence(s) sur {{ totalSessions }} séance(s) suivie(s).</p>
+            <p class="text-secondary">{{ sessionsAttended }} présence(s) sur {{ pastSessions }} séance(s) passée(s).</p>
           </mat-card>
           @if (performanceScores.length) {
             <mat-card>
@@ -70,7 +71,8 @@ export class AthleteDetailComponent {
   athlete?: User;
   attendanceRate = 0;
   sessionsAttended = 0;
-  totalSessions = 0;
+  pastSessions = 0;
+  upcomingSessions = 0;
   lastActivity: string | null = null;
   performanceScores: number[] = [];
 
@@ -86,19 +88,12 @@ export class AthleteDetailComponent {
       this.loaded = true;
       if (!this.athlete) return;
 
-      const sessionsById = new Map(sessions.map((session) => [session.id, session]));
-      const ownParticipations = participations.filter((participation) => participation.user_id === athleteId);
-      this.totalSessions = ownParticipations.length;
-      this.sessionsAttended = ownParticipations.filter((participation) => participation.status === 'present').length;
-      this.attendanceRate = this.totalSessions ? Math.round((this.sessionsAttended / this.totalSessions) * 100) : 0;
-
-      const lastSession = ownParticipations
-        .map((participation) => sessionsById.get(participation.session_id))
-        .filter((session): session is NonNullable<typeof session> => !!session)
-        .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())[0];
-      this.lastActivity = lastSession
-        ? new Date(lastSession.starts_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        : null;
+      const summary = summarizeAttendance(athleteId, participations, sessions);
+      this.pastSessions = summary.pastSessions;
+      this.upcomingSessions = summary.upcoming;
+      this.sessionsAttended = summary.attended;
+      this.attendanceRate = summary.rate;
+      this.lastActivity = summary.lastActivity ? summary.lastActivity.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
 
       this.performanceScores = performances
         .filter((performance) => performance.user_id === athleteId)

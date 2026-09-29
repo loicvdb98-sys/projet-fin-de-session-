@@ -13,11 +13,15 @@ import { User, UserService } from './user.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { SessionService } from '@features/sessions/session.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { summarizeAttendance } from './attendance';
 
 interface AthleteSummary extends User {
   attendanceRate: number;
   sessionsAttended: number;
-  totalSessions: number;
+  /** Séances passées auxquelles le sportif était inscrit (base du taux de présence). */
+  pastSessions: number;
+  upcomingSessions: number;
+  registrations: number;
   lastActivity: string | null;
 }
 
@@ -67,7 +71,7 @@ interface AthleteSummary extends User {
                 <span class="module-rail-icon module-initials" aria-hidden="true">{{ initials(athlete.full_name) }}</span>
                 <span class="module-rail-text">
                   <span class="module-rail-label">{{ athlete.full_name }}</span>
-                  <small class="module-rail-sublabel">Présence {{ athlete.attendanceRate }} % · {{ athlete.sessionsAttended }}/{{ athlete.totalSessions }}</small>
+                  <small class="module-rail-sublabel">Présence {{ athlete.attendanceRate }} % · {{ athlete.sessionsAttended }}/{{ athlete.pastSessions }}</small>
                 </span>
               </button>
             }
@@ -90,11 +94,11 @@ interface AthleteSummary extends User {
                 <div class="goal-meter">
                   <div class="goal-meter-head">
                     <strong class="goal-meter-value">{{ athlete.attendanceRate }} %</strong>
-                    <span class="text-secondary">{{ athlete.sessionsAttended }}/{{ athlete.totalSessions }} séance(s) suivie(s)</span>
+                    <span class="text-secondary">{{ athlete.sessionsAttended }}/{{ athlete.pastSessions }} séance(s) passée(s)</span>
                   </div>
                   <div class="goal-progress"><span [style.width.%]="athlete.attendanceRate"></span></div>
                 </div>
-                <span class="module-stat-line text-secondary">Dernière activité : {{ athlete.lastActivity || 'aucune séance' }}</span>
+                <span class="module-stat-line text-secondary">Dernière présence : {{ athlete.lastActivity || 'aucune' }} · {{ athlete.upcomingSessions }} séance(s) à venir</span>
 
                 <div class="module-detail-actions">
                   <a class="action-chip primary" [routerLink]="['/athletes', athlete.id]">
@@ -126,14 +130,16 @@ export class AthletesComponent {
     return this.athletes.find((athlete) => athlete.id === this.selectedId);
   }
 
+  /** Présence moyenne des sportifs ayant déjà au moins une séance passée. */
   get averageAttendance(): number {
-    return this.athletes.length ? Math.round(this.athletes.reduce((sum, athlete) => sum + athlete.attendanceRate, 0) / this.athletes.length) : 0;
+    const withHistory = this.athletes.filter((athlete) => athlete.pastSessions > 0);
+    return withHistory.length ? Math.round(withHistory.reduce((sum, athlete) => sum + athlete.attendanceRate, 0) / withHistory.length) : 0;
   }
 
-  get withoutActivity(): number { return this.athletes.filter((athlete) => athlete.totalSessions === 0).length; }
+  get withoutActivity(): number { return this.athletes.filter((athlete) => athlete.registrations === 0).length; }
 
-  // Une participation ne porte que le statut ; on la croise avec les séances pour dater
-  // la dernière activité, et on l'agrège par sportif pour un taux de présence réel.
+  // Une participation ne porte que le statut ; on la croise avec les séances (voir
+  // summarizeAttendance) pour ne compter que les séances passées dans le taux de présence.
   load(): void {
     this.loading = true;
     this.loadError = false;
@@ -143,20 +149,16 @@ export class AthletesComponent {
       this.sessionService.list()
     ]).pipe(
       map(([athletes, participations, sessions]): AthleteSummary[] => {
-        const sessionsById = new Map(sessions.map((session) => [session.id, session]));
         return athletes.map((athlete) => {
-          const own = participations.filter((participation) => participation.user_id === athlete.id);
-          const attended = own.filter((participation) => participation.status === 'present').length;
-          const lastSession = own
-            .map((participation) => sessionsById.get(participation.session_id))
-            .filter((session): session is NonNullable<typeof session> => !!session)
-            .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())[0];
+          const summary = summarizeAttendance(athlete.id, participations, sessions);
           return {
             ...athlete,
-            totalSessions: own.length,
-            sessionsAttended: attended,
-            attendanceRate: own.length ? Math.round((attended / own.length) * 100) : 0,
-            lastActivity: lastSession ? new Date(lastSession.starts_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null,
+            registrations: summary.registrations,
+            pastSessions: summary.pastSessions,
+            upcomingSessions: summary.upcoming,
+            sessionsAttended: summary.attended,
+            attendanceRate: summary.rate,
+            lastActivity: summary.lastActivity ? summary.lastActivity.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null,
           };
         });
       }),
@@ -173,7 +175,7 @@ export class AthletesComponent {
 
   /** Couleur du module selon l'assiduité : vert à partir de 70 %, bleu dès 40 %, rouge en dessous. */
   tint(athlete: AthleteSummary): string {
-    if (!athlete.totalSessions) return 'c-secondary';
+    if (!athlete.pastSessions) return 'c-secondary';
     return athlete.attendanceRate >= 70 ? 'c-success' : athlete.attendanceRate >= 40 ? 'c-info' : 'c-danger';
   }
 
