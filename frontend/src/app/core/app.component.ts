@@ -2,11 +2,11 @@
  * Composant racine de l'application : affiche la coquille (rail de navigation,
  * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
  */
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { forkJoin, of, shareReplay, switchMap } from 'rxjs';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, forkJoin, of, shareReplay, switchMap } from 'rxjs';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
 import { SessionService } from '@features/sessions/session.service';
@@ -24,18 +24,28 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
   imports: [RouterOutlet, RouterLink, RouterLinkActive, AsyncPipe, ToastContainerComponent],
   template: `
     <div class="app-shell">
-      <aside class="app-rail" aria-label="Navigation principale">
-        <a class="app-rail-brand" routerLink="/dashboard" aria-label="SportPlan - tableau de bord">
-          <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 22 22" fill="currentColor">
-              <rect x="4" y="12" width="3.2" height="6" rx="1.6"/>
-              <rect x="9.4" y="8" width="3.2" height="10" rx="1.6"/>
-              <rect x="14.8" y="4" width="3.2" height="14" rx="1.6"/>
-              <circle cx="16.4" cy="2.1" r="1.3"/>
-            </svg>
-          </span>
-          <span>SportPlan</span>
-        </a>
+      <aside class="app-rail" [class.menu-open]="menuOpen()" aria-label="Navigation principale">
+        <div class="app-rail-top">
+          <a class="app-rail-brand" routerLink="/dashboard" aria-label="SportPlan - tableau de bord">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 22 22" fill="currentColor">
+                <rect x="4" y="12" width="3.2" height="6" rx="1.6"/>
+                <rect x="9.4" y="8" width="3.2" height="10" rx="1.6"/>
+                <rect x="14.8" y="4" width="3.2" height="14" rx="1.6"/>
+                <circle cx="16.4" cy="2.1" r="1.3"/>
+              </svg>
+            </span>
+            <span>SportPlan</span>
+          </a>
+          <button type="button" class="app-menu-toggle" (click)="menuOpen.set(!menuOpen())"
+            [attr.aria-expanded]="menuOpen()" [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'">
+            @if (menuOpen()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            }
+          </button>
+        </div>
 
         @if (currentUser$ | async; as me) {
           <div class="app-rail-user">
@@ -160,6 +170,9 @@ export class AppComponent {
   private readonly participations = inject(ParticipationService);
   private readonly toast = inject(ToastService);
 
+  /** Menu de navigation déplié (affichage mobile uniquement). */
+  readonly menuOpen = signal(false);
+
   // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois).
   // shareReplay évite un second appel à /users/me pour la vérification des rappels ci-dessous.
   readonly currentUser$ = toObservable(this.auth.isAuthenticated).pipe(
@@ -168,6 +181,8 @@ export class AppComponent {
   );
 
   constructor() {
+    // Referme le menu mobile après chaque navigation.
+    inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => this.menuOpen.set(false));
     this.currentUser$.subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
