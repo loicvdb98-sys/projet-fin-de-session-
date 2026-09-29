@@ -188,6 +188,7 @@ def run_seed() -> None:
         add_participation(db, lea.id, s5.id, "present")
 
         add_participation(db, sportif.id, s6.id, "inscrit")
+        add_participation(db, sportif.id, s8.id, "inscrit")
         add_participation(db, lea.id, s6.id, "inscrit")
         add_participation(db, thomas.id, s7.id, "inscrit")
         add_participation(db, ines.id, s8.id, "inscrit")
@@ -203,7 +204,7 @@ def run_seed() -> None:
 
         # --- Objectifs et records personnels du sportif de démo ---
         get_or_create_goal(db, sportif.id, "Terminer 12 séances ce mois-ci", metric="séances",
-                            target_value=12, current_value=9, unit="séances",
+                            target_value=12, current_value=5, unit="séances",
                             due_date=(now + timedelta(days=8)).date(), notes="Rester régulier chaque semaine.")
         get_or_create_goal(db, sportif.id, "Améliorer mon endurance", metric="score",
                             target_value=100, current_value=88, unit="points",

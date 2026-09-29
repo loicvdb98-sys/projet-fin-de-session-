@@ -27,6 +27,22 @@ Comptes créés :
 Les comptes sont réservés au développement local. Changez les mots de passe avant
 toute utilisation sur un environnement partagé ou de production.
 
+## Avant une présentation
+
+Les dates du jeu de démonstration sont calculées par rapport au jour où
+`seed.py` est lancé (séances passées à J-16…J-3, séances à venir à J+2…J+9).
+Quelques jours plus tard, les séances « à venir » sont donc déjà passées et le
+sportif de démo n'a plus d'inscription future. La veille d'une démonstration,
+rechargez le jeu de données :
+
+```powershell
+python reset_demo.py
+python seed.py
+```
+
+`reset_demo.py` supprime aussi les séances créées à la main avec le compte coach
+de démo : sauvegardez la base avant si elles doivent être conservées.
+
 ## Retirer les données de démonstration
 
 Comme ce ne sont pas de vraies données, un script symétrique les supprime
