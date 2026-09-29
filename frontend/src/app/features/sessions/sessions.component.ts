@@ -45,7 +45,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
   imports: [DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page sessions-page">
-      <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez toutes vos séances à venir.</p></div><a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a></div>
+      <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez vos séances à venir et l’historique des séances passées.</p></div><a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a></div>
       @if (canManage) {
         <mat-card class="workout-builder" [class.collapsed]="!builderExpanded">
           <button type="button" class="builder-heading builder-toggle" (click)="builderExpanded = !builderExpanded" [attr.aria-expanded]="builderExpanded">
@@ -92,21 +92,17 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
       } @else if (sessions.length) {
         <div class="module-shell">
           <nav class="module-rail" aria-label="Séances">
-            @for (session of sortedSessions(); track session.id) {
-              <button
-                type="button"
-                class="module-rail-item"
-                [class]="'c-' + sessionTint(session)"
-                [class.active]="session.id === selectedModuleSessionId"
-                [attr.aria-current]="session.id === selectedModuleSessionId ? 'true' : null"
-                (click)="selectedModuleSessionId = session.id">
-                <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
-                <span class="module-rail-text">
-                  <span class="module-rail-label">{{ session.title }}</span>
-                  <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}</small>
-                </span>
-                @if (remainingSpots(session) <= 0) { <span class="module-rail-dot" title="Complet"></span> }
-              </button>
+            @if (upcomingSessions().length) {
+              <p class="app-rail-section">À venir</p>
+              @for (session of upcomingSessions(); track session.id) {
+                <ng-container *ngTemplateOutlet="railItemTpl; context: { session: session }"></ng-container>
+              }
+            }
+            @if (pastSessions().length) {
+              <p class="app-rail-section">Passées</p>
+              @for (session of pastSessions(); track session.id) {
+                <ng-container *ngTemplateOutlet="railItemTpl; context: { session: session }"></ng-container>
+              }
             }
           </nav>
 
@@ -116,10 +112,10 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
                 <div class="module-detail-header">
                   <span class="module-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
                   <div>
-                    <p class="eyebrow">SÉANCE{{ isNextSession(session) ? ' · À VENIR' : '' }}</p>
+                    <p class="eyebrow">SÉANCE · {{ isPast(session) ? 'PASSÉE' : isNextSession(session) ? 'PROCHAINE' : 'À VENIR' }}</p>
                     <h2>{{ session.title }}</h2>
                   </div>
-                  <span class="module-badge">{{ remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
+                  <span class="module-badge">{{ isPast(session) ? 'Terminée' : remainingSpots(session) > 0 ? remainingSpots(session) + ' place(s)' : 'Complet' }}</span>
                 </div>
 
                 @if (editingSessionId === session.id) {
@@ -165,8 +161,25 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
           </div>
         </div>
 
+        <ng-template #railItemTpl let-session="session">
+          <button
+            type="button"
+            class="module-rail-item"
+            [class]="'c-' + sessionTint(session)"
+            [class.active]="session.id === selectedModuleSession?.id"
+            [attr.aria-current]="session.id === selectedModuleSession?.id ? 'true' : null"
+            (click)="selectedModuleSessionId = session.id">
+            <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
+            <span class="module-rail-text">
+              <span class="module-rail-label">{{ session.title }}</span>
+              <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}</small>
+            </span>
+            @if (!isPast(session) && remainingSpots(session) <= 0) { <span class="module-rail-dot" title="Complet"></span> }
+          </button>
+        </ng-template>
+
         <ng-template #actionsTpl let-session="session">
-          <button type="button" class="action-chip primary" [disabled]="remainingSpots(session) <= 0" (click)="register(session.id)">
+          <button type="button" class="action-chip primary" [disabled]="isPast(session) || remainingSpots(session) <= 0" (click)="register(session.id)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
             S'inscrire
           </button>
@@ -179,14 +192,16 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.9-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.2 20c.2-2.4 1.9-4.5 4.8-4.5"/></svg>
               Présences
             </button>
-            <button type="button" class="action-chip" (click)="startEdit(session)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Modifier
-            </button>
-            <button type="button" class="action-chip danger" (click)="cancelSession(session)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
-              Annuler
-            </button>
+            @if (!isPast(session)) {
+              <button type="button" class="action-chip" (click)="startEdit(session)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Modifier
+              </button>
+              <button type="button" class="action-chip danger" (click)="cancelSession(session)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+                Annuler
+              </button>
+            }
           }
         </ng-template>
 
@@ -248,9 +263,10 @@ export class SessionsComponent implements OnDestroy {
   sessionsLoadError = false;
   selectedModuleSessionId?: number;
 
-  /** Séance affichée dans le panneau de détail : celle sélectionnée dans le rail, sinon la plus proche à venir. */
+  /** Séance affichée dans le panneau de détail : celle sélectionnée dans le rail, sinon la prochaine à venir (ou la dernière passée). */
   get selectedModuleSession(): SportSession | undefined {
-    return this.sessions.find((session) => session.id === this.selectedModuleSessionId) ?? this.sortedSessions()[0];
+    return this.sessions.find((session) => session.id === this.selectedModuleSessionId)
+      ?? this.upcomingSessions()[0] ?? this.pastSessions()[0];
   }
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
@@ -310,13 +326,24 @@ export class SessionsComponent implements OnDestroy {
     return Math.max(0, session.capacity - session.registered_count);
   }
 
-  /** Séances triées chronologiquement (les plus proches d'abord), pour le rail de la vue « Modules ». */
-  sortedSessions(): SportSession[] {
-    return [...this.sessions].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  /** Vrai si la séance a déjà commencé (plus d'inscription, de modification ni d'annulation possible). */
+  isPast(session: SportSession): boolean {
+    return new Date(session.starts_at).getTime() <= Date.now();
   }
 
-  /** Couleur associée au remplissage de la séance : places nombreuses, rares, ou complet. */
-  sessionTint(session: SportSession): 'primary' | 'warning' | 'danger' {
+  /** Séances à venir, de la plus proche à la plus lointaine. */
+  upcomingSessions(): SportSession[] {
+    return this.sessions.filter((session) => !this.isPast(session)).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }
+
+  /** Séances passées, de la plus récente à la plus ancienne. */
+  pastSessions(): SportSession[] {
+    return this.sessions.filter((session) => this.isPast(session)).sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+  }
+
+  /** Couleur de la séance : passée, ou selon son remplissage (places nombreuses, rares, complet). */
+  sessionTint(session: SportSession): 'secondary' | 'primary' | 'warning' | 'danger' {
+    if (this.isPast(session)) return 'secondary';
     const remaining = this.remainingSpots(session);
     if (remaining <= 0) return 'danger';
     return session.capacity && remaining / session.capacity <= 0.25 ? 'warning' : 'primary';
@@ -329,7 +356,7 @@ export class SessionsComponent implements OnDestroy {
 
   /** Vrai si la séance est la prochaine à venir chronologiquement. */
   isNextSession(session: SportSession): boolean {
-    return this.sortedSessions()[0]?.id === session.id;
+    return this.upcomingSessions()[0]?.id === session.id;
   }
 
   /** Date complète en français avec majuscule initiale (ex. "Dimanche 06 septembre à 11:47"). */
