@@ -14,6 +14,7 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { ThemeService } from '@shared/services/theme.service';
 import { ToastService } from '@shared/services/toast.service';
 import { ToastContainerComponent } from '@shared/components/toast-container.component';
+import { NotificationService } from '@features/notifications/notification.service';
 
 /** Fenêtre avant le début d'une séance pendant laquelle un rappel est affiché. */
 const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
@@ -37,7 +38,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             </span>
             <span>SportPlan</span>
           </a>
-          <button type="button" class="app-menu-toggle" (click)="menuOpen.set(!menuOpen())"
+          <button type="button" class="app-menu-toggle" [class.has-unread]="notifications.unreadCount() > 0" (click)="menuOpen.set(!menuOpen())"
             [attr.aria-expanded]="menuOpen()" [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'">
             @if (menuOpen()) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -106,6 +107,7 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
             <a class="app-rail-item" routerLink="/notifications" routerLinkActive="active">
               <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
               <span class="app-rail-label">Notifications</span>
+              @if (notifications.unreadCount(); as unread) { <span class="app-rail-badge" [attr.aria-label]="unread + ' notification(s) non lue(s)'">{{ unread }}</span> }
             </a>
 
             @if (auth.isCoachOrAdmin()) {
@@ -169,6 +171,7 @@ export class AppComponent {
   private readonly sessions = inject(SessionService);
   private readonly participations = inject(ParticipationService);
   private readonly toast = inject(ToastService);
+  readonly notifications = inject(NotificationService);
 
   /** Menu de navigation déplié (affichage mobile uniquement). */
   readonly menuOpen = signal(false);
@@ -181,8 +184,13 @@ export class AppComponent {
   );
 
   constructor() {
-    // Referme le menu mobile après chaque navigation.
-    inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => this.menuOpen.set(false));
+    // Referme le menu mobile après chaque navigation, et rafraîchit le compteur de
+    // notifications non lues (de nouvelles peuvent arriver quand une séance change).
+    inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.menuOpen.set(false);
+      if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
+      else this.notifications.unreadCount.set(0);
+    });
     this.currentUser$.subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });

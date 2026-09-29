@@ -21,6 +21,9 @@ body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, B
 .app-rail-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .app-menu-toggle { display: none; place-items: center; width: 2.6rem; height: 2.6rem; padding: 0; border: 1px solid var(--border-default); border-radius: .8rem; background: var(--bg-surface-alt); color: var(--text-primary); cursor: pointer; }
 .app-menu-toggle svg { width: 1.3rem; height: 1.3rem; }
+.app-menu-toggle { position: relative; }
+.app-menu-toggle.has-unread::after { content: ""; position: absolute; top: .35rem; right: .35rem; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 0 2px var(--bg-surface-alt); }
+.app-rail-badge { display: grid; place-items: center; flex: 0 0 auto; min-width: 1.35rem; height: 1.35rem; padding: 0 .35rem; border-radius: 999px; background: var(--accent-primary); color: #fff; font-size: .7rem; font-weight: 800; }
 .app-rail-brand { color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: .7rem; font-weight: 800; font-size: 1.05rem; letter-spacing: -.02em; padding: 0 .3rem; }
 .brand-mark { display: grid; place-items: center; flex: 0 0 2.3rem; width: 2.3rem; height: 2.3rem; border-radius: .7rem; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; box-shadow: 0 5px 14px rgb(var(--accent-rgb) / 26%); transform: rotate(-5deg); }
 .brand-mark svg { width: 1.25rem; height: 1.25rem; }

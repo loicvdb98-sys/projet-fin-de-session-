@@ -21,6 +21,12 @@ import { markForCheck } from '@core/mark-for-check.operator';
           <h1>Notifications</h1>
           <p class="text-secondary">Retrouvez vos rappels et informations importantes.</p>
         </div>
+        @if (unread.length > 1) {
+          <button type="button" class="action-chip primary" (click)="markAllRead()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.5l3.5 3.5L12 9.5"/><path d="M10 15l1 1 8-8"/></svg>
+            Tout marquer comme lu
+          </button>
+        }
       </div>
 
       @if (loading) {
@@ -134,6 +140,17 @@ export class NotificationsComponent {
         this.toast.success('Notification marquée comme lue.');
       },
       error: () => this.toast.error('Impossible de marquer cette notification comme lue.')
+    });
+  }
+
+  /** Marque toutes les notifications comme lues côté serveur puis dans la liste affichée. */
+  markAllRead(): void {
+    this.service.markAllRead().pipe(markForCheck(this.cd)).subscribe({
+      next: () => {
+        this.notifications = this.notifications.map((notification) => ({ ...notification, is_read: true }));
+        this.toast.success('Toutes les notifications sont marquées comme lues.');
+      },
+      error: () => this.toast.error('Impossible de marquer les notifications comme lues.')
     });
   }
 

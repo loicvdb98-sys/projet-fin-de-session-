@@ -1,7 +1,7 @@
 """Routeur FastAPI exposant les endpoints de notifications utilisateur."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -31,6 +31,17 @@ def create_notification(data: NotificationCreate, db: Session = Depends(get_db),
     db.commit()
     db.refresh(item)
     return item
+
+
+@router.post("/read-all")
+def mark_all_read(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Marque toutes les notifications non lues de l'utilisateur connecté comme lues
+    (POST /notifications/read-all) et renvoie le nombre de notifications mises à jour."""
+    result = db.execute(
+        update(Notification).where(Notification.user_id == user.id, Notification.is_read == False).values(is_read=True)  # noqa: E712
+    )
+    db.commit()
+    return {"updated": result.rowcount}
 
 
 @router.patch("/{notification_id}/read", response_model=NotificationRead)
