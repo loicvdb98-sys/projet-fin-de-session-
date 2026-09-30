@@ -17,6 +17,13 @@ py -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 Vérification de santé : `GET http://127.0.0.1:8000/health`.
 Documentation interactive générée par FastAPI : `http://127.0.0.1:8000/docs`.
 
+Au démarrage, l'API crée les tables **et les index** manquants (y compris sur une base
+existante, créée avant l'ajout d'un index) puis supprime les refresh tokens expirés.
+Aucun script de migration n'est à lancer pour ces changements.
+
+> Si le rechargement automatique (`--reload`) ne relance pas l'API après une
+> modification (cela arrive sous Windows), arrêter le serveur avec `Ctrl+C` et le relancer.
+
 ## Tests
 
 ```powershell

@@ -4,7 +4,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -25,33 +25,29 @@ def my_statistics(db: Session = Depends(get_db), user: User = Depends(get_curren
     Pour un sportif : statistiques sur ses propres participations et performances.
     """
     now = datetime.now(timezone.utc)
+    # Chaque requête calcule plusieurs chiffres à la fois (COUNT conditionnels) : trois
+    # requêtes au lieu de six.
+    upcoming = func.count(case((SportSession.starts_at > now, 1)))
+    present = func.count(case((Participation.status == "present", 1)))
     if user.role in {"coach", "admin"}:
         # `True` comme filtre neutralise le WHERE pour un admin (accès à toutes les séances).
-        session_filter = True if user.role == "admin" else SportSession.coach_id == user.id
-        total_sessions = db.scalar(select(func.count(SportSession.id)).where(session_filter)) or 0
-        upcoming_sessions = db.scalar(select(func.count(SportSession.id)).where(session_filter, SportSession.starts_at > now)) or 0
-        participation_filter = True if user.role == "admin" else SportSession.coach_id == user.id
-        participation_query = select(Participation).join(SportSession).where(participation_filter)
-        performance_query = select(Performance).join(SportSession).where(participation_filter)
+        scope = True if user.role == "admin" else SportSession.coach_id == user.id
+        total_sessions, upcoming_sessions = db.execute(select(func.count(SportSession.id), upcoming).where(scope)).one()
+        total_participations, attended_sessions = db.execute(
+            select(func.count(Participation.id), present).join(SportSession, Participation.session_id == SportSession.id).where(scope)
+        ).one()
+        # Même périmètre : les performances de ses séances pour un coach (et non toute la plateforme).
+        performance_query = select(func.count(Performance.id), func.avg(Performance.score)).join(SportSession, Performance.session_id == SportSession.id).where(scope)
     else:
-        total_sessions = db.scalar(select(func.count(Participation.id)).where(Participation.user_id == user.id)) or 0
-        upcoming_sessions = db.scalar(
-            select(func.count(Participation.id)).join(SportSession).where(
-                Participation.user_id == user.id, SportSession.starts_at > now
-            )
-        ) or 0
-        participation_query = select(Participation).where(Participation.user_id == user.id)
-        performance_query = select(Performance).where(Performance.user_id == user.id)
-
-    total_participations = db.scalar(select(func.count()).select_from(participation_query.subquery())) or 0
-    attended_sessions = db.scalar(
-        select(func.count()).select_from(participation_query.where(Participation.status == "present").subquery())
-    ) or 0
-    total_performances = db.scalar(select(func.count()).select_from(performance_query.subquery())) or 0
-    # Même périmètre que total_performances : ses performances pour un sportif, celles de
-    # ses séances pour un coach, toutes pour un admin (et non toute la plateforme pour un coach).
-    performances = performance_query.subquery()
-    average_score = db.scalar(select(func.avg(performances.c.score)))
+        # Pour un sportif, une « séance » est une de ses inscriptions.
+        total_sessions, upcoming_sessions, attended_sessions = db.execute(
+            select(func.count(Participation.id), upcoming, present)
+            .join(SportSession, Participation.session_id == SportSession.id)
+            .where(Participation.user_id == user.id)
+        ).one()
+        total_participations = total_sessions
+        performance_query = select(func.count(Performance.id), func.avg(Performance.score)).where(Performance.user_id == user.id)
+    total_performances, average_score = db.execute(performance_query).one()
     return StatisticsRead(
         total_sessions=total_sessions,
         upcoming_sessions=upcoming_sessions,

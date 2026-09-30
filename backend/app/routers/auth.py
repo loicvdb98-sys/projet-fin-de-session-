@@ -9,7 +9,7 @@ from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -36,6 +36,12 @@ def _dummy_hash() -> str:
     """Hachage de référence, vérifié quand l'email est inconnu : la réponse prend alors le
     même temps que pour un vrai compte, ce qui empêche de deviner quels emails existent."""
     return hash_password("compte-inexistant-SportPlan-0")
+
+
+def purge_expired_refresh_tokens(db: Session) -> int:
+    """Supprime (sans commit) les refresh tokens expirés, devenus inutilisables, et retourne
+    leur nombre. Appelé au démarrage de l'API pour que la table ne grossisse pas indéfiniment."""
+    return db.execute(delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(timezone.utc))).rowcount
 
 
 def revoke_all_refresh_tokens(user_id: int, db: Session) -> None:

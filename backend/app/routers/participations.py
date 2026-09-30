@@ -3,6 +3,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -38,9 +39,12 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
     """
     if user.role == "sportif" and data.user_id != user.id:
         raise HTTPException(403, "Vous ne pouvez inscrire qu'un compte")
-    if not db.get(User, data.user_id) or not db.get(SportSession, data.session_id):
-        raise HTTPException(404, "Utilisateur ou séance introuvable")
+    participant = db.get(User, data.user_id)
     session = db.get(SportSession, data.session_id)
+    if not participant or not session:
+        raise HTTPException(404, "Utilisateur ou séance introuvable")
+    if not participant.is_active:
+        raise HTTPException(409, "Ce compte est désactivé")
     if is_past(session.starts_at):
         raise HTTPException(409, "Impossible de s'inscrire à une séance passée")
     if session.coach_id == data.user_id:
@@ -54,7 +58,12 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
         raise HTTPException(409, "Participation déjà existante")
     item = Participation(**data.model_dump())
     db.add(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Deux demandes simultanées : l'index unique (user_id, session_id) refuse la seconde.
+        db.rollback()
+        raise HTTPException(409, "Participation déjà existante")
     db.refresh(item)
     return item
 

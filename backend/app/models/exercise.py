@@ -16,7 +16,7 @@ class Exercise(Base):
 
     __tablename__ = "exercises"
     id: Mapped[int] = mapped_column(primary_key=True)
-    session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"))
+    session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"), index=True)
     name: Mapped[str] = mapped_column(Unicode(150))
     description: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
     sets: Mapped[int | None] = mapped_column(Integer, nullable=True)

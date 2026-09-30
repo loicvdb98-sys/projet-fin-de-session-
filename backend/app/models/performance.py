@@ -19,8 +19,8 @@ class Performance(Base):
 
     __tablename__ = "performances"
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("sport_sessions.id"), index=True)
     score: Mapped[float] = mapped_column(Float)
     notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

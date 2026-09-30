@@ -33,6 +33,20 @@ un `schema` Pydantic → le routeur vérifie les droits (`require_roles`, propri
 de la ressource) et les règles métier (capacité, dates, statuts) → il lit ou écrit
 les `models` via la session SQLAlchemy → il renvoie un `schema` de réponse.
 
+### Performances de la base et de l'API
+
+- **Index** sur toutes les clés étrangères (`user_id`, `session_id`, `coach_id`) et sur
+  la date des séances, déclarés dans les modèles. `ensure_indexes` (`database.py`) les
+  crée au démarrage s'ils manquent, même sur une base déjà remplie.
+- **Unicité des inscriptions** : l'index unique `ux_participations_user_session` empêche
+  deux inscriptions du même sportif à la même séance, même en cas de double clic simultané
+  (l'API répond alors 409).
+- **Requêtes groupées** : les listes chargent coach et inscrits en une requête chacune
+  (`joinedload` / `selectinload`) plutôt qu'une par séance ; `/statistics/me` calcule
+  ses six chiffres en trois requêtes (COUNT conditionnels).
+- **Compression** : les réponses de plus de 1 Ko sont compressées (gzip).
+- **Purge** : les refresh tokens expirés sont supprimés à chaque démarrage.
+
 ## Frontend (`frontend/src/app/`)
 
 Organisation par fonctionnalité (feature-based), plutôt que par type de fichier :
@@ -125,7 +139,7 @@ tous les appareils).
 - **Backend** (`backend/tests/`, Pytest) : tests unitaires (sécurité, schémas, dates)
   et tests d'API avec le `TestClient` de FastAPI. Les tests d'API tournent sur une base
   SQLite en mémoire recréée pour chaque test (`tests/conftest.py`), jamais sur la base
-  SQL Server : inscription, sécurité de l'authentification (blocage après plusieurs
+  SQL Server : inscription, en-têtes HTTP et CORS, index et compression, sécurité de l'authentification (blocage après plusieurs
   échecs, rotation et vol de refresh token, changement de mot de passe), permissions
   sur les comptes, séances et inscriptions, statistiques, objectifs, records et journal.
 - **Frontend** (`*.spec.ts`, Vitest) : services (authentification, thème, toasts) et

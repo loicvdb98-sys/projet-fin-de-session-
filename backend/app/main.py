@@ -7,19 +7,26 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from .config import get_settings
-from .database import Base, engine
+from .database import Base, SessionLocal, engine, ensure_indexes
 # Les modèles sont importés ici (même sans usage direct) pour que SQLAlchemy
 # les enregistre dans Base.metadata avant l'appel à create_all().
 from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WorkoutProgram  # noqa: F401
 from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users
+from .routers.auth import purge_expired_refresh_tokens
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Cycle de vie de l'application : crée les tables manquantes en base au démarrage."""
+    """Cycle de vie de l'application : au démarrage, crée les tables et les index manquants
+    en base, puis supprime les refresh tokens expirés (inutiles, ils s'accumulent sinon)."""
     Base.metadata.create_all(bind=engine)
+    ensure_indexes(engine)
+    with SessionLocal() as db:
+        purge_expired_refresh_tokens(db)
+        db.commit()
     yield
 
 
@@ -33,6 +40,9 @@ app = FastAPI(
     redoc_url="/redoc" if docs_enabled else None,
     openapi_url="/openapi.json" if docs_enabled else None,
 )
+# Réponses de plus de 1 Ko compressées (listes de séances, participations...) : moins de
+# données à télécharger, surtout sur téléphone.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Le jeton voyage dans l'en-tête Authorization, jamais dans un cookie : pas besoin
 # d'allow_credentials, et seuls les méthodes et en-têtes utilisés par le front sont permis.
 app.add_middleware(
