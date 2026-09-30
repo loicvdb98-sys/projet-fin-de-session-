@@ -133,6 +133,15 @@ Pour que cette politique fonctionne, l'intégration du CSS « critique » d'Angu
 que la CSP aurait bloqué (la page serait restée sans style). Les styles en ligne restent
 autorisés, car Angular et Material en injectent.
 
+## Dépendances
+
+- Backend : bibliothèques maintenues et versions épinglées (`requirements.txt`) ; `python-jose`,
+  abandonnée, a été remplacée par PyJWT.
+- Frontend : `npm audit` ne signale **aucune vulnérabilité**. L'ancien serveur de développement
+  webpack (`@angular-devkit/build-angular`), à l'origine de 10 alertes, a été remplacé par le
+  serveur Vite d'Angular (`@angular/build:dev-server`), déjà utilisé pour le build.
+- Les tests et le build sont relancés à chaque push par GitHub Actions.
+
 ## Application installable (PWA)
 
 Le service worker ne met en cache que les fichiers de l'application (HTML, JavaScript, CSS,
