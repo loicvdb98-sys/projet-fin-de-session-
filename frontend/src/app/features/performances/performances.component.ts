@@ -1,13 +1,15 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { Performance, PerformanceService } from './performance.service';
 import { SessionService } from '@features/sessions/session.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { UserService } from '@features/athletes/user.service';
-import { combineLatest, map, of, shareReplay, switchMap } from 'rxjs';
+import { combineLatest, map, of, shareReplay, switchMap, take } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { csvDate, saveCsv } from '@shared/csv';
 
 Chart.register(...registerables);
 
@@ -25,7 +27,7 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; athlet
  */
 @Component({
   standalone: true,
-  imports: [AsyncPipe, DatePipe, DecimalPipe, MatCardModule],
+  imports: [AsyncPipe, DatePipe, DecimalPipe, MatButtonModule, MatCardModule],
   template: `
     <section class="page">
       <div class="page-heading">
@@ -34,6 +36,7 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; athlet
           <h1>Statistiques</h1>
           <p class="text-secondary">{{ isCoach ? 'Assiduité à vos séances et performances de vos sportifs.' : 'Votre progression, votre historique et votre assiduité.' }}</p>
         </div>
+        @if ((performances$ | async)?.length) { <button mat-stroked-button type="button" class="teal-outline" (click)="exportCsv()">Exporter (CSV)</button> }
       </div>
 
       <div class="module-shell">
@@ -152,6 +155,19 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   /** Section affichée dans le panneau de droite, comme le rail des pages Séances/Participations. */
   selectedSection: Section = 'overview';
   private latestPerformances: Performance[] = [];
+
+  /**
+   * Exporte les performances en CSV (date, séance, sportif pour un coach, score, notes), dans
+   * l'ordre chronologique. Les titres de séance et noms des sportifs ne sont chargés qu'au clic.
+   */
+  exportCsv(): void {
+    this.enrichedPerformances$.pipe(take(1)).subscribe((performances) => {
+      const rows = [...performances].sort((a, b) => a.recorded_at.localeCompare(b.recorded_at)).map((item) => [
+        csvDate(item.recorded_at), item.sessionTitle, ...(this.isCoach ? [item.athleteName] : []), item.score, item.notes ?? '',
+      ]);
+      saveCsv('performances', ['Date', 'Séance', ...(this.isCoach ? ['Sportif'] : []), 'Score', 'Notes'], rows);
+    });
+  }
 
   ngAfterViewInit(): void {
     this.performances$.subscribe((performances) => {

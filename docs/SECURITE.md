@@ -83,6 +83,14 @@ Chaque réponse de l'API porte des en-têtes de protection (`backend/app/main.py
 - **Documentation** : `/docs`, `/redoc` et `/openapi.json` se désactivent en production
   avec `EXPOSE_API_DOCS=false`.
 
+## Exports CSV
+
+Les exports (participations, performances, assiduité) sont générés dans le navigateur à
+partir des données que l'API a déjà autorisées pour l'utilisateur. Une cellule de texte
+qui commence par `=`, `+`, `-` ou `@` est préfixée d'une apostrophe (`shared/csv.ts`) :
+Excel l'afficherait sinon comme une formule, ce qui permettrait à un titre de séance piégé
+d'exécuter une formule chez la personne qui ouvre le fichier (injection de formules CSV).
+
 ## Droits d'accès
 
 - Chaque endpoint protégé exige un jeton d'accès valide (`get_current_user`) et, si

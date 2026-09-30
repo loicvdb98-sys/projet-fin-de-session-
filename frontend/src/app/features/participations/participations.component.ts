@@ -8,6 +8,7 @@ import { ParticipationService } from './participation.service';
 import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { csvDate, csvTime, saveCsv } from '@shared/csv';
 
 /**
  * Écran "Participations" : croise les inscriptions avec les détails de séance
@@ -44,6 +45,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
           <h1>{{ isManager ? 'Participations' : 'Mes participations' }}</h1>
           <p class="text-secondary">{{ isManager ? 'Inscriptions à vos séances, passées et à venir, avec leur statut.' : 'Retrouvez vos inscriptions, passées et à venir, avec leur statut.' }}</p>
         </div>
+        @if (items.length) { <button mat-stroked-button type="button" class="teal-outline" (click)="exportCsv()">Exporter (CSV)</button> }
       </div>
 
       @if (loading) {
@@ -234,6 +236,15 @@ export class ParticipationsComponent {
   formatFullDate(iso: string): string {
     const formatted = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  /** Exporte les participations (présences) en CSV, de la plus ancienne à la plus récente. */
+  exportCsv(): void {
+    const rows = [...this.items].sort((a, b) => a.startsAt.localeCompare(b.startsAt)).map((item) => [
+      csvDate(item.startsAt), csvTime(item.startsAt), item.sessionTitle, item.coachName,
+      ...(this.isManager ? [item.athleteName] : []), this.statusMeta(item.status).label,
+    ]);
+    saveCsv('participations', ['Date', 'Heure', 'Séance', 'Coach', ...(this.isManager ? ['Sportif'] : []), 'Statut'], rows);
   }
 
   /** Supprime la participation (désinscription) et rafraîchit la liste, sans recharger la page. */

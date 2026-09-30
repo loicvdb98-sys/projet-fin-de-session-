@@ -56,7 +56,9 @@ frontend/src/app/
 ├── core/         Bootstrap de l'application : app.component, app.config, routes, guard d'authentification
 ├── shared/        Code transverse réutilisé par plusieurs fonctionnalités
 │   ├── components/  Composants UI génériques (conteneur des toasts)
-│   └── services/    Services transverses (toast, thème, statistiques)
+│   ├── services/    Services transverses (toast, thème, statistiques)
+│   ├── csv.ts       Export CSV pour Excel (séparateur ;, BOM, protection contre l'injection de formules)
+│   └── download.ts  Enregistrement d'un fichier reçu (agenda .ics, CSV)
 └── features/       Un dossier par domaine métier, page + service co-localisés
     ├── auth/            login, auth.service, auth.interceptor
     ├── dashboard/       tableau de bord

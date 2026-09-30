@@ -43,6 +43,9 @@ Rôle par défaut. Peut :
 - Sur la page **Statistiques**, consulter en plus son propre historique
   d'assiduité (module **Assiduité**), calculé sur ses participations aux
   séances passées.
+- Exporter ses participations et ses performances au format CSV (bouton
+  **Exporter (CSV)** des pages **Mes participations** et **Statistiques**),
+  pour les ouvrir dans Excel.
 - Modifier son propre profil et mot de passe (ce qui déconnecte ses autres appareils),
   et se déconnecter de tous les appareils depuis Profil › Sécurité.
 
@@ -69,7 +72,11 @@ Tout ce qu'un sportif peut faire, plus :
 - Suivre les présences : depuis **Vos séances**, le bouton **Présences**
   liste les inscrits d'une séance et permet de les marquer
   Inscrit / Présent / Absent.
-- Voir la liste des sportifs (page **Sportifs**) et leur suivi détaillé.
+- Voir la liste des sportifs (page **Sportifs**) et leur suivi détaillé, et
+  exporter leur assiduité en CSV (une ligne par sportif : présences, taux,
+  séances à venir, dernière présence).
+- Ses exports **Participations** et **Statistiques** couvrent les inscriptions et
+  performances de ses séances, avec le nom du sportif.
 - Lire les bilans de journal écrits après ses séances (avec le nom du
   sportif) et y ajouter son commentaire — sans pouvoir modifier ni supprimer
   le bilan lui-même.

@@ -14,6 +14,7 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { SessionService } from '@features/sessions/session.service';
 import { markForCheck } from '@core/mark-for-check.operator';
 import { summarizeAttendance } from './attendance';
+import { saveCsv } from '@shared/csv';
 
 interface AthleteSummary extends User {
   attendanceRate: number;
@@ -36,6 +37,7 @@ interface AthleteSummary extends User {
           <h1>Mes sportifs</h1>
           <p class="text-secondary">Retrouvez les sportifs actifs et accédez rapidement à leur suivi.</p>
         </div>
+        @if (athletes.length) { <button mat-stroked-button type="button" class="teal-outline" (click)="exportCsv()">Exporter l’assiduité (CSV)</button> }
       </div>
 
       @if (loading) {
@@ -171,6 +173,15 @@ export class AthletesComponent {
       },
       error: () => { this.loadError = true; this.loading = false; }
     });
+  }
+
+  /** Exporte l'assiduité de chaque sportif en CSV (une ligne par sportif). */
+  exportCsv(): void {
+    const rows = this.athletes.map((athlete) => [
+      athlete.full_name, athlete.email, athlete.pastSessions, athlete.sessionsAttended,
+      athlete.pastSessions ? athlete.attendanceRate : null, athlete.upcomingSessions, athlete.lastActivity ?? '',
+    ]);
+    saveCsv('assiduite', ['Sportif', 'Email', 'Séances passées', 'Présences', 'Taux de présence (%)', 'Séances à venir', 'Dernière présence'], rows);
   }
 
   /** Couleur du module selon l'assiduité : vert à partir de 70 %, bleu dès 40 %, rouge en dessous. */
