@@ -15,17 +15,19 @@ from .database import Base, SessionLocal, engine, ensure_indexes
 # les enregistre dans Base.metadata avant l'appel à create_all().
 from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
 from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users, waitlist
-from .routers.auth import purge_expired_refresh_tokens
+from .routers.auth import purge_expired_refresh_tokens, purge_expired_reset_tokens
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Cycle de vie de l'application : au démarrage, crée les tables et les index manquants
-    en base, puis supprime les refresh tokens expirés (inutiles, ils s'accumulent sinon)."""
+    en base, puis supprime les refresh tokens et liens de réinitialisation expirés (inutiles,
+    ils s'accumulent sinon)."""
     Base.metadata.create_all(bind=engine)
     ensure_indexes(engine)
     with SessionLocal() as db:
         purge_expired_refresh_tokens(db)
+        purge_expired_reset_tokens(db)
         db.commit()
     yield
 

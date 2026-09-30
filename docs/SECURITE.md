@@ -17,6 +17,23 @@ Ce document recense les protections mises en place dans SportPlan, côté API
   actuel, ferme les sessions ouvertes sur les autres appareils et renvoie une nouvelle
   paire de jetons pour l'appareil courant.
 
+## Mot de passe oublié
+
+- `POST /auth/forgot-password` envoie un lien `…/reset-password?token=…` : jeton aléatoire
+  de 256 bits, stocké en base sous forme d'empreinte SHA-256 (table `password_reset_tokens`),
+  **valable 30 minutes et à usage unique** ; une nouvelle demande annule le lien précédent.
+- La réponse est **identique** que l'adresse corresponde à un compte ou non.
+- Le lien reprend l'adresse du front d'où vient la demande **seulement si elle fait partie
+  des origines autorisées** (`ALLOWED_ORIGINS`, `ALLOWED_ORIGIN_REGEX`), sinon `FRONTEND_URL` :
+  un attaquant ne peut pas faire envoyer à sa victime un lien vers son propre site pour y
+  récupérer le jeton (« empoisonnement » du lien de réinitialisation).
+- `POST /auth/reset-password` applique la politique de mot de passe, ferme toutes les
+  sessions du compte et lève un éventuel blocage dû aux échecs de connexion.
+- Limites : 10 appels par minute et par IP, et 3 demandes de lien par adresse et par
+  quart d'heure (pas d'inondation de boîte mail).
+- Sans serveur SMTP configuré, le lien est écrit dans la console de l'API (développement
+  et démonstration) ; avec `SMTP_HOST`, il part par email chiffré (STARTTLS).
+
 ## Jetons JWT
 
 | Jeton | Durée | Stockage côté serveur |
@@ -55,6 +72,7 @@ Limites en mémoire (`backend/app/rate_limit.py`), réponse `429 Too Many Reques
 | Connexion et inscription, par adresse IP | 10 appels par minute |
 | Connexion, par compte | 5 échecs en 15 minutes bloquent le compte, même si l'attaquant change d'adresse IP |
 | Changement de mot de passe, par utilisateur | 5 tentatives par minute |
+| Lien « mot de passe oublié », par adresse email | 3 demandes par quart d'heure |
 
 - Un email inconnu reçoit exactement la même réponse qu'un mauvais mot de passe, dans
   le même temps : le mot de passe est comparé à une empreinte de référence, ce qui

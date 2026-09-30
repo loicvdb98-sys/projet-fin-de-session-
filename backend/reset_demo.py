@@ -17,12 +17,14 @@ from app.models import (
     Goal,
     Notification,
     Participation,
+    PasswordResetToken,
     PersonalRecord,
     Performance,
     RefreshToken,
     Session as SportSession,
     TrainingJournal,
     User,
+    WaitlistEntry,
     WorkoutProgram,
 )
 
@@ -55,9 +57,13 @@ def run_reset() -> None:
         db.execute(delete(Participation).where(
             Participation.user_id.in_(demo_user_ids) | Participation.session_id.in_(demo_session_ids)
         ))
+        db.execute(delete(WaitlistEntry).where(
+            WaitlistEntry.user_id.in_(demo_user_ids) | WaitlistEntry.session_id.in_(demo_session_ids)
+        ))
         db.execute(delete(Exercise).where(Exercise.session_id.in_(demo_session_ids)))
         db.execute(delete(SportSession).where(SportSession.id.in_(demo_session_ids)))
         db.execute(delete(RefreshToken).where(RefreshToken.user_id.in_(demo_user_ids)))
+        db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(demo_user_ids)))
         db.execute(delete(User).where(User.id.in_(demo_user_ids)))
         db.commit()
 

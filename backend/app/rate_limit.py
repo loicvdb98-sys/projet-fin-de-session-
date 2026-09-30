@@ -5,7 +5,8 @@ sensibles contre la force brute :
 - par compte : 5 échecs de connexion en 15 minutes bloquent ce compte temporairement,
   même si l'attaquant change d'adresse IP à chaque essai ;
 - par utilisateur connecté : 5 tentatives de changement de mot de passe par minute
-  (un jeton volé ne permet pas de deviner le mot de passe actuel en boucle).
+  (un jeton volé ne permet pas de deviner le mot de passe actuel en boucle) ;
+- par adresse email : 3 demandes de lien « mot de passe oublié » par quart d'heure.
 """
 
 from collections import defaultdict, deque
@@ -21,6 +22,7 @@ _attempts: dict[str, deque[datetime]] = defaultdict(deque)
 IP_LIMIT, IP_WINDOW = 10, timedelta(minutes=1)
 ACCOUNT_LIMIT, ACCOUNT_WINDOW = 5, timedelta(minutes=15)
 PASSWORD_LIMIT, PASSWORD_WINDOW = 5, timedelta(minutes=1)
+RESET_LIMIT, RESET_WINDOW = 3, timedelta(minutes=15)
 # Au-delà de ce nombre de clés, les entrées expirées sont purgées (la mémoire ne grossit pas indéfiniment).
 _PURGE_THRESHOLD = 1000
 
@@ -37,7 +39,7 @@ def _purge(now: datetime) -> None:
     """Supprime les clés sans tentative récente (fenêtre la plus longue)."""
     if len(_attempts) <= _PURGE_THRESHOLD:
         return
-    longest = max(IP_WINDOW, ACCOUNT_WINDOW, PASSWORD_WINDOW)
+    longest = max(IP_WINDOW, ACCOUNT_WINDOW, PASSWORD_WINDOW, RESET_WINDOW)
     for key in [key for key, attempts in _attempts.items() if not attempts or attempts[-1] < now - longest]:
         del _attempts[key]
 
@@ -79,3 +81,9 @@ def reset_login_failures(email: str) -> None:
 def password_change_rate_limit(user_id: int) -> None:
     """Limite les tentatives de changement de mot de passe d'un utilisateur connecté."""
     _hit(f"mot-de-passe:{user_id}", PASSWORD_LIMIT, PASSWORD_WINDOW, "Trop de tentatives. Réessayez dans une minute.")
+
+
+def password_reset_rate_limit(email: str) -> None:
+    """Limite à 3 demandes de lien « mot de passe oublié » par adresse et par quart d'heure
+    (évite d'inonder une boîte mail). La limite s'applique à toute adresse, existante ou non."""
+    _hit(f"reinitialisation:{email}", RESET_LIMIT, RESET_WINDOW, "Trop de demandes pour cette adresse. Réessayez dans quelques minutes.")

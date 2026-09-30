@@ -56,3 +56,12 @@ Il identifie tout ce qui appartient aux comptes `@sportplan.dev` (créés par
 `seed.py`) — séances, participations, performances, objectifs, records,
 programmes, journal, notifications — et les supprime, sans toucher aux comptes
 que de vrais utilisateurs auraient créés via l'inscription normale.
+
+## Démontrer « mot de passe oublié »
+
+Sans serveur SMTP configuré, le lien de réinitialisation n'est pas envoyé par email :
+il est écrit dans la console où tourne l'API (`uvicorn`), sur une ligne
+`Email non envoyé (SMTP non configuré)`. Copiez l'adresse `…/reset-password?token=…`
+dans le navigateur. Pour ne pas modifier un compte de démonstration, choisissez à
+nouveau le mot de passe `SportPlanDemo2026!`. Le lien est valable 30 minutes et ne
+sert qu'une fois.

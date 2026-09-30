@@ -4,23 +4,27 @@ rafraîchissement et révocation des jetons JWT, et changement de mot de passe.
 
 import hashlib
 import logging
+import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..models.password_reset import PasswordResetToken
 from ..models.refresh_token import RefreshToken
 from ..models.user import User
-from ..rate_limit import ensure_account_not_locked, login_rate_limit, password_change_rate_limit, record_login_failure, reset_login_failures
-from ..schemas.auth import LogoutRequest, PasswordChange, Token, TokenRefresh
+from ..rate_limit import ensure_account_not_locked, login_rate_limit, password_change_rate_limit, password_reset_rate_limit, record_login_failure, reset_login_failures
+from ..schemas.auth import ForgotPasswordRequest, LogoutRequest, PasswordChange, PasswordReset, Token, TokenRefresh
 from ..dependencies import get_current_user
 from ..schemas.user import UserCreate, UserRead
 from ..security import TokenError, create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from ..config import get_settings
+from ..services.email import send_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -42,6 +46,11 @@ def purge_expired_refresh_tokens(db: Session) -> int:
     """Supprime (sans commit) les refresh tokens expirés, devenus inutilisables, et retourne
     leur nombre. Appelé au démarrage de l'API pour que la table ne grossisse pas indéfiniment."""
     return db.execute(delete(RefreshToken).where(RefreshToken.expires_at < datetime.now(timezone.utc))).rowcount
+
+
+def purge_expired_reset_tokens(db: Session) -> int:
+    """Supprime (sans commit) les liens de réinitialisation expirés et retourne leur nombre."""
+    return db.execute(delete(PasswordResetToken).where(PasswordResetToken.expires_at < datetime.now(timezone.utc))).rowcount
 
 
 def revoke_all_refresh_tokens(user_id: int, db: Session) -> None:
@@ -186,3 +195,66 @@ def change_password(data: PasswordChange, db: Session = Depends(get_db), user: U
     db.commit()
     logger.info("Mot de passe changé pour l'utilisateur %s", user.id)
     return {"access_token": create_access_token(str(user.id)), "refresh_token": refresh_token}
+
+
+RESET_REQUEST_MESSAGE = "Si un compte correspond à cette adresse, un lien de réinitialisation vient d'être envoyé."
+
+
+def _frontend_base(request: Request) -> str:
+    """Adresse du front à mettre dans le lien : celle d'où vient la demande (PC ou téléphone du
+    réseau local) si elle fait partie des origines autorisées, sinon FRONTEND_URL. Une origine
+    quelconque n'est jamais reprise : un attaquant pourrait sinon faire envoyer à sa victime un
+    lien vers son propre site et y récupérer le jeton."""
+    settings = get_settings()
+    origin = (request.headers.get("origin") or "").rstrip("/")
+    allowed = origin in settings.allowed_origins_list or bool(settings.allowed_origin_regex and re.fullmatch(settings.allowed_origin_regex, origin))
+    return origin if origin and allowed else settings.frontend_url.rstrip("/")
+
+
+@router.post("/forgot-password", status_code=202, dependencies=[Depends(login_rate_limit)])
+def forgot_password(data: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    """Envoie un lien de réinitialisation du mot de passe (POST /auth/forgot-password), valable
+    30 minutes et à usage unique ; une nouvelle demande annule le lien précédent. La réponse est
+    la même que l'adresse corresponde à un compte ou non : on ne révèle pas quels emails existent.
+    """
+    email = str(data.email).lower()
+    password_reset_rate_limit(email)
+    user = db.scalar(select(User).where(User.email == email))
+    if user and user.is_active:
+        now = datetime.now(timezone.utc)
+        db.execute(
+            update(PasswordResetToken)
+            .where(PasswordResetToken.user_id == user.id, PasswordResetToken.used_at.is_(None))
+            .values(used_at=now)
+        )
+        token = secrets.token_urlsafe(32)
+        minutes = get_settings().password_reset_expire_minutes
+        db.add(PasswordResetToken(token_hash=_token_hash(token), user_id=user.id, expires_at=now + timedelta(minutes=minutes)))
+        db.commit()
+        link = f"{_frontend_base(request)}/reset-password?token={token}"
+        send_email(
+            user.email,
+            "SportPlan : réinitialisation de votre mot de passe",
+            f"Bonjour {user.full_name},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable {minutes} minutes) :\n{link}\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe reste inchangé.",
+        )
+        logger.info("Lien de réinitialisation émis pour l'utilisateur %s", user.id)
+    return {"detail": RESET_REQUEST_MESSAGE}
+
+
+@router.post("/reset-password", status_code=204, dependencies=[Depends(login_rate_limit)])
+def reset_password(data: PasswordReset, db: Session = Depends(get_db)):
+    """Enregistre un nouveau mot de passe grâce au lien reçu par email (POST /auth/reset-password).
+    Le lien ne sert qu'une fois ; toutes les sessions ouvertes sont fermées et un éventuel blocage
+    du compte (trop d'échecs de connexion) est levé.
+    """
+    stored = db.scalar(select(PasswordResetToken).where(PasswordResetToken.token_hash == _token_hash(data.token)))
+    user = db.get(User, stored.user_id) if stored else None
+    if not stored or not stored.is_valid or not user or not user.is_active:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ce lien de réinitialisation est invalide ou a expiré. Faites une nouvelle demande.")
+    user.hashed_password = hash_password(data.new_password)
+    stored.used_at = datetime.now(timezone.utc)
+    revoke_all_refresh_tokens(user.id, db)
+    db.commit()
+    reset_login_failures(user.email)
+    logger.info("Mot de passe réinitialisé pour l'utilisateur %s", user.id)

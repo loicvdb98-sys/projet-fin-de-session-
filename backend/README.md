@@ -61,6 +61,9 @@ Copier `.env.example` en `.env` et renseigner les valeurs (voir
 | `ALLOWED_ORIGINS` | Origines autorisées par le middleware CORS |
 | `ALLOWED_ORIGIN_REGEX` | Origines supplémentaires (expression régulière), ex. le réseau local pour un téléphone |
 | `EXPOSE_API_DOCS` | `true` par défaut ; `false` en production masque `/docs`, `/redoc` et `/openapi.json` |
+| `FRONTEND_URL` | Adresse du front mise dans le lien « mot de passe oublié » (`http://localhost:4200` par défaut) |
+| `PASSWORD_RESET_EXPIRE_MINUTES` | Durée de validité de ce lien (30 minutes par défaut) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SENDER` | Serveur d'envoi des emails ; sans `SMTP_HOST`, le lien est écrit dans la console de l'API |
 | `APP_TIMEZONE` | Fuseau des heures écrites dans les notifications (`Europe/Paris` par défaut ; paquet `tzdata` requis sous Windows) |
 
 Les protections de l'API (jetons, limitation des tentatives, en-têtes HTTP) sont

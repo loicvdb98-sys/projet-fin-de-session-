@@ -7,6 +7,8 @@
  * page (et ses dépendances, comme Chart.js pour les statistiques) la première
  * fois qu'on l'ouvre.
  *
+ * Les écrans de connexion, de mot de passe oublié et de réinitialisation sont publics.
+ *
  * Le titre de chaque route devient le titre de l'onglet (« Séances · SportPlan »,
  * voir SportPlanTitleStrategy), utile pour l'historique et les lecteurs d'écran.
  */
@@ -15,6 +17,8 @@ import { authGuard, coachGuard, adminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: 'login', title: 'Connexion', loadComponent: () => import('@features/auth/login.component').then((m) => m.LoginComponent) },
+  { path: 'forgot-password', title: 'Mot de passe oublié', loadComponent: () => import('@features/auth/forgot-password.component').then((m) => m.ForgotPasswordComponent) },
+  { path: 'reset-password', title: 'Nouveau mot de passe', loadComponent: () => import('@features/auth/reset-password.component').then((m) => m.ResetPasswordComponent) },
   { path: 'dashboard', title: 'Tableau de bord', loadComponent: () => import('@features/dashboard/dashboard.component').then((m) => m.DashboardComponent), canActivate: [authGuard] },
   { path: 'sessions', title: 'Séances', loadComponent: () => import('@features/sessions/sessions.component').then((m) => m.SessionsComponent), canActivate: [authGuard] },
   { path: 'workouts/new', title: 'Créer une séance', loadComponent: () => import('@features/workout-create/workout-create.component').then((m) => m.WorkoutCreateComponent), canActivate: [coachGuard] },

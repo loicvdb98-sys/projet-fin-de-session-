@@ -25,6 +25,16 @@ class Settings(BaseSettings):
     expose_api_docs: bool = True
     # Fuseau des dates écrites dans les messages (notifications) ; l'API stocke tout en UTC.
     app_timezone: str = "Europe/Paris"
+    # Mot de passe oublié : adresse du front utilisée dans le lien envoyé (si la demande ne vient
+    # pas d'une origine autorisée), durée de validité du lien, et serveur d'envoi des emails
+    # (sans SMTP_HOST, le lien est écrit dans le journal de l'API).
+    frontend_url: str = "http://localhost:4200"
+    password_reset_expire_minutes: int = 30
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_sender: str = "SportPlan <no-reply@sportplan.dev>"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

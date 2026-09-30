@@ -1,6 +1,6 @@
 """Schémas Pydantic pour l'authentification : jetons JWT et changement de mot de passe."""
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from .user import check_password_strength
 
@@ -35,4 +35,23 @@ class PasswordChange(BaseModel):
     @classmethod
     def reject_weak_passwords(cls, value: str) -> str:
         """Le nouveau mot de passe suit la même politique qu'à l'inscription."""
+        return check_password_strength(value)
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Demande d'un lien de réinitialisation du mot de passe."""
+
+    email: EmailStr
+
+
+class PasswordReset(BaseModel):
+    """Nouveau mot de passe choisi grâce au lien reçu par email."""
+
+    token: str = Field(min_length=20, max_length=200)
+    new_password: str = Field(min_length=12, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def reject_weak_passwords(cls, value: str) -> str:
+        """Même politique qu'à l'inscription."""
         return check_password_strength(value)

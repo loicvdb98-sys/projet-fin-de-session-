@@ -64,4 +64,22 @@ describe('AuthService', () => {
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
   });
+
+  it('asks for a reset link and returns the neutral server message', () => {
+    let message = '';
+    service.forgotPassword('alex@example.com').subscribe((value) => (message = value));
+    const request = http.expectOne('http://localhost:8000/auth/forgot-password');
+
+    expect(request.request.body).toEqual({ email: 'alex@example.com' });
+    request.flush({ detail: 'Si un compte correspond à cette adresse, un lien vient d’être envoyé.' }, { status: 202, statusText: 'Accepted' });
+    expect(message).toContain('Si un compte correspond');
+  });
+
+  it('sends the token and the new password to reset it', () => {
+    service.resetPassword('jeton-du-lien-recu-par-email', 'NouveauDepart2026').subscribe();
+
+    const request = http.expectOne('http://localhost:8000/auth/reset-password');
+    expect(request.request.body).toEqual({ token: 'jeton-du-lien-recu-par-email', new_password: 'NouveauDepart2026' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

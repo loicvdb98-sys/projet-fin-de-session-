@@ -7,6 +7,9 @@ avec une 403) et ne peut être changé ensuite que par un admin, depuis
 [Gestion des comptes](#admin). Personne ne peut changer son propre rôle ni
 désactiver son propre compte, même via l'API.
 
+Tout utilisateur peut, depuis l'écran de connexion, demander un lien **« Mot de passe
+oublié ? »** pour choisir un nouveau mot de passe (voir [SECURITE.md](SECURITE.md)).
+
 Le frontend ne fait jamais confiance à une valeur de rôle mise en cache côté
 client pour la sécurité : chaque écran protégé correspond à un endpoint qui
 revérifie le rôle côté serveur (`require_roles(...)` dans les routeurs

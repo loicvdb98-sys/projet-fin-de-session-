@@ -4,7 +4,7 @@
  */
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,7 +14,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [FormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
   template: `
     <mat-card class="auth-card">
       <p class="eyebrow">BIENVENUE SUR SPORTPLAN</p>
@@ -56,6 +56,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
       <button mat-button class="switch-auth" type="button" (click)="toggleMode()">
         {{ registerMode ? 'J’ai déjà un compte' : 'Créer un compte' }}
       </button>
+      @if (!registerMode) { <a mat-button class="switch-auth" routerLink="/forgot-password">Mot de passe oublié ?</a> }
     </mat-card>
   `
 })
@@ -107,10 +108,13 @@ export class LoginComponent {
     }
     this.auth.login(email, this.password).pipe(markForCheck(this.cd)).subscribe({
       next: () => void this.router.navigate(['/dashboard']),
-      error: (response: { status: number }) => {
+      error: (response: { status: number; error?: { detail?: unknown } }) => {
+        // 429 : trop de tentatives (compte bloqué 15 min) ; le message du serveur l'explique.
         this.error = response.status === 0
           ? 'Le serveur est indisponible. Démarrez l’API FastAPI sur le port 8000.'
-          : 'Email ou mot de passe incorrect.';
+          : response.status === 429 && typeof response.error?.detail === 'string'
+            ? `${response.error.detail} Vous pouvez aussi réinitialiser votre mot de passe.`
+            : 'Email ou mot de passe incorrect.';
       }
     });
   }

@@ -72,6 +72,16 @@ export class AuthService {
     );
   }
 
+  /** Demande un lien de réinitialisation du mot de passe ; renvoie le message (neutre) du serveur. */
+  forgotPassword(email: string): Observable<string> {
+    return this.http.post<{ detail: string }>(`${this.apiUrl}/auth/forgot-password`, { email }).pipe(map((response) => response.detail));
+  }
+
+  /** Enregistre un nouveau mot de passe grâce au jeton du lien reçu par email. */
+  resetPassword(token: string, new_password: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/auth/reset-password`, { token, new_password });
+  }
+
   /** Ferme les sessions de tous les appareils (refresh tokens révoqués) puis déconnecte celui-ci. */
   logoutEverywhere(): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/auth/logout-all`, {}).pipe(tap(() => this.logout()));

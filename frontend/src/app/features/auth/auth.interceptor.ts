@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { ToastService } from '@shared/services/toast.service';
 
 /** Appels d'authentification : jamais de jeton ajouté, jamais de renouvellement automatique. */
-const AUTH_ENDPOINT = /\/auth\/(login|register|refresh|logout)$/;
+const AUTH_ENDPOINT = /\/auth\/(login|register|refresh|logout|forgot-password|reset-password)$/;
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
