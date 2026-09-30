@@ -89,7 +89,9 @@ Tout ce qu'un sportif peut faire, plus :
 - Son export d'agenda contient aussi les séances à venir qu'il anime.
 - Suivre les présences : depuis **Vos séances**, le bouton **Présences**
   liste les inscrits d'une séance et permet de les marquer
-  Inscrit / Présent / Absent.
+  Inscrit / Présent / Absent ; une fois la séance commencée, **« Marquer les N non
+  pointé(s) présent(s) »** pointe d'un coup tous ceux qui ne l'ont pas encore été
+  (`POST /sessions/{id}/attendance`).
 - Voir la liste des sportifs (page **Sportifs**) et leur suivi détaillé, et
   exporter leur assiduité en CSV (une ligne par sportif : présences, taux,
   séances à venir, dernière présence).

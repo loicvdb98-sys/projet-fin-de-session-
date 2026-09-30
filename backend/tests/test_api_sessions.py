@@ -133,3 +133,31 @@ def test_coach_cannot_register_to_own_session(client, db_factory, people, auth_h
     response = register(client, auth_headers("coach@example.com"), people["coach"].id, session_id)
 
     assert response.status_code == 409
+
+
+# --- Pointage groupé ---------------------------------------------------------
+
+def test_coach_marks_every_unmarked_athlete_present_at_once(client, db_factory, people, auth_headers):
+    session_id = new_session(db_factory, people["coach"].id, days=-0.1)
+    with db_factory() as db:
+        db.add_all([
+            Participation(user_id=people["sportif"].id, session_id=session_id),
+            Participation(user_id=people["other_sportif"].id, session_id=session_id, status="absent"),
+        ])
+        db.commit()
+
+    response = client.post(f"/sessions/{session_id}/attendance", json={"status": "present"}, headers=auth_headers("coach@example.com"))
+
+    assert response.json() == {"updated": 1}
+    statuses = {item["user_id"]: item["status"] for item in client.get("/participations/", headers=auth_headers("coach@example.com")).json()}
+    assert statuses == {people["sportif"].id: "present", people["other_sportif"].id: "absent"}
+
+
+def test_bulk_attendance_waits_for_the_session_and_its_coach(client, db_factory, people, auth_headers):
+    upcoming = new_session(db_factory, people["coach"].id, days=2)
+    started = new_session(db_factory, people["coach"].id, days=-0.1)
+
+    assert client.post(f"/sessions/{upcoming}/attendance", json={"status": "present"}, headers=auth_headers("coach@example.com")).status_code == 409
+    assert client.post(f"/sessions/{started}/attendance", json={"status": "present"}, headers=auth_headers("autre.coach@example.com")).status_code == 403
+    assert client.post(f"/sessions/{started}/attendance", json={"status": "present"}, headers=auth_headers("sportif@example.com")).status_code == 403
+    assert client.post(f"/sessions/{started}/attendance", json={"status": "inscrit"}, headers=auth_headers("coach@example.com")).status_code == 422

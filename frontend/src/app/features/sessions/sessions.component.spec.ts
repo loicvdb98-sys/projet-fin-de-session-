@@ -123,6 +123,27 @@ describe('SessionsComponent', () => {
     });
   });
 
+  it('marks every unmarked athlete present once the session has started', () => {
+    let requested: [number, string] | undefined;
+    const component = setup([session(1, -0.1), session(2, 2)], [], { markUnmarked: (id: number, status: 'present' | 'absent') => { requested = [id, status]; return of({ updated: 2 }); } });
+    component.attendanceRows = [
+      { participationId: 1, userId: 5, fullName: 'Léa', status: 'inscrit' },
+      { participationId: 2, userId: 6, fullName: 'Tom', status: 'absent' },
+      { participationId: 3, userId: 7, fullName: 'Inès', status: 'inscrit' },
+    ];
+
+    component.attendanceSessionId = 2;
+    expect(component.canMarkAllPresent()).toBe(false);
+
+    component.attendanceSessionId = 1;
+    expect(component.canMarkAllPresent()).toBe(true);
+    component.markAllPresent();
+
+    expect(requested).toEqual([1, 'present']);
+    expect(component.attendanceRows.map((row) => row.status)).toEqual(['present', 'absent', 'present']);
+    expect(component.canMarkAllPresent()).toBe(false);
+  });
+
   it('shows the duplicated session right away', () => {
     const copy = session(9, 8);
     const component = setup([session(1, 1)], [], { duplicate: () => of(copy) });

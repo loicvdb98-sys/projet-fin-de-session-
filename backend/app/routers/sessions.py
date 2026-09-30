@@ -4,7 +4,7 @@ duplication et leur export vers un agenda (fichier .ics)."""
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..database import get_db
@@ -14,6 +14,7 @@ from ..models.notification import Notification
 from ..models.participation import Participation
 from ..models.session import Session as SportSession
 from ..models.user import User
+from ..schemas.participation import AttendanceBulk
 from ..schemas.session import SessionCreate, SessionDuplicate, SessionRead, SessionRepeat, SessionUpdate
 from ..services.ics import build_calendar
 from ..services.time import is_past, local_datetime_label
@@ -190,6 +191,33 @@ def repeat_session(
     for copy in copies:
         db.refresh(copy)
     return copies
+
+
+@router.post("/{session_id}/attendance")
+def mark_unmarked_attendance(
+    session_id: int,
+    data: AttendanceBulk,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles("coach", "admin")),
+) -> dict[str, int]:
+    """Pointe d'un coup tous les inscrits encore au statut « inscrit » (POST /sessions/{session_id}/attendance),
+    comme présents ou absents ; les présences déjà saisies ne changent pas. Réservé au coach de la
+    séance ou à un admin, une fois la séance commencée. Retourne le nombre de participations pointées.
+    """
+    item = db.get(SportSession, session_id)
+    if not item:
+        raise HTTPException(404, "Séance introuvable")
+    if user.role == "coach" and item.coach_id != user.id:
+        raise HTTPException(403, "Vous ne gérez pas cette séance")
+    if not is_past(item.starts_at):
+        raise HTTPException(409, "La séance n'a pas encore commencé")
+    updated = db.execute(
+        update(Participation)
+        .where(Participation.session_id == session_id, Participation.status == "inscrit")
+        .values(status=data.status)
+    ).rowcount
+    db.commit()
+    return {"updated": updated}
 
 
 @router.patch("/{session_id}", response_model=SessionRead)

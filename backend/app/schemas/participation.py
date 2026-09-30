@@ -1,5 +1,7 @@
 """Schémas Pydantic pour l'inscription des utilisateurs aux séances (participations)."""
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -24,3 +26,9 @@ class ParticipationRead(BaseModel):
     user_id: int
     session_id: int
     status: str
+
+
+class AttendanceBulk(BaseModel):
+    """Statut à donner à tous les inscrits d'une séance qui ne sont pas encore pointés."""
+
+    status: Literal["present", "absent"]

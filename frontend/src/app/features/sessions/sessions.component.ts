@@ -303,15 +303,24 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             @if (attendanceLoading) {
               <p class="text-secondary">Chargement des inscrits…</p>
             } @else if (attendanceRows.length) {
+              @if (canMarkAllPresent()) {
+                <div class="attendance-bulk">
+                  <button type="button" class="action-chip primary" (click)="markAllPresent()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l3 3L14 8.5"/><path d="M10 15.5l1.5 1.5L20 8"/></svg>
+                    Marquer les {{ unmarkedCount() }} non pointé(s) présent(s)
+                  </button>
+                </div>
+              }
               @for (row of attendanceRows; track row.participationId) {
                 <div class="attendance-row">
                   <span>{{ row.fullName }}</span>
-                  <div class="attendance-actions">
+                  <div class="attendance-actions" role="group" [attr.aria-label]="'Présence de ' + row.fullName">
                     @for (option of attendanceStatuses; track option.value) {
                       <button
                         type="button"
                         class="attendance-chip"
                         [class.active]="row.status === option.value"
+                        [attr.aria-pressed]="row.status === option.value"
                         (click)="setAttendance(row, option.value)"
                       >{{ option.label }}</button>
                     }
@@ -752,6 +761,27 @@ export class SessionsComponent implements OnDestroy {
         this.attendanceLoading = false;
       },
       error: () => { this.attendanceLoading = false; this.toast.error('Impossible de charger les inscrits.'); }
+    });
+  }
+
+  /** Inscrits pas encore pointés dans le panneau des présences ouvert. */
+  unmarkedCount(): number { return this.attendanceRows.filter((row) => row.status === 'inscrit').length; }
+
+  /** Pointage groupé proposé une fois la séance commencée, s'il reste des inscrits non pointés. */
+  canMarkAllPresent(): boolean {
+    const session = this.sessions.find((item) => item.id === this.attendanceSessionId);
+    return !!session && this.isPast(session) && this.unmarkedCount() > 0;
+  }
+
+  /** Marque présents, en une requête, tous les inscrits pas encore pointés. */
+  markAllPresent(): void {
+    if (this.attendanceSessionId === undefined) return;
+    this.service.markUnmarked(this.attendanceSessionId, 'present').pipe(markForCheck(this.cd)).subscribe({
+      next: ({ updated }) => {
+        this.attendanceRows = this.attendanceRows.map((row) => (row.status === 'inscrit' ? { ...row, status: 'present' } : row));
+        this.toast.success(`${updated} présence(s) enregistrée(s).`);
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible d’enregistrer les présences.')
     });
   }
 

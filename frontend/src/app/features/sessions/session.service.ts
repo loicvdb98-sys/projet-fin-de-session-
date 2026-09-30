@@ -47,6 +47,10 @@ export class SessionService {
   duplicate(id: number, days?: number): Observable<SportSession> {
     return this.http.post<SportSession>(`${this.apiUrl}/${id}/duplicate`, days ? { days } : {});
   }
+  /** Pointe d'un coup tous les inscrits non encore pointés (séance commencée) ; renvoie leur nombre. */
+  markUnmarked(id: number, status: 'present' | 'absent'): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(`${this.apiUrl}/${id}/attendance`, { status });
+  }
   /** Listes d'attente où figure l'utilisateur connecté, avec sa position. */
   myWaitlist(): Observable<WaitlistPosition[]> { return this.http.get<WaitlistPosition[]>(`${this.apiUrl}/waitlist/mine`); }
   /** Rejoint la liste d'attente d'une séance complète. */
