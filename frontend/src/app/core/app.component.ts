@@ -15,6 +15,7 @@ import { ThemeService } from '@shared/services/theme.service';
 import { ToastService } from '@shared/services/toast.service';
 import { ToastContainerComponent } from '@shared/components/toast-container.component';
 import { NotificationService } from '@features/notifications/notification.service';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 /** Fenêtre avant le début d'une séance pendant laquelle un rappel est affiché. */
 const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
@@ -209,6 +210,12 @@ export class AppComponent {
     this.currentUser$.pipe(distinctUntilChanged((previous, next) => previous?.id === next?.id)).subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
+    // Version installable (PWA) : prévient quand une mise à jour de l'application est prête.
+    const updates = inject(SwUpdate);
+    if (updates.isEnabled) {
+      updates.versionUpdates.pipe(filter((event): event is VersionReadyEvent => event.type === 'VERSION_READY'))
+        .subscribe(() => this.toast.info('Une nouvelle version de SportPlan est prête : rechargez la page pour en profiter.'));
+    }
     // Menu ouvert : la page en dessous ne défile plus (classe posée sur <html>).
     effect(() => this.document.documentElement.classList.toggle('menu-lock', this.menuOpen()));
     // Passage en affichage large (rotation d'une tablette, dépliage d'un pliable) : le menu

@@ -1,7 +1,7 @@
 /**
  * Configuration racine de l'application Angular (bootstrap standalone) :
  * routeur (retour en haut de page à chaque navigation), client HTTP avec
- * intercepteur d'authentification, animations, et
+ * intercepteur d'authentification, animations, service worker (PWA), et
  * langue française pour les pipes de date et de nombre (« septembre », « 80,6 »).
  *
  * `provideZoneChangeDetection` est requis explicitement : depuis Angular 20+,
@@ -12,12 +12,13 @@
  * qui provoquait des pages bloquées indéfiniment sur leur état "Chargement…"
  * bien que les données arrivaient correctement.
  */
-import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, isDevMode, provideZoneChangeDetection } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TitleStrategy, provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { SportPlanTitleStrategy } from './title.strategy';
 import { authInterceptor } from '@features/auth/auth.interceptor';
@@ -32,6 +33,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     { provide: TitleStrategy, useClass: SportPlanTitleStrategy },
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+    // Application installable (PWA) : le service worker met en cache le socle de l'application
+    // (jamais les réponses de l'API, propres à chaque compte). Actif seulement dans le build de
+    // production (npm run start:pwa), et seulement sur une origine sécurisée (HTTPS ou localhost).
+    provideServiceWorker('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' })
   ]
 };

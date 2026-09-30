@@ -109,7 +109,11 @@ La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info
 
 - **Chargement à la demande** : chaque page est déclarée avec `loadComponent`
   (`core/app.routes.ts`) ; le navigateur ne télécharge au démarrage que le socle de
-  l'application (environ 530 Ko), puis le code d'une page la première fois qu'on l'ouvre.
+  l'application (540 Ko, soit 125 Ko transférés une fois compressés), puis le code d'une
+  page la première fois qu'on l'ouvre.
+- **Application installable (PWA)** : manifeste et service worker d'Angular ; le socle est
+  mis en cache (ouverture hors ligne et démarrage instantané), jamais les réponses de l'API.
+  Voir [frontend/README.md](../frontend/README.md).
 - **Profil en mémoire** : `UserService.me()` n'interroge `/users/me` qu'une fois par
   connexion (le cache est vidé à la connexion et à la déconnexion, et mis à jour quand
   l'utilisateur modifie son profil). Un parcours de toutes les pages passe ainsi de 59

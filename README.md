@@ -61,7 +61,8 @@ L'application est servie sur `http://localhost:4200`.
    réseau **privé** dans Windows (les ports 4200 et 8000 doivent y être autorisés
    par le pare-feu).
 2. Dans `backend/.env`, autoriser le front servi sur le réseau local :
-   `ALLOWED_ORIGIN_REGEX=http://192\.168\.\d{1,3}\.\d{1,3}:4200`
+   `ALLOWED_ORIGIN_REGEX=http://192\.168\.\d{1,3}\.\d{1,3}:(4200|4300)`
+   (4300 : version installable, voir plus bas)
 3. Lancer l'API et le front en écoutant sur le réseau :
 
    ```powershell
@@ -75,6 +76,17 @@ L'application est servie sur `http://localhost:4200`.
 4. Sur le téléphone, ouvrir `http://<adresse IP du PC>:4200` (affichée par
    `npm run start:lan` sur la ligne « Network », ou par `ipconfig`). L'application
    appelle l'API à la même adresse, sur le port 8000.
+
+### 5. Version installable (PWA)
+
+```powershell
+cd frontend
+npm run start:pwa
+```
+
+Build de production servi sur `http://localhost:4300`, installable depuis Chrome ou Edge
+(icône sur l'écran d'accueil, ouverture en plein écran, socle de l'application disponible
+hors ligne). Détails, et installation sur un téléphone : [frontend/README.md](frontend/README.md).
 
 ## Tests
 

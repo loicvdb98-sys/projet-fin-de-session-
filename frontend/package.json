@@ -6,7 +6,8 @@
     "start": "ng serve",
     "start:lan": "ng serve --host 0.0.0.0",
     "build": "ng build",
-    "test": "ng test"
+    "test": "ng test",
+    "start:pwa": "ng build --configuration production && node scripts/serve-pwa.mjs"
   },
   "dependencies": {
     "@angular/animations": "^22.0.0",
@@ -17,6 +18,7 @@
     "@angular/material": "^22.0.0",
     "@angular/platform-browser": "^22.0.0",
     "@angular/router": "^22.0.0",
+    "@angular/service-worker": "^22.1.6",
     "chart.js": "^4.5.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

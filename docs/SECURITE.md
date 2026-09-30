@@ -101,6 +101,13 @@ Chaque réponse de l'API porte des en-têtes de protection (`backend/app/main.py
 - **Documentation** : `/docs`, `/redoc` et `/openapi.json` se désactivent en production
   avec `EXPOSE_API_DOCS=false`.
 
+## Application installable (PWA)
+
+Le service worker ne met en cache que les fichiers de l'application (HTML, JavaScript, CSS,
+icônes), jamais les réponses de l'API : sur un appareil partagé, un autre compte ne peut
+pas retrouver les données du précédent dans le cache. Il n'est actif que sur une origine
+sécurisée (HTTPS ou `localhost`), comme l'imposent les navigateurs.
+
 ## Exports CSV
 
 Les exports (participations, performances, assiduité) sont générés dans le navigateur à

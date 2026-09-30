@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     secret_key: str
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
-    allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
+    # 4200 : ng serve ; 4300 : version installable (npm run start:pwa).
+    allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200,http://localhost:4300,http://127.0.0.1:4300"
     # Origines supplémentaires acceptées par expression régulière, ex. le front ouvert depuis
     # un téléphone du réseau local : http://192\.168\.\d{1,3}\.\d{1,3}:4200 (vide = aucune).
     allowed_origin_regex: str | None = None
