@@ -80,4 +80,54 @@ describe('SessionsComponent', () => {
     expect(component.sessions.map((item) => item.id)).toContain(9);
     expect(component.selectedModuleSession?.id).toBe(9);
   });
+
+  describe('search and filters', () => {
+    const catalog = (): SportSession[] => [
+      { ...session(1, 1), title: 'Yoga & récupération', coach_name: 'Camille Coach' },
+      { ...session(2, 3), title: 'Circuit force', coach_name: 'Léo Durand', registered_count: 10 },
+      { ...session(3, 12), title: 'Préparation trail', coach_name: 'Camille Coach' },
+      { ...session(4, -2), title: 'HIIT express', coach_name: 'Léo Durand' },
+    ];
+
+    it('finds sessions by title or coach, ignoring accents and case', () => {
+      const component = setup(catalog());
+
+      component.searchTerm = 'RECUPERATION';
+      expect(component.upcomingSessions().map((item) => item.id)).toEqual([1]);
+
+      component.searchTerm = 'leo';
+      expect([...component.upcomingSessions(), ...component.pastSessions()].map((item) => item.id)).toEqual([2, 4]);
+    });
+
+    it('keeps only upcoming sessions with free spots, or those of the next 7 days', () => {
+      const component = setup(catalog());
+
+      component.filter = 'available';
+      expect(component.visibleCount()).toBe(2);
+      expect(component.upcomingSessions().map((item) => item.id)).toEqual([1, 3]);
+
+      component.filter = 'week';
+      expect(component.upcomingSessions().map((item) => item.id)).toEqual([1, 2]);
+    });
+
+    it('keeps only my registrations with the « mine » filter', () => {
+      const component = setup(catalog(), [{ id: 7, user_id: 1, session_id: 3, status: 'inscrit' }]);
+
+      component.filter = 'mine';
+
+      expect(component.visibleCount()).toBe(1);
+      expect(component.selectedModuleSession?.id).toBe(3);
+    });
+
+    it('does not let filters hide the real next session or shrink the calendar export', () => {
+      const component = setup(catalog(), [{ id: 7, user_id: 1, session_id: 1, status: 'inscrit' }]);
+
+      component.searchTerm = 'trail';
+
+      expect(component.isNextSession(catalog()[0])).toBe(true);
+      expect(component.myUpcomingSessions().map((item) => item.id)).toEqual([1]);
+      component.resetFilters();
+      expect(component.visibleCount()).toBe(4);
+    });
+  });
 });

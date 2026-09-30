@@ -35,6 +35,16 @@ interface AttendanceRow {
   status: string;
 }
 
+/** Filtre rapide de la liste des séances. */
+type SessionFilter = 'all' | 'mine' | 'available' | 'week';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Texte sans accents ni majuscules, pour une recherche tolérante (« recuperation » trouve « Récupération »). */
+function normalizeText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
   { value: 'inscrit', label: 'Inscrit' },
   { value: 'present', label: 'Présent' },
@@ -96,6 +106,21 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
       } @else if (sessionsLoadError) {
         <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="refreshSessions()">Réessayer</button></p>
       } @else if (sessions.length) {
+        <div class="session-toolbar" role="search">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="session-search">
+            <mat-label>Rechercher une séance ou un coach</mat-label>
+            <input matInput type="search" autocomplete="off" [value]="searchTerm" (input)="searchTerm = $any($event.target).value">
+          </mat-form-field>
+          <div class="filter-chips" role="group" aria-label="Filtrer les séances">
+            @for (option of filterOptions; track option.value) {
+              <button type="button" class="filter-chip" [class.active]="filter === option.value" [attr.aria-pressed]="filter === option.value" (click)="filter = option.value">{{ option.label }}</button>
+            }
+          </div>
+          <span class="session-count text-secondary" aria-live="polite">{{ visibleCount() }} séance(s)</span>
+        </div>
+        @if (!visibleCount()) {
+          <p class="empty-state">Aucune séance ne correspond à votre recherche. <button mat-button class="teal-action" (click)="resetFilters()">Tout afficher</button></p>
+        } @else {
         <div class="module-shell">
           <nav class="module-rail" aria-label="Séances">
             @if (upcomingSessions().length) {
@@ -169,6 +194,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             }
           </div>
         </div>
+        }
 
         <ng-template #railItemTpl let-session="session">
           <button
@@ -290,11 +316,27 @@ export class SessionsComponent implements OnDestroy {
   sessionsLoading = true;
   sessionsLoadError = false;
   selectedModuleSessionId?: number;
+  /** Recherche libre (titre, coach, description) et filtre rapide appliqués au rail. */
+  searchTerm = '';
+  filter: SessionFilter = 'all';
 
-  /** Séance affichée dans le panneau de détail : celle sélectionnée dans le rail, sinon la prochaine à venir (ou la dernière passée). */
+  /**
+   * Séance affichée dans le panneau de détail : celle sélectionnée dans le rail si elle
+   * correspond toujours aux filtres, sinon la prochaine à venir (ou la dernière passée).
+   */
   get selectedModuleSession(): SportSession | undefined {
-    return this.sessions.find((session) => session.id === this.selectedModuleSessionId)
-      ?? this.upcomingSessions()[0] ?? this.pastSessions()[0];
+    const visible = [...this.upcomingSessions(), ...this.pastSessions()];
+    return visible.find((session) => session.id === this.selectedModuleSessionId) ?? visible[0];
+  }
+
+  /** Filtres proposés ; « Mes séances » inclut, pour un coach, celles qu'il anime. */
+  get filterOptions(): { value: SessionFilter; label: string }[] {
+    return [
+      { value: 'all', label: 'Toutes' },
+      { value: 'mine', label: this.canManage ? 'Mes séances' : 'Mes inscriptions' },
+      { value: 'available', label: 'Places libres' },
+      { value: 'week', label: '7 prochains jours' },
+    ];
   }
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(150)]],
@@ -375,14 +417,43 @@ export class SessionsComponent implements OnDestroy {
     return new Date(session.starts_at).getTime() <= Date.now();
   }
 
-  /** Séances à venir, de la plus proche à la plus lointaine. */
-  upcomingSessions(): SportSession[] {
+  /** Toutes les séances à venir (sans filtre), de la plus proche à la plus lointaine. */
+  private allUpcomingSessions(): SportSession[] {
     return this.sessions.filter((session) => !this.isPast(session)).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   }
 
-  /** Séances passées, de la plus récente à la plus ancienne. */
+  /** Séances à venir affichées (recherche et filtre appliqués), de la plus proche à la plus lointaine. */
+  upcomingSessions(): SportSession[] {
+    return this.allUpcomingSessions().filter((session) => this.matchesFilters(session));
+  }
+
+  /** Séances passées affichées, de la plus récente à la plus ancienne. */
   pastSessions(): SportSession[] {
-    return this.sessions.filter((session) => this.isPast(session)).sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+    return this.sessions.filter((session) => this.isPast(session) && this.matchesFilters(session)).sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+  }
+
+  /** Nombre de séances affichées après recherche et filtre. */
+  visibleCount(): number {
+    return this.sessions.filter((session) => this.matchesFilters(session)).length;
+  }
+
+  /** Vrai si la séance correspond à la recherche (sans tenir compte des accents) et au filtre choisi. */
+  matchesFilters(session: SportSession): boolean {
+    const term = normalizeText(this.searchTerm.trim());
+    if (term && !normalizeText(`${session.title} ${session.coach_name} ${session.description ?? ''}`).includes(term)) return false;
+    const startsAt = new Date(session.starts_at).getTime();
+    switch (this.filter) {
+      case 'mine': return !!this.myParticipation(session) || session.coach_id === this.currentUserId;
+      case 'available': return !this.isPast(session) && this.remainingSpots(session) > 0;
+      case 'week': return startsAt > Date.now() && startsAt <= Date.now() + 7 * DAY_MS;
+      default: return true;
+    }
+  }
+
+  /** Efface la recherche et revient à la liste complète. */
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.filter = 'all';
   }
 
   /** Couleur de la séance : passée, ou selon son remplissage (places nombreuses, rares, complet). */
@@ -398,9 +469,9 @@ export class SessionsComponent implements OnDestroy {
     return session.capacity ? Math.min(100, Math.round((session.registered_count / session.capacity) * 100)) : 0;
   }
 
-  /** Vrai si la séance est la prochaine à venir chronologiquement. */
+  /** Vrai si la séance est la prochaine à venir chronologiquement (quels que soient les filtres). */
   isNextSession(session: SportSession): boolean {
-    return this.upcomingSessions()[0]?.id === session.id;
+    return this.allUpcomingSessions()[0]?.id === session.id;
   }
 
   /** Date complète en français avec majuscule initiale (ex. "Dimanche 06 septembre à 11:47"). */
@@ -527,7 +598,7 @@ export class SessionsComponent implements OnDestroy {
 
   /** Séances à venir où l'utilisateur est attendu : inscrit (hors absence) ou coach de la séance. */
   myUpcomingSessions(): SportSession[] {
-    return this.upcomingSessions().filter((session) => {
+    return this.allUpcomingSessions().filter((session) => {
       const mine = this.myParticipation(session);
       return mine ? mine.status !== 'absent' : session.coach_id === this.currentUserId;
     });

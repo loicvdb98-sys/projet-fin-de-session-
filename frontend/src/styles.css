@@ -279,7 +279,7 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 @media (min-width: 761px) and (min-height: 701px) {
   main:has(.sessions-page), main:has(.participations-page), main:has(.module-page) { padding-block: 1.5rem; }
   .sessions-page, .participations-page, .module-page { height: calc(100dvh - 3rem - var(--shell-top, 0px)); display: flex; flex-direction: column; overflow: hidden; }
-  .sessions-page .page-heading, .sessions-page .workout-builder, .sessions-page .timer-card,
+  .sessions-page .page-heading, .sessions-page .workout-builder, .sessions-page .timer-card, .sessions-page .session-toolbar,
   .participations-page .page-heading, .module-page .page-heading, .module-page .cards { flex: 0 0 auto; }
   .sessions-page .module-shell, .participations-page .module-shell, .module-page .module-shell { flex: 1; min-height: 0; align-items: stretch; margin-top: 1rem; }
   .sessions-page .module-rail, .participations-page .module-rail, .module-page .module-rail { overflow-y: auto; }
@@ -290,6 +290,14 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .workout-form-card, .exercise-library { min-width: 0; }
 .exercise-library h2 { margin: .25rem 0 .35rem; }
 .library-search { width: 100%; margin-top: .75rem; }
+/* Page Séances : recherche et filtres rapides au-dessus du rail. */
+.session-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-top: 1rem; }
+.session-search { flex: 1 1 16rem; max-width: 26rem; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.filter-chip { min-height: 2.25rem; padding: .35rem .85rem; border-radius: 999px; border: 1px solid var(--border-default); background: var(--bg-surface); color: var(--text-secondary); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.filter-chip:hover { border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-default)); color: var(--text-primary); }
+.filter-chip.active { background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface)); border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-default)); color: var(--accent-primary); }
+.session-count { margin-left: auto; font-size: .8rem; font-weight: 600; }
 .pattern-shell { display: flex; gap: .8rem; align-items: flex-start; margin-top: 1rem; }
 .pattern-rail { display: flex; flex-direction: column; gap: .2rem; flex: 0 0 7.4rem; }
 .pattern-rail-item { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .4rem .45rem; background: transparent; border: none; border-radius: .6rem; color: var(--text-secondary); font: inherit; font-weight: 700; font-size: .74rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
@@ -563,13 +571,13 @@ main:focus, main h1[tabindex="-1"]:focus { outline: none; }
 /* Téléphones, pliables et tablettes (≤ 1180 px) : aucun texte sous 12 px. */
 @media (max-width: 1180px) {
   .eyebrow, .app-rail-section, .module-rail-sublabel, .calendar-weekday, .app-rail-user-info .role-badge { font-size: .75rem; }
-  .module-badge, .pattern-rail-label, .pattern-rail-count, .calendar-day-badge, .app-rail-badge { font-size: .75rem; }
+  .module-badge, .pattern-rail-label, .pattern-rail-count, .calendar-day-badge, .app-rail-badge, .attendance-chip { font-size: .75rem; }
   .cards > .stat-card .mat-mdc-card-title { font-size: .8rem; }
   .cards > .stat-card .text-secondary { font-size: .75rem; }
 }
 /* Écrans tactiles : zones à toucher d'au moins 44 px (WCAG 2.5.5 / recommandations Android et iOS). */
 @media (pointer: coarse) {
-  .action-chip, .app-rail-item, .app-rail-brand, .calendar-today-btn { min-height: 2.75rem; }
+  .action-chip, .app-rail-item, .app-rail-brand, .calendar-today-btn, .filter-chip, .attendance-chip { min-height: 2.75rem; }
   .action-chip { padding-inline: 1rem; }
   .module-rail-item { min-height: 3rem; }
   .app-menu-toggle { width: 2.75rem; height: 2.75rem; }

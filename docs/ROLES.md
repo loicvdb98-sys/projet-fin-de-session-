@@ -22,6 +22,9 @@ Rôle par défaut. Peut :
 - Consulter les séances disponibles et s'inscrire, tant qu'il reste des
   places (`registered_count < capacity`, affiché comme « X place(s) » ou
   « Complet » sur chaque séance).
+- Rechercher une séance par titre, coach ou description (sans tenir compte des
+  accents) et filtrer la liste : **Mes inscriptions**, **Places libres**,
+  **7 prochains jours** (pour un coach, **Mes séances** inclut celles qu'il anime).
 - Voir ses participations passées/à venir et se désinscrire
   (page **Mes participations**), avec un résumé (à venir, terminées, taux
   de présence).
