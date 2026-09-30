@@ -67,6 +67,7 @@ Copier `.env.example` en `.env` et renseigner les valeurs (voir
 | `FRONTEND_URL` | Adresse du front mise dans le lien « mot de passe oublié » (`http://localhost:4200` par défaut) |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | Durée de validité de ce lien (30 minutes par défaut) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SENDER` | Serveur d'envoi des emails ; sans `SMTP_HOST`, le lien est écrit dans la console de l'API |
+| `REMINDERS_ENABLED`, `REMINDER_INTERVAL_MINUTES` | Rappels automatiques des séances des prochaines 24 h (activés, toutes les 15 minutes par défaut) |
 | `APP_TIMEZONE` | Fuseau des heures écrites dans les notifications (`Europe/Paris` par défaut ; paquet `tzdata` requis sous Windows) |
 
 Les protections de l'API (jetons, limitation des tentatives, en-têtes HTTP) sont

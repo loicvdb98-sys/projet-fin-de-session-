@@ -3,8 +3,9 @@ configuration du CORS, enregistrement des routeurs et création automatique des 
 au démarrage.
 """
 
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,21 +15,39 @@ from .config import get_settings
 from .database import Base, SessionLocal, engine, ensure_indexes
 # Les modèles sont importés ici (même sans usage direct) pour que SQLAlchemy
 # les enregistre dans Base.metadata avant l'appel à create_all().
-from .models import AuditEvent, Exercise, Goal, Notification, Participation, PasswordResetToken, Performance, PersonalRecord, Session, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
+from .models import AuditEvent, Exercise, Goal, Notification, Participation, PasswordResetToken, Performance, PersonalRecord, Session, SessionReminder, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
 from .routers import admin, auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users, waitlist
 from .routers.auth import purge_expired_refresh_tokens, purge_expired_reset_tokens
 from .services.audit import purge_old_events
+from .services.reminders import send_due_reminders
 
 # Messages de l'application (connexions, sécurité, maintenance) affichés dans la console avec
 # l'heure et le niveau ; sans cela, seuls les avertissements apparaissaient.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s : %(message)s")
+logger = logging.getLogger("sportplan")
+
+
+def _send_reminders() -> None:
+    with SessionLocal() as db:
+        send_due_reminders(db)
+
+
+async def _reminder_loop(interval_minutes: int) -> None:
+    """Envoie les rappels de séance dus, puis recommence après `interval_minutes`. Le travail
+    (SQL, email) tourne dans un thread pour ne pas bloquer les requêtes de l'API."""
+    while True:
+        try:
+            await asyncio.to_thread(_send_reminders)
+        except Exception:  # une erreur ponctuelle (base indisponible…) ne doit pas arrêter la boucle
+            logger.exception("Échec de l'envoi des rappels de séance")
+        await asyncio.sleep(interval_minutes * 60)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Cycle de vie de l'application : au démarrage, crée les tables et les index manquants
-    en base, puis supprime les refresh tokens et liens de réinitialisation expirés (inutiles,
-    ils s'accumulent sinon)."""
+    en base, supprime les refresh tokens, liens de réinitialisation et événements du journal
+    périmés, puis lance la tâche de fond des rappels de séance (arrêtée à l'extinction)."""
     Base.metadata.create_all(bind=engine)
     ensure_indexes(engine)
     with SessionLocal() as db:
@@ -36,7 +55,13 @@ async def lifespan(_: FastAPI):
         purge_expired_reset_tokens(db)
         purge_old_events(db)
         db.commit()
+    settings = get_settings()
+    reminders = asyncio.create_task(_reminder_loop(settings.reminder_interval_minutes)) if settings.reminders_enabled else None
     yield
+    if reminders:
+        reminders.cancel()
+        with suppress(asyncio.CancelledError):
+            await reminders
 
 
 settings = get_settings()

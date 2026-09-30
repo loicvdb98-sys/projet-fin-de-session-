@@ -40,6 +40,10 @@ python reset_demo.py
 python seed.py
 ```
 
+Au redémarrage de l'API, les inscrits des séances qui commencent dans les 24 h reçoivent
+leur rappel automatique (notification « Rappel : … demain à … ») : la cloche du menu en
+affiche le nombre, ce qui permet de montrer la fonctionnalité.
+
 `reset_demo.py` supprime aussi les séances créées à la main avec le compte coach
 de démo : sauvegardez la base avant si elles doivent être conservées.
 

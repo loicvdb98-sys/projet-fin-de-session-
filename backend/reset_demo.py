@@ -22,6 +22,7 @@ from app.models import (
     PersonalRecord,
     Performance,
     RefreshToken,
+    SessionReminder,
     Session as SportSession,
     TrainingJournal,
     User,
@@ -57,6 +58,9 @@ def run_reset() -> None:
         db.execute(delete(WorkoutProgram).where(WorkoutProgram.user_id.in_(demo_user_ids)))
         db.execute(delete(Participation).where(
             Participation.user_id.in_(demo_user_ids) | Participation.session_id.in_(demo_session_ids)
+        ))
+        db.execute(delete(SessionReminder).where(
+            SessionReminder.user_id.in_(demo_user_ids) | SessionReminder.session_id.in_(demo_session_ids)
         ))
         db.execute(delete(WaitlistEntry).where(
             WaitlistEntry.user_id.in_(demo_user_ids) | WaitlistEntry.session_id.in_(demo_session_ids)

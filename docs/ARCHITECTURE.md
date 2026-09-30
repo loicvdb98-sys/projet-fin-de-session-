@@ -51,6 +51,11 @@ les `models` via la session SQLAlchemy → il renvoie un `schema` de réponse.
   ses six chiffres en trois requêtes (COUNT conditionnels).
 - **Compression** : les réponses de plus de 1 Ko sont compressées (gzip).
 - **Purge** : les refresh tokens expirés sont supprimés à chaque démarrage.
+- **Tâche de fond** : au démarrage, l'API lance une boucle (`main.py`, `services/reminders.py`)
+  qui, toutes les 15 minutes, prévient les inscrits des séances commençant dans les 24 h
+  (notification, email si SMTP). Le travail SQL tourne dans un thread
+  (`asyncio.to_thread`) pour ne pas bloquer les requêtes ; la table `session_reminders`
+  garantit un seul rappel par sportif et par séance, même si l'API redémarre.
 
 ## Frontend (`frontend/src/app/`)
 

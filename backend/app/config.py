@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: str | None = None
     smtp_sender: str = "SportPlan <no-reply@sportplan.dev>"
+    # Rappels de séance (24 h avant) : vérification périodique par une tâche de fond de l'API.
+    reminders_enabled: bool = True
+    reminder_interval_minutes: int = 15
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

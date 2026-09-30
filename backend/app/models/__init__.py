@@ -13,8 +13,9 @@ from .notification import Notification
 from .password_reset import PasswordResetToken
 from .journal import TrainingJournal
 from .refresh_token import RefreshToken
+from .reminder import SessionReminder
 from .session import Session
 from .user import User
 from .waitlist import WaitlistEntry
 
-__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal", "WaitlistEntry", "PasswordResetToken", "AuditEvent"]
+__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal", "WaitlistEntry", "PasswordResetToken", "AuditEvent", "SessionReminder"]

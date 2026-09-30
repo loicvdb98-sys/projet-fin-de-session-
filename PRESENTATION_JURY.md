@@ -58,6 +58,7 @@ Le projet est une application web de gestion de séances sportives. Elle central
 - Objectifs et records personnels, badges et série de semaines d'entraînement pour motiver le sportif.
 - Programmes d'entraînement, journal de suivi et notifications.
 - Application installable sur téléphone (PWA : icône, plein écran, ouverture hors ligne).
+- Rappels automatiques la veille de chaque séance (tâche de fond de l'API : notification et email).
 - Gestion d'athlètes pour le coach, avec des alertes d'assiduité (sportifs à relancer).
 
 > **📸 Capture à placer — aperçu des fonctionnalités :** crée une mosaïque de 3 ou 4 petites captures : tableau de bord, calendrier, performances et objectifs. Ne mets pas de texte illisible dans les miniatures ; elles servent seulement à montrer l'étendue du projet.

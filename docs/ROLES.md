@@ -42,6 +42,9 @@ Rôle par défaut. Peut :
 - Voir arriver ses notifications sans recharger la page : le compteur du menu est
   vérifié toutes les minutes (onglet visible) et au retour sur l'onglet, et un
   message signale chaque nouvelle notification (place obtenue, séance modifiée…).
+- Recevoir un **rappel automatique** la veille de chaque séance où il est inscrit
+  (notification « Rappel : Yoga demain à 18:30 », et email si un serveur SMTP est
+  configuré), une seule fois par séance.
 - Recevoir un rappel (toast), à l'ouverture de l'application, quand une séance
   à laquelle il est inscrit commence dans moins de 3h (voir
   `AppComponent.checkUpcomingReminders`).

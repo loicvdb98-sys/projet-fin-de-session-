@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .exercise import Exercise
     from .participation import Participation
     from .user import User
+    from .reminder import SessionReminder
     from .waitlist import WaitlistEntry
 
 
@@ -33,6 +34,8 @@ class Session(Base):
     participations: Mapped[list["Participation"]] = relationship(back_populates="session", cascade="all, delete-orphan")
     # File d'attente dans l'ordre d'arrivée (id croissant).
     waitlist: Mapped[list["WaitlistEntry"]] = relationship(back_populates="session", cascade="all, delete-orphan", order_by="WaitlistEntry.id")
+    # Rappels déjà envoyés : supprimés avec la séance.
+    reminders: Mapped[list["SessionReminder"]] = relationship(back_populates="session", cascade="all, delete-orphan")
 
     @property
     def coach_name(self) -> str:
