@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Origines supplémentaires acceptées par expression régulière, ex. le front ouvert depuis
     # un téléphone du réseau local : http://192\.168\.\d{1,3}\.\d{1,3}:4200 (vide = aucune).
     allowed_origin_regex: str | None = None
+    # Documentation interactive (/docs, /redoc, /openapi.json) : pratique en développement,
+    # à désactiver en production (EXPOSE_API_DOCS=false) pour ne pas publier la carte de l'API.
+    expose_api_docs: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

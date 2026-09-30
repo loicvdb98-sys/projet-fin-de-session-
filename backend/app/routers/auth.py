@@ -9,7 +9,6 @@ from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -20,7 +19,7 @@ from ..rate_limit import ensure_account_not_locked, login_rate_limit, password_c
 from ..schemas.auth import LogoutRequest, PasswordChange, Token, TokenRefresh
 from ..dependencies import get_current_user
 from ..schemas.user import UserCreate, UserRead
-from ..security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
+from ..security import TokenError, create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from ..config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -133,7 +132,7 @@ def refresh(data: TokenRefresh, db: Session = Depends(get_db)):
             new_refresh = _issue_refresh_token(user.id, db)
             db.commit()
             return {"access_token": create_access_token(str(user.id)), "refresh_token": new_refresh}
-    except (JWTError, ValueError, TypeError, KeyError):
+    except (TokenError, ValueError, TypeError, KeyError):
         user = None
     if not user or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token invalide")

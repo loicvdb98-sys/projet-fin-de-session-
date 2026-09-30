@@ -4,12 +4,11 @@ par rôle (utilisées via Depends() dans les routeurs).
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
 from sqlalchemy.orm import Session
 
 from .database import get_db
 from .models.user import User
-from .security import decode_token
+from .security import TokenError, decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -25,7 +24,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if payload.get("type") != "access" or not payload.get("sub"):
             raise credentials_error
         user = db.get(User, int(payload["sub"]))
-    except (JWTError, ValueError, TypeError):
+    except (TokenError, ValueError, TypeError):
         raise credentials_error
     if user is None or not user.is_active:
         raise credentials_error

@@ -1,10 +1,11 @@
-"""Point d'entrée de l'application FastAPI : création de l'app, configuration du CORS,
-enregistrement des routeurs et création automatique des tables au démarrage.
+"""Point d'entrée de l'application FastAPI : création de l'app, en-têtes de sécurité,
+configuration du CORS, enregistrement des routeurs et création automatique des tables
+au démarrage.
 """
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
@@ -22,15 +23,52 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Sports Sessions API", version="1.0.0", lifespan=lifespan)
+settings = get_settings()
+docs_enabled = settings.expose_api_docs
+app = FastAPI(
+    title="Sports Sessions API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
+)
+# Le jeton voyage dans l'en-tête Authorization, jamais dans un cookie : pas besoin
+# d'allow_credentials, et seuls les méthodes et en-têtes utilisés par le front sont permis.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_settings().allowed_origins_list,
-    allow_origin_regex=get_settings().allowed_origin_regex,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.allowed_origins_list,
+    allow_origin_regex=settings.allowed_origin_regex,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# En-têtes ajoutés à chaque réponse de l'API. La politique de contenu stricte n'est pas
+# appliquée aux pages de documentation, qui chargent l'interface Swagger depuis un CDN.
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+}
+DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Ajoute les en-têtes de sécurité ; les réponses d'authentification (jetons) ne
+    doivent jamais être mises en cache par le navigateur ou un proxy."""
+    response = await call_next(request)
+    for header, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    if not request.url.path.startswith(DOCS_PATHS):
+        response.headers.setdefault("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+    if request.url.path.startswith("/auth"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(sessions.router)

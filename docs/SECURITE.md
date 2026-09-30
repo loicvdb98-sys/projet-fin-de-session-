@@ -26,6 +26,10 @@ Ce document recense les protections mises en place dans SportPlan, côté API
 
 - Signature HS256 avec une clé `SECRET_KEY` d'au moins 32 caractères : l'API refuse de
   démarrer avec une clé plus courte.
+- Bibliothèque **PyJWT**, maintenue (elle remplace `python-jose`, abandonnée et touchée
+  par des failles connues, CVE-2024-33663 et CVE-2024-33664). Seul l'algorithme HS256
+  est accepté : un jeton non signé (`alg: none`) ou signé avec une autre clé est refusé,
+  de même qu'un jeton sans `sub`, `type`, `iat` ou `exp`.
 - Chaque jeton porte un identifiant unique aléatoire (`jti`) : deux jetons émis dans la
   même seconde restent distincts.
 - **Rotation** : chaque `POST /auth/refresh` révoque le refresh token présenté et en
@@ -59,6 +63,25 @@ Limites en mémoire (`backend/app/rate_limit.py`), réponse `429 Too Many Reques
   forgé ne peut pas insérer de fausses lignes dans le journal.
 - Ces compteurs vivent dans le processus de l'API : ils repartent de zéro à chaque
   redémarrage et ne sont pas partagés entre plusieurs instances.
+
+## En-têtes HTTP et CORS
+
+Chaque réponse de l'API porte des en-têtes de protection (`backend/app/main.py`) :
+
+| En-tête | Effet |
+| --- | --- |
+| `X-Content-Type-Options: nosniff` | le navigateur n'interprète pas une réponse JSON comme un script |
+| `X-Frame-Options: DENY` et `frame-ancestors 'none'` | l'API ne peut pas être affichée dans une iframe |
+| `Content-Security-Policy: default-src 'none'` | une réponse de l'API ne peut charger aucune ressource (sauf les pages de documentation) |
+| `Referrer-Policy: no-referrer` | aucune adresse n'est transmise aux sites tiers |
+| `Cache-Control: no-store` (routes `/auth`) | les jetons ne sont jamais mis en cache |
+
+- **CORS** : seules les origines de `ALLOWED_ORIGINS` (et `ALLOWED_ORIGIN_REGEX`) sont
+  acceptées, avec les seules méthodes `GET`, `POST`, `PATCH`, `DELETE` et les en-têtes
+  `Authorization` et `Content-Type`. Le jeton voyage dans l'en-tête `Authorization` et
+  jamais dans un cookie : les identifiants (`allow_credentials`) sont refusés.
+- **Documentation** : `/docs`, `/redoc` et `/openapi.json` se désactivent en production
+  avec `EXPOSE_API_DOCS=false`.
 
 ## Droits d'accès
 

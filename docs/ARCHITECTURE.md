@@ -16,11 +16,11 @@ Organisation par type de responsabilité, standard pour une API FastAPI :
 
 ```text
 backend/app/
-├── main.py          Point d'entrée : création de l'app FastAPI, CORS, montage des routeurs
+├── main.py          Point d'entrée : création de l'app FastAPI, en-têtes de sécurité, CORS, montage des routeurs
 ├── config.py        Lecture des variables d'environnement (Pydantic Settings)
 ├── database.py       Connexion SQLAlchemy et fabrique de sessions
 ├── dependencies.py  Dépendances FastAPI réutilisables (ex: session DB, utilisateur courant)
-├── security.py      Hachage des mots de passe (Argon2), création/validation des JWT
+├── security.py      Hachage des mots de passe (Argon2), création/validation des JWT (PyJWT)
 ├── rate_limit.py     Limitation des tentatives (par IP, par compte, par utilisateur)
 ├── models/           Modèles SQLAlchemy (une classe = une table)
 ├── schemas/          Schémas Pydantic (validation des requêtes/réponses HTTP)

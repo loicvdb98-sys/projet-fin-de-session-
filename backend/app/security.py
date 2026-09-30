@@ -5,7 +5,7 @@ création/décodage des jetons JWT d'accès et de rafraîchissement.
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from jose import JWTError, jwt
+import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError
 
@@ -13,6 +13,8 @@ from .config import get_settings
 
 ALGORITHM = "HS256"
 password_hasher = PasswordHasher()
+# Erreur levée pour tout jeton invalide, expiré, mal signé ou incomplet (base des exceptions PyJWT).
+TokenError = jwt.PyJWTError
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -51,11 +53,13 @@ def create_refresh_token(subject: str) -> str:
 
 def decode_token(token: str) -> dict:
     """Décode et vérifie la signature d'un JWT, retourne son contenu (payload).
-    Lève une JWTError si le token est invalide, expiré ou mal signé.
+    Seul l'algorithme HS256 est accepté (un jeton « alg: none » ou signé autrement est
+    refusé) et les champs sub, type, iat et exp sont obligatoires.
+    Lève une TokenError si le token est invalide, expiré, mal signé ou incomplet.
     """
-    return jwt.decode(token, get_settings().secret_key, algorithms=[ALGORITHM])
-
-
-def is_token_error(error: Exception) -> bool:
-    """Indique si une exception donnée correspond à une erreur de traitement de JWT."""
-    return isinstance(error, JWTError)
+    return jwt.decode(
+        token,
+        get_settings().secret_key,
+        algorithms=[ALGORITHM],
+        options={"require": ["sub", "type", "iat", "exp"]},
+    )

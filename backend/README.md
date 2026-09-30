@@ -28,12 +28,12 @@ py -m pytest
 
 ```text
 app/
-├── main.py         point d'entrée : création de l'app, CORS, montage des routeurs
+├── main.py         point d'entrée : création de l'app, en-têtes de sécurité, CORS, routeurs
 ├── config.py       variables d'environnement (Pydantic Settings)
 ├── database.py     connexion SQLAlchemy et sessions
 ├── dependencies.py dépendances FastAPI réutilisables
-├── security.py     hachage des mots de passe (Argon2), JWT
-├── rate_limit.py   limitation du nombre de requêtes
+├── security.py     hachage des mots de passe (Argon2), JWT (PyJWT)
+├── rate_limit.py   limitation des tentatives (par IP, par compte, par utilisateur)
 ├── models/         modèles SQLAlchemy
 ├── schemas/        schémas Pydantic (validation des requêtes/réponses)
 ├── routers/        endpoints REST par domaine métier
@@ -48,7 +48,12 @@ Copier `.env.example` en `.env` et renseigner les valeurs (voir
 | Variable | Rôle |
 | --- | --- |
 | `DATABASE_URL` | Chaîne de connexion SQLAlchemy/pyodbc vers SQL Server |
-| `SECRET_KEY` | Clé de signature des JWT |
+| `SECRET_KEY` | Clé de signature des JWT (32 caractères minimum) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de vie du token d'accès |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Durée de vie du refresh token |
 | `ALLOWED_ORIGINS` | Origines autorisées par le middleware CORS |
+| `ALLOWED_ORIGIN_REGEX` | Origines supplémentaires (expression régulière), ex. le réseau local pour un téléphone |
+| `EXPOSE_API_DOCS` | `true` par défaut ; `false` en production masque `/docs`, `/redoc` et `/openapi.json` |
+
+Les protections de l'API (jetons, limitation des tentatives, en-têtes HTTP) sont
+décrites dans [docs/SECURITE.md](../docs/SECURITE.md).
