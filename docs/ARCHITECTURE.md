@@ -100,6 +100,11 @@ définie dans `styles.css` :
 - la fiche de l'élément sélectionné (`.module-detail-card`), qui contient aussi les
   formulaires de création (`.module-form`) et les actions (`.action-chip`).
 
+Les couleurs passent par des variables CSS (`--accent-primary`, `--bg-surface`…) redéfinies
+pour le thème sombre (`html[data-theme='dark']`). Les composants Angular Material (champs,
+listes déroulantes et leurs options, interrupteurs) sont repeints avec ces mêmes variables :
+le thème Material de base est clair et laisserait sinon du texte noir sur fond sombre.
+
 La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info`,
 `c-success`, `c-warning` ou `c-danger`. Sur ordinateur, une page portant la classe
 `module-page` tient sur un seul écran (le rail et la fiche défilent en interne) ; sous

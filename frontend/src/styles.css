@@ -465,6 +465,31 @@ html[data-theme='dark'] .mat-mdc-form-field:hover .mdc-notched-outline__trailing
 html[data-theme='dark'] .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
 html[data-theme='dark'] .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
 html[data-theme='dark'] .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing { border-color: var(--accent-secondary) !important; }
+/* Thème sombre : listes déroulantes (mat-select) et leurs options, libellé des interrupteurs et
+   textes d'aide. Le thème Material de base est clair : sans ces règles, ces textes restaient noirs. */
+html[data-theme='dark'] .mat-mdc-select-value, html[data-theme='dark'] .mat-mdc-select-placeholder { color: var(--text-primary); }
+html[data-theme='dark'] .mat-mdc-select-arrow { color: var(--text-secondary); }
+html[data-theme='dark'] .mat-mdc-select-panel { background: var(--bg-surface); }
+html[data-theme='dark'] .mat-mdc-option { color: var(--text-primary); }
+html[data-theme='dark'] .mat-mdc-option:hover:not(.mdc-list-item--disabled), html[data-theme='dark'] .mat-mdc-option.mat-mdc-option-active { background: var(--bg-surface-alt); }
+html[data-theme='dark'] .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text { color: var(--accent-primary-hover); }
+html[data-theme='dark'] .mat-mdc-slide-toggle .mdc-label, html[data-theme='dark'] .mat-mdc-slide-toggle label { color: var(--text-primary); }
+html[data-theme='dark'] .mat-mdc-form-field-hint { color: var(--text-secondary); }
+/* Interrupteurs aux couleurs de l'application (prune en clair, violet en sombre) au lieu du rose
+   du thème Material ; « html » rend la règle plus précise que celle du thème (.mat-accent). */
+html .mat-mdc-slide-toggle, html .mat-mdc-slide-toggle.mat-accent {
+  --mat-slide-toggle-selected-handle-color: var(--accent-primary);
+  --mat-slide-toggle-selected-hover-handle-color: var(--accent-primary-hover);
+  --mat-slide-toggle-selected-focus-handle-color: var(--accent-primary-hover);
+  --mat-slide-toggle-selected-pressed-handle-color: var(--accent-primary-hover);
+  --mat-slide-toggle-selected-track-color: color-mix(in srgb, var(--accent-primary) 40%, var(--bg-surface));
+  --mat-slide-toggle-selected-hover-track-color: color-mix(in srgb, var(--accent-primary) 50%, var(--bg-surface));
+  --mat-slide-toggle-selected-focus-track-color: color-mix(in srgb, var(--accent-primary) 50%, var(--bg-surface));
+  --mat-slide-toggle-selected-pressed-track-color: color-mix(in srgb, var(--accent-primary) 50%, var(--bg-surface));
+  --mat-slide-toggle-selected-hover-state-layer-color: var(--accent-primary);
+  --mat-slide-toggle-selected-focus-state-layer-color: var(--accent-primary);
+  --mat-slide-toggle-selected-pressed-state-layer-color: var(--accent-primary);
+}
 html[data-theme='dark'] .mat-mdc-button, html[data-theme='dark'] .mat-mdc-outlined-button { color: var(--text-primary); }
 html[data-theme='dark'] .mat-mdc-outlined-button { border-color: var(--border-default); }
 .workout-page .page-heading h1 { font-size: clamp(2rem, 5vw, 3rem); }
