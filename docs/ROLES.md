@@ -51,9 +51,10 @@ Rôle par défaut. Peut :
 - Suivre ses performances, objectifs, programmes et son journal
   d'entraînement — toujours restreints à ses propres données côté backend
   (`WHERE user_id = current_user.id`) : mettre à jour la progression d'un
-  objectif (avec, pour un objectif en séances, le nombre de séances suivies
-  depuis le 1er du mois), supprimer un record, modifier ou supprimer un bilan
-  de son journal.
+  objectif, supprimer un record, modifier ou supprimer un bilan de son journal.
+  Un objectif **en séances** (unité « séances ») avance tout seul : sa valeur est
+  le nombre de séances où il a été pointé présent depuis le 1er du mois de création
+  de l'objectif, jusqu'à l'échéance (`services/goals.py`).
 - Sur la page **Statistiques**, consulter en plus son propre historique
   d'assiduité (module **Assiduité**), calculé sur ses participations aux
   séances passées.

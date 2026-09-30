@@ -11,13 +11,16 @@ from ..models.goal import Goal
 from ..models.record import PersonalRecord
 from ..models.user import User
 from ..schemas.goals import GoalCreate, GoalRead, RecordCreate, RecordRead
+from ..services.goals import is_session_goal, sync_session_goals
 
 router = APIRouter(tags=["goals and records"])
 
 
 @router.get("/goals", response_model=list[GoalRead])
 def list_goals(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """Liste les objectifs de l'utilisateur connecté (GET /goals), les plus récents en premier."""
+    """Liste les objectifs de l'utilisateur connecté (GET /goals), les plus récents en premier.
+    Les objectifs en séances sont d'abord recalculés à partir des présences."""
+    sync_session_goals(db, user.id)
     return db.scalars(select(Goal).where(Goal.user_id == user.id).order_by(Goal.created_at.desc())).all()
 
 
@@ -27,6 +30,7 @@ def create_goal(data: GoalCreate, db: Session = Depends(get_db), user: User = De
     item = Goal(user_id=user.id, **data.model_dump())
     db.add(item)
     db.commit()
+    sync_session_goals(db, user.id)
     db.refresh(item)
     return item
 
@@ -37,9 +41,14 @@ def update_goal(goal_id: int, data: GoalCreate, db: Session = Depends(get_db), u
     item = db.get(Goal, goal_id)
     if not item or item.user_id != user.id:
         raise HTTPException(404, "Objectif introuvable")
-    for key, value in data.model_dump().items():
+    changes = data.model_dump()
+    if is_session_goal(item) and data.unit.strip().lower().startswith("séance"):
+        # Valeur tenue à jour par les présences : la saisie manuelle est ignorée.
+        changes.pop("current_value")
+    for key, value in changes.items():
         setattr(item, key, value)
     db.commit()
+    sync_session_goals(db, user.id)
     db.refresh(item)
     return item
 

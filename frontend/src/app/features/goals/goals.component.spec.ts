@@ -2,36 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { GoalsComponent } from './goals.component';
 import { Goal, GoalService } from './goal.service';
-import { UserService } from '@features/athletes/user.service';
-import { ParticipationService } from '@features/participations/participation.service';
-import { SessionService } from '@features/sessions/session.service';
 
-const DAY = 24 * 60 * 60 * 1000;
-const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-// Séances déjà passées : une ce mois-ci, une le mois précédent.
-const sessions = [
-  { id: 10, starts_at: new Date(Math.max(monthStart, Date.now() - DAY)).toISOString() },
-  { id: 11, starts_at: new Date(monthStart - 5 * DAY).toISOString() },
-];
-const goal = (id: number, current: number, target: number, unit = 'séances'): Goal =>
-  ({ id, user_id: 1, title: `Objectif ${id}`, metric: 'séances', target_value: target, current_value: current, unit });
+const goal = (id: number, current: number, target: number, unit = 'séances', extra: Partial<Goal> = {}): Goal =>
+  ({ id, user_id: 1, title: `Objectif ${id}`, metric: 'séances', target_value: target, current_value: current, unit, ...extra });
 
 function setup(goals: Goal[]): GoalsComponent {
   TestBed.configureTestingModule({
-    providers: [
-      { provide: GoalService, useValue: { goals: () => of(goals), records: () => of([]) } },
-      { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Sportif', role: 'sportif', is_active: true }) } },
-      { provide: SessionService, useValue: { list: () => of(sessions) } },
-      {
-        provide: ParticipationService, useValue: {
-          list: () => of([
-            { id: 1, user_id: 1, session_id: 10, status: 'present' },
-            { id: 2, user_id: 1, session_id: 11, status: 'present' },
-            { id: 3, user_id: 2, session_id: 10, status: 'present' },
-          ])
-        }
-      },
-    ]
+    providers: [{ provide: GoalService, useValue: { goals: () => of(goals), records: () => of([]) } }]
   });
   return TestBed.createComponent(GoalsComponent).componentInstance;
 }
@@ -45,16 +22,18 @@ describe('GoalsComponent', () => {
     expect(component.reachedCount).toBe(1);
   });
 
-  it('counts only the current user sessions attended since the 1st of the month', () => {
-    const component = setup([goal(1, 0, 12)]);
-
-    expect(component.attendedThisMonth).toBe(1);
-  });
-
-  it('suggests the attendance only for goals counted in sessions', () => {
+  it('counts automatic session goals from the first day of their creation month', () => {
     const component = setup([]);
 
-    expect(component.isSessionGoal(goal(1, 0, 12, 'séances'))).toBe(true);
-    expect(component.isSessionGoal(goal(2, 0, 100, 'points'))).toBe(false);
+    const start = component.goalMonth(goal(1, 5, 12, 'séances', { auto_progress: true, created_at: '2026-09-27T10:00:00Z' }));
+
+    expect([start.getFullYear(), start.getMonth(), start.getDate()]).toEqual([2026, 8, 1]);
+  });
+
+  it('caps the progress at 100 % once the goal is exceeded', () => {
+    const component = setup([]);
+
+    expect(component.progress(goal(1, 15, 12))).toBe(100);
+    expect(component.isReached(goal(1, 15, 12))).toBe(true);
   });
 });

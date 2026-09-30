@@ -25,3 +25,8 @@ class Goal(Base):
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)
+
+    @property
+    def auto_progress(self) -> bool:
+        """Objectif compté en séances : sa progression suit les présences (voir services/goals.py)."""
+        return self.unit.strip().lower().startswith("séance")

@@ -1,14 +1,16 @@
 """Tests d'API des objectifs : mise à jour de la progression, réservée au propriétaire."""
 
 GOAL = {"title": "Terminer 12 séances", "metric": "séances", "target_value": 12, "current_value": 0, "unit": "séances"}
+# Objectif hors séances : sa progression se saisit à la main (voir test_goals_auto.py pour les séances).
+DISTANCE_GOAL = {"title": "Courir 50 km", "metric": "distance", "target_value": 50, "current_value": 0, "unit": "km"}
 
 
 def test_owner_can_update_goal_progress(client, make_user, auth_headers):
     make_user("sportif@example.com")
     headers = auth_headers("sportif@example.com")
-    goal = client.post("/goals", json=GOAL, headers=headers).json()
+    goal = client.post("/goals", json=DISTANCE_GOAL, headers=headers).json()
 
-    response = client.patch(f"/goals/{goal['id']}", json={**GOAL, "current_value": 5}, headers=headers)
+    response = client.patch(f"/goals/{goal['id']}", json={**DISTANCE_GOAL, "current_value": 5}, headers=headers)
 
     assert response.status_code == 200
     assert response.json()["current_value"] == 5

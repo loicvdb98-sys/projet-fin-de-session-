@@ -18,6 +18,7 @@ from ..models.session import Session as SportSession
 from ..models.user import User
 from ..schemas.statistics import BadgeRead, BadgesRead, StatisticsRead
 from ..services.badges import compute_badges
+from ..services.goals import sync_session_goals
 from ..services.time import local_date
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
@@ -69,6 +70,7 @@ def my_badges(db: Session = Depends(get_db), user: User = Depends(get_current_us
     présences (1, 10, 25, 5 de suite), 4 semaines d'affilée, objectif atteint, record, 5 bilans de journal.
     """
     now = datetime.now(timezone.utc)
+    sync_session_goals(db, user.id, now)
     rows = db.execute(
         select(SportSession.starts_at, Participation.status)
         .join(SportSession, Participation.session_id == SportSession.id)

@@ -24,6 +24,8 @@ class GoalRead(GoalCreate):
     id: int
     user_id: int
     created_at: datetime
+    # Vrai pour un objectif en séances : la valeur actuelle suit les présences, elle ne se saisit pas.
+    auto_progress: bool = False
 
 
 class RecordCreate(BaseModel):

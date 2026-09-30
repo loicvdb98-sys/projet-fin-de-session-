@@ -7,6 +7,8 @@ import { API_URL } from '@core/api.config';
 export interface Goal {
   id: number; user_id: number; title: string; metric: string; target_value: number;
   current_value: number; unit: string; due_date?: string; notes?: string;
+  /** Objectif en séances : la valeur suit les présences pointées (calculée par l'API). */
+  auto_progress?: boolean; created_at?: string;
 }
 export interface PersonalRecord {
   id: number; user_id: number; exercise_name: string; value: number; unit: string;
