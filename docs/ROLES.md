@@ -76,6 +76,10 @@ sportif marqué absent ne peut pas se remettre « inscrit »).
 
 Tout ce qu'un sportif peut faire, plus :
 
+- Voir **sa semaine** en arrivant sur le tableau de bord (module « Cette semaine ») :
+  ses séances du lundi au dimanche, leur remplissage et les présences restant à pointer
+  (un admin y voit toutes les séances de la semaine).
+
 - Créer une séance (`/workouts/new` ou l'éditeur intégré à **Vos séances**),
   toujours en tant qu'animateur de sa propre séance
   (`coach_id` doit être son propre id).

@@ -19,6 +19,7 @@ import { ParticipationService } from '@features/participations/participation.ser
 import { ProgramService } from '@features/programs/program.service';
 import { JournalService } from '@features/journal/journal.service';
 import { AttendanceAlert, attendanceAlert } from '@features/athletes/attendance';
+import { weekOverview } from './week-overview';
 import { User } from '@features/athletes/user.service';
 
 /** Sportif à relancer, tel qu'affiché dans le bandeau du tableau de bord coach. */
@@ -37,6 +38,9 @@ const MODULES: DashboardModule[] = [
   { key: 'journal', title: 'Journal', description: 'Consignez vos ressentis après chaque séance.', link: '/journal', color: 'info' },
   { key: 'notifications', title: 'Notifications', description: 'Restez informé des dernières alertes.', link: '/notifications', color: 'warning' },
 ];
+
+/** Premier module d'un coach ou d'un admin, ouvert par défaut. */
+const WEEK_MODULE: DashboardModule = { key: 'week', title: 'Cette semaine', description: 'Vos séances du lundi au dimanche : remplissage et présences à pointer.', link: '/sessions', color: 'info' };
 
 const COACH_MODULES: DashboardModule[] = [
   { key: 'athletes', title: 'Sportifs', description: 'Suivez vos athlètes et leur progression.', link: '/athletes', color: 'primary' },
@@ -156,6 +160,7 @@ const STATUS_LABELS: Record<string, string> = {
                 <span class="module-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     @switch (module.key) {
+                      @case ('week') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8.5 15l2 2 4-4"/> }
                       @case ('sessions') { <path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/> }
                       @case ('calendar') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/> }
                       @case ('participations') { <circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/> }
@@ -173,6 +178,9 @@ const STATUS_LABELS: Record<string, string> = {
                   <p class="eyebrow">MODULE</p>
                   <h2>{{ module.title }}</h2>
                 </div>
+                @if (module.key === 'week' && (week$ | async); as week) {
+                  <span class="module-badge">{{ week.rows.length }} séance{{ week.rows.length > 1 ? 's' : '' }}</span>
+                }
                 @if (module.key === 'sessions' && (stats$ | async); as stats) {
                   <span class="module-badge">{{ stats.upcoming_sessions }} à venir</span>
                 }
@@ -198,6 +206,20 @@ const STATUS_LABELS: Record<string, string> = {
 
               <p class="text-secondary">{{ module.description }}</p>
 
+              @if (module.key === 'week' && (week$ | async); as week) {
+                @if (week.rows.length) {
+                  <span class="module-stat-line text-secondary">Remplissage moyen {{ week.fill }} %{{ week.toMark ? ' · ' + week.toMark + ' présence(s) à pointer' : ' · présences à jour' }}</span>
+                  <span class="module-preview-list">
+                    @for (row of week.rows; track row.session.id) {
+                      <span class="module-preview-goal">
+                        <span class="module-preview-row-main"><span class="module-preview-dot" [class.unread]="row.toMark > 0" aria-hidden="true"></span>{{ row.session.title }}</span>
+                        <span class="text-secondary">{{ weekday(row.session.starts_at) }} · {{ row.session.registered_count }}/{{ row.session.capacity }}{{ row.toMark ? ' · ' + row.toMark + ' à pointer' : '' }}</span>
+                        <span class="module-mini-progress" aria-hidden="true"><span [style.width.%]="row.fill"></span></span>
+                      </span>
+                    }
+                  </span>
+                } @else { <p class="empty-state module-empty">Aucune séance cette semaine : planifiez-en une depuis « Créer une séance ».</p> }
+              }
               @if (module.key === 'sessions' && (upcomingSessions$ | async); as upcoming) {
                 @if (upcoming.length) {
                   <span class="module-preview-list">
@@ -286,7 +308,7 @@ const STATUS_LABELS: Record<string, string> = {
                 } @else { <p class="empty-state module-empty">Aucun sportif suivi pour le moment.</p> }
               }
 
-              <a class="module-detail-cta" [routerLink]="module.link">Ouvrir {{ module.title }} →</a>
+              <a class="module-detail-cta" [routerLink]="module.link">{{ module.key === 'week' ? 'Voir mes séances' : 'Ouvrir ' + module.title }} →</a>
             </div>
           }
         </div>
@@ -374,6 +396,10 @@ export class DashboardComponent {
     ? inject(UserService).athletes().pipe(shareReplay({ bufferSize: 1, refCount: true }))
     : of([]);
   readonly athletes$ = this.allAthletes$.pipe(map((athletes) => athletes.slice(0, 3)));
+  /** Semaine du coach (ou de l'admin) : séances, remplissage, présences à pointer. */
+  readonly week$ = combineLatest([this.allSessions$, this.allParticipations$, this.user$]).pipe(
+    map(([sessions, participations, user]) => weekOverview(sessions, participations, user.id, user.role === 'admin'))
+  );
   /** Sportifs à relancer (coach/admin) : même règle que sur la page Mes sportifs. */
   readonly alerts$ = combineLatest([this.allAthletes$, this.allParticipations$, this.allSessions$]).pipe(
     map(([athletes, participations, sessions]) => athletes
@@ -390,11 +416,18 @@ export class DashboardComponent {
     this.programs$, this.journal$, this.notifications$, this.athletes$, this.sessions$
   ]).pipe(map(() => true), shareReplay({ bufferSize: 1, refCount: true }));
 
-  selectedKey = 'sessions';
+  /** Un coach ou un admin arrive sur sa semaine ; un sportif, sur ses séances. */
+  selectedKey = this.auth.isCoachOrAdmin() ? 'week' : 'sessions';
 
   /** Modules affichés dans le rail : modules communs, plus modules coach si le rôle le permet. */
   get modules(): DashboardModule[] {
-    return this.auth.isCoachOrAdmin() ? [...MODULES, ...COACH_MODULES] : MODULES;
+    return this.auth.isCoachOrAdmin() ? [WEEK_MODULE, ...MODULES, ...COACH_MODULES] : MODULES;
+  }
+
+  /** Jour et heure courts (ex. « mer. 30 · 18:30 »). */
+  weekday(iso: string): string {
+    const date = new Date(iso);
+    return `${date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })} · ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   get selectedModule(): DashboardModule | undefined {
