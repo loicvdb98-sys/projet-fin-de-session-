@@ -1,5 +1,7 @@
 # SportPlan — Gestion de séances sportives
 
+[![Tests](https://github.com/loicvdb98-sys/projet-fin-de-session-/actions/workflows/ci.yml/badge.svg)](https://github.com/loicvdb98-sys/projet-fin-de-session-/actions/workflows/ci.yml)
+
 Application web de gestion et de suivi de séances sportives : planification des
 entraînements, suivi des performances, objectifs, programmes, journal
 d'entraînement et notifications. Projet de fin de session.
@@ -100,6 +102,10 @@ py -m pytest
 cd frontend
 npm test
 ```
+
+Ces tests, ainsi que le build de production du frontend, sont relancés automatiquement par
+GitHub Actions à chaque push sur `main` (`.github/workflows/ci.yml`) ; le badge en haut de
+cette page indique le résultat du dernier passage.
 
 ## Documentation
 
