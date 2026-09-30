@@ -7,7 +7,8 @@
  * page (et ses dépendances, comme Chart.js pour les statistiques) la première
  * fois qu'on l'ouvre.
  *
- * Les écrans de connexion, de mot de passe oublié et de réinitialisation sont publics.
+ * Les écrans de connexion, de mot de passe oublié et de réinitialisation sont publics ;
+ * une adresse inconnue affiche la page « Page introuvable » (404).
  *
  * Le titre de chaque route devient le titre de l'onglet (« Séances · SportPlan »,
  * voir SportPlanTitleStrategy), utile pour l'historique et les lecteurs d'écran.
@@ -35,5 +36,5 @@ export const routes: Routes = [
   { path: 'admin/users', title: 'Gestion des comptes', loadComponent: () => import('@features/admin/admin-users.component').then((m) => m.AdminUsersComponent), canActivate: [adminGuard] },
   { path: 'admin/audit', title: 'Journal d’activité', loadComponent: () => import('@features/admin/audit-log.component').then((m) => m.AuditLogComponent), canActivate: [adminGuard] },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', title: 'Page introuvable', loadComponent: () => import('./not-found.component').then((m) => m.NotFoundComponent) }
 ];

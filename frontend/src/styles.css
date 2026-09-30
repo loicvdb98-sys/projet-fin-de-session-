@@ -339,6 +339,11 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .audit-body small, .audit-when small { color: var(--text-secondary); font-size: .8rem; overflow-wrap: anywhere; }
 .audit-when { display: flex; flex-direction: column; align-items: flex-end; gap: .1rem; flex: 0 0 auto; font-size: .82rem; font-weight: 600; text-align: right; }
 @media (max-width: 560px) { .audit-row { flex-wrap: wrap; } .audit-body { flex-basis: calc(100% - 1.5rem); } .audit-when { flex-direction: row; flex-wrap: wrap; gap: .1rem .6rem; margin-left: 1.5rem; align-items: baseline; text-align: left; } }
+/* Bandeau « hors ligne » (en bas de l'écran, au-dessus du contenu, sans masquer le menu). */
+.offline-banner { position: fixed; z-index: 900; left: 50%; bottom: 1rem; transform: translateX(-50%); display: flex; align-items: center; gap: .6rem; width: max-content; max-width: calc(100vw - 2rem); padding: .7rem 1rem; border-radius: .9rem; background: var(--text-primary); color: var(--bg-surface); font-size: .88rem; font-weight: 600; box-shadow: var(--shadow-soft); }
+.offline-banner svg { flex: 0 0 1.2rem; width: 1.2rem; height: 1.2rem; }
+/* Page 404 */
+.not-found-card .form-actions { margin-top: 1.5rem; }
 /* Page Séances : position dans la liste d'attente. */
 .waitlist-status { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .2rem; font-size: .82rem; font-weight: 700; color: var(--text-primary); }
 .waitlist-status svg { width: 1rem; height: 1rem; color: var(--accent-secondary); }

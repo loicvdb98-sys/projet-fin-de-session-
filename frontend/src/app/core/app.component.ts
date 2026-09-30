@@ -29,6 +29,12 @@ const NOTIFICATION_POLL_MS = 60 * 1000;
   host: { '(document:keydown.escape)': 'closeMenu(true)' },
   template: `
     <a class="skip-link" href="#contenu" (click)="skipToContent($event)">Aller au contenu</a>
+    @if (!online()) {
+      <div class="offline-banner" role="status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 5.2-2.8"/><path d="M19 12.9a10 10 0 0 0-2.3-1.6"/><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/><path d="M22 8.8a15 15 0 0 0-11.3-3.8"/><path d="M12 20h.01"/></svg>
+        <span>Vous êtes hors ligne : les informations affichées ne sont peut-être plus à jour.</span>
+      </div>
+    }
     <div class="app-shell">
       <aside id="app-menu" class="app-rail" [class.menu-open]="menuOpen()" [class.dense]="auth.isAuthenticated() && auth.isCoachOrAdmin()" aria-label="Navigation principale">
         <div class="app-rail-top">
@@ -187,6 +193,8 @@ export class AppComponent {
 
   /** Menu de navigation déplié (affichage mobile uniquement). */
   readonly menuOpen = signal(false);
+  /** Connexion réseau disponible (bandeau « hors ligne » sinon). */
+  readonly online = signal(navigator.onLine);
   /** Faux jusqu'à la première navigation : le focus n'est pas déplacé au chargement initial. */
   private hasNavigated = false;
 
@@ -217,6 +225,7 @@ export class AppComponent {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
     this.watchNotifications();
+    this.watchConnection();
     // Version installable (PWA) : prévient quand une mise à jour de l'application est prête.
     const updates = inject(SwUpdate);
     if (updates.isEnabled) {
@@ -248,6 +257,19 @@ export class AppComponent {
     this.notifications.arrived.subscribe((items) => this.toast.info(
       items.length === 1 ? `Nouvelle notification : ${items[0].title}` : `${items.length} nouvelles notifications`
     ));
+  }
+
+  /**
+   * Suit la connexion réseau : bandeau quand elle est perdue ; à son retour, message et
+   * rafraîchissement des notifications (les pages rechargent leurs données en naviguant).
+   */
+  private watchConnection(): void {
+    window.addEventListener('offline', () => this.online.set(false));
+    window.addEventListener('online', () => {
+      this.online.set(true);
+      this.toast.success('Connexion rétablie.');
+      if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
+    });
   }
 
   /** Touche Échap : referme le menu mobile et rend le focus au bouton qui l'a ouvert. */
