@@ -11,7 +11,7 @@ d'entraînement et notifications. Projet de fin de session.
 | Frontend | Angular 22, TypeScript, Angular Material, Chart.js |
 | Backend | Python 3, FastAPI, SQLAlchemy, Pydantic |
 | Base de données | SQL Server (via `pyodbc`) |
-| Sécurité | JWT (access + refresh token), Argon2 pour le hachage des mots de passe, CORS |
+| Sécurité | JWT (access + refresh token avec rotation), Argon2, limitation des tentatives, CORS (voir [docs/SECURITE.md](docs/SECURITE.md)) |
 | Tests | Pytest (backend), Vitest (frontend) |
 
 ## Structure du dépôt
@@ -93,6 +93,7 @@ npm test
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — organisation du code backend et frontend.
 - [docs/ROLES.md](docs/ROLES.md) — ce que peuvent voir et faire un sportif, un coach et un admin.
+- [docs/SECURITE.md](docs/SECURITE.md) — protections des comptes, des jetons et de l'API.
 - [backend/SETUP_LOCAL.md](backend/SETUP_LOCAL.md) — configuration de la base de données et de l'API en local.
 - [backend/SEED.md](backend/SEED.md) — comptes et données de démonstration.
 - [frontend/README.md](frontend/README.md) — structure et commandes du frontend Angular.

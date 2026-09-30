@@ -2,6 +2,7 @@
 création/décodage des jetons JWT d'accès et de rafraîchissement.
 """
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
@@ -29,10 +30,12 @@ def hash_password(password: str) -> str:
 
 def create_token(subject: str, token_type: str, expires_delta: timedelta) -> str:
     """Crée un JWT signé pour `subject` (identifiant utilisateur), avec un type
-    ("access" ou "refresh") et une durée de validité donnée.
+    ("access" ou "refresh") et une durée de validité donnée. L'identifiant unique `jti`
+    distingue deux jetons émis dans la même seconde (sinon identiques, donc de même empreinte
+    en base pour les refresh tokens).
     """
     now = datetime.now(timezone.utc)
-    payload = {"sub": subject, "type": token_type, "iat": now, "exp": now + expires_delta}
+    payload = {"sub": subject, "type": token_type, "iat": now, "exp": now + expires_delta, "jti": secrets.token_urlsafe(16)}
     return jwt.encode(payload, get_settings().secret_key, algorithm=ALGORITHM)
 
 

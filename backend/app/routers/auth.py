@@ -5,17 +5,18 @@ rafraîchissement et révocation des jetons JWT, et changement de mot de passe.
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.refresh_token import RefreshToken
 from ..models.user import User
-from ..rate_limit import login_rate_limit
+from ..rate_limit import ensure_account_not_locked, login_rate_limit, password_change_rate_limit, record_login_failure, reset_login_failures
 from ..schemas.auth import LogoutRequest, PasswordChange, Token, TokenRefresh
 from ..dependencies import get_current_user
 from ..schemas.user import UserCreate, UserRead
@@ -24,6 +25,27 @@ from ..config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
+
+# Un refresh token déjà remplacé (rotation) peut être présenté une seconde fois de bonne foi,
+# par exemple par deux onglets qui renouvellent leur session au même instant. Au-delà de ce
+# délai, sa réutilisation signale un vol probable du jeton.
+REUSE_GRACE_PERIOD = timedelta(seconds=60)
+
+
+@lru_cache
+def _dummy_hash() -> str:
+    """Hachage de référence, vérifié quand l'email est inconnu : la réponse prend alors le
+    même temps que pour un vrai compte, ce qui empêche de deviner quels emails existent."""
+    return hash_password("compte-inexistant-SportPlan-0")
+
+
+def revoke_all_refresh_tokens(user_id: int, db: Session) -> None:
+    """Révoque (sans commit) tous les refresh tokens encore actifs d'un utilisateur."""
+    db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=datetime.now(timezone.utc))
+    )
 
 
 def _token_hash(token: str) -> str:
@@ -69,10 +91,15 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     une paire de jetons (accès + rafraîchissement). Soumis à la limitation de débit.
     """
     email = form.username.strip().lower()
+    ensure_account_not_locked(email)
     user = db.scalar(select(User).where(User.email == email))
-    if not user or not user.is_active or not verify_password(form.password, user.hashed_password):
-        logger.warning("Échec de connexion pour %s", form.username)
+    password_ok = verify_password(form.password, user.hashed_password if user else _dummy_hash())
+    if not user or not user.is_active or not password_ok:
+        record_login_failure(email)
+        # %r échappe les retours à la ligne : un email forgé ne peut pas insérer de fausses lignes dans le journal.
+        logger.warning("Échec de connexion pour %r", email[:254])
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email ou mot de passe incorrect")
+    reset_login_failures(email)
     refresh_token = _issue_refresh_token(user.id, db)
     db.commit()
     logger.info("Connexion réussie pour l'utilisateur %s", user.id)
@@ -83,6 +110,8 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 def refresh(data: TokenRefresh, db: Session = Depends(get_db)):
     """Échange un refresh token valide contre une nouvelle paire de jetons (POST /auth/refresh).
     Applique une rotation : l'ancien refresh token est révoqué et un nouveau est émis.
+    Si un jeton déjà remplacé est réutilisé (hors délai de grâce), toutes les sessions du
+    compte sont fermées : le jeton a probablement été volé.
     """
     try:
         payload = decode_token(data.refresh_token)
@@ -90,7 +119,14 @@ def refresh(data: TokenRefresh, db: Session = Depends(get_db)):
             raise ValueError
         user = db.get(User, int(payload["sub"]))
         stored = db.scalar(select(RefreshToken).where(RefreshToken.token_hash == _token_hash(data.refresh_token)))
-        if not stored or not stored.is_valid or not user or stored.user_id != user.id:
+        if stored and user and stored.user_id == user.id and stored.revoked_at is not None:
+            revoked_at = stored.revoked_at if stored.revoked_at.tzinfo else stored.revoked_at.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - revoked_at > REUSE_GRACE_PERIOD:
+                revoke_all_refresh_tokens(user.id, db)
+                db.commit()
+                logger.warning("Réutilisation d'un refresh token révoqué : sessions fermées pour l'utilisateur %s", user.id)
+            user = None
+        elif not stored or not stored.is_valid or not user or stored.user_id != user.id:
             user = None
         elif user.is_active:
             stored.revoked_at = datetime.now(timezone.utc)
@@ -116,14 +152,32 @@ def logout(data: LogoutRequest, db: Session = Depends(get_db)):
         logger.info("Refresh token révoqué pour l'utilisateur %s", stored.user_id)
 
 
-@router.post("/change-password", status_code=204)
+@router.post("/logout-all", status_code=204)
+def logout_all(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Ferme toutes les sessions de l'utilisateur connecté (POST /auth/logout-all) : chaque
+    refresh token est révoqué, sur tous les appareils. Les jetons d'accès déjà émis restent
+    valables jusqu'à leur expiration (30 minutes au plus).
+    """
+    revoke_all_refresh_tokens(user.id, db)
+    db.commit()
+    logger.info("Toutes les sessions fermées pour l'utilisateur %s", user.id)
+
+
+@router.post("/change-password", response_model=Token)
 def change_password(data: PasswordChange, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Change le mot de passe de l'utilisateur connecté (POST /auth/change-password).
-    Nécessite de fournir le mot de passe actuel et exige un nouveau mot de passe différent.
+    Nécessite le mot de passe actuel et un nouveau mot de passe différent et robuste.
+    Les sessions ouvertes sur les autres appareils sont fermées ; une nouvelle paire de
+    jetons est renvoyée pour que l'appareil courant reste connecté.
     """
+    password_change_rate_limit(user.id)
     if not verify_password(data.current_password, user.hashed_password):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Mot de passe actuel incorrect")
     if data.current_password == data.new_password:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Le nouveau mot de passe doit être différent")
     user.hashed_password = hash_password(data.new_password)
+    revoke_all_refresh_tokens(user.id, db)
+    refresh_token = _issue_refresh_token(user.id, db)
     db.commit()
+    logger.info("Mot de passe changé pour l'utilisateur %s", user.id)
+    return {"access_token": create_access_token(str(user.id)), "refresh_token": refresh_token}

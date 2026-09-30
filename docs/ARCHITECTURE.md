@@ -21,7 +21,7 @@ backend/app/
 ├── database.py       Connexion SQLAlchemy et fabrique de sessions
 ├── dependencies.py  Dépendances FastAPI réutilisables (ex: session DB, utilisateur courant)
 ├── security.py      Hachage des mots de passe (Argon2), création/validation des JWT
-├── rate_limit.py     Limitation du nombre de requêtes
+├── rate_limit.py     Limitation des tentatives (par IP, par compte, par utilisateur)
 ├── models/           Modèles SQLAlchemy (une classe = une table)
 ├── schemas/          Schémas Pydantic (validation des requêtes/réponses HTTP)
 ├── routers/           Endpoints REST regroupés par domaine métier, avec leurs règles métier
@@ -106,7 +106,9 @@ transverse utilise l'alias correspondant.
 2. `AuthService` stocke le JWT (access + refresh token) reçu de l'endpoint
    `/auth` du backend.
 3. `authInterceptor` (`features/auth/auth.interceptor.ts`) ajoute
-   automatiquement le token à chaque requête HTTP sortante.
+   automatiquement le token à chaque requête HTTP sortante ; quand le jeton d'accès
+   (30 min) expire, il le renouvelle une fois avec le refresh token puis rejoue la
+   requête. Le serveur fait tourner le refresh token à chaque renouvellement.
 4. `authGuard` / `coachGuard` / `adminGuard` (`core/auth.guard.ts`) protègent les
    routes Angular définies dans `core/app.routes.ts` selon le rôle de
    l'utilisateur.
@@ -114,14 +116,17 @@ transverse utilise l'alias correspondant.
    l'utilisateur courant aux routeurs qui en ont besoin.
 
 Voir [ROLES.md](ROLES.md) pour le détail de ce que chaque rôle (sportif, coach,
-admin) peut voir et faire dans l'application.
+admin) peut voir et faire dans l'application, et [SECURITE.md](SECURITE.md) pour les
+protections (limitation des tentatives, détection de vol de jeton, déconnexion de
+tous les appareils).
 
 ## Tests
 
 - **Backend** (`backend/tests/`, Pytest) : tests unitaires (sécurité, schémas, dates)
   et tests d'API avec le `TestClient` de FastAPI. Les tests d'API tournent sur une base
   SQLite en mémoire recréée pour chaque test (`tests/conftest.py`), jamais sur la base
-  SQL Server : inscription, permissions sur les comptes, séances et inscriptions,
-  statistiques, objectifs, records et journal.
+  SQL Server : inscription, sécurité de l'authentification (blocage après plusieurs
+  échecs, rotation et vol de refresh token, changement de mot de passe), permissions
+  sur les comptes, séances et inscriptions, statistiques, objectifs, records et journal.
 - **Frontend** (`*.spec.ts`, Vitest) : services (authentification, thème, toasts) et
   logique des composants (tableau de bord, séances à venir/passées, objectifs).

@@ -55,9 +55,24 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/auth/register`, data);
   }
 
-  /** Change le mot de passe de l'utilisateur connecté après vérification du mot de passe actuel. */
+  /**
+   * Change le mot de passe de l'utilisateur connecté après vérification du mot de passe actuel.
+   * Le serveur ferme les sessions des autres appareils et renvoie une nouvelle paire de jetons,
+   * enregistrée ici pour que cet appareil reste connecté.
+   */
   changePassword(current_password: string, new_password: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/auth/change-password`, { current_password, new_password });
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/change-password`, { current_password, new_password }).pipe(
+      tap((response) => {
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+      }),
+      map(() => undefined)
+    );
+  }
+
+  /** Ferme les sessions de tous les appareils (refresh tokens révoqués) puis déconnecte celui-ci. */
+  logoutEverywhere(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/auth/logout-all`, {}).pipe(tap(() => this.logout()));
   }
 
   /**

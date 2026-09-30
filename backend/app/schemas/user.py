@@ -1,6 +1,37 @@
 """Schémas Pydantic pour les comptes utilisateurs."""
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+Role = Literal["sportif", "coach", "admin"]
+COMMON_PASSWORDS = {"password123456", "azerty123456", "qwerty123456"}
+
+
+def check_password_strength(value: str) -> str:
+    """Politique de mot de passe commune à l'inscription et au changement de mot de passe :
+    pas de mot de passe courant ni d'espace, au moins une minuscule, une majuscule et un chiffre
+    (la longueur, 12 à 128 caractères, est vérifiée par le champ lui-même).
+    """
+    if value.lower() in COMMON_PASSWORDS:
+        raise ValueError("Mot de passe trop courant")
+    if any(character.isspace() for character in value):
+        raise ValueError("Le mot de passe ne doit pas contenir d'espaces")
+    if not any(character.islower() for character in value):
+        raise ValueError("Le mot de passe doit contenir une minuscule")
+    if not any(character.isupper() for character in value):
+        raise ValueError("Le mot de passe doit contenir une majuscule")
+    if not any(character.isdigit() for character in value):
+        raise ValueError("Le mot de passe doit contenir un chiffre")
+    return value
+
+
+def normalize_full_name(value: str) -> str:
+    """Réduit les espaces multiples d'un nom et vérifie qu'il reste au moins 2 caractères."""
+    normalized = " ".join(value.split())
+    if len(normalized) < 2:
+        raise ValueError("Le nom doit contenir au moins 2 caractères")
+    return normalized
 
 
 class UserCreate(BaseModel):
@@ -22,28 +53,13 @@ class UserCreate(BaseModel):
     @classmethod
     def normalize_name(cls, value: str) -> str:
         """Réduit les espaces multiples et vérifie une longueur minimale après normalisation."""
-        normalized = " ".join(value.split())
-        if len(normalized) < 2:
-            raise ValueError("Le nom doit contenir au moins 2 caractères")
-        return normalized
+        return normalize_full_name(value)
 
     @field_validator("password")
     @classmethod
     def reject_weak_passwords(cls, value: str) -> str:
-        """Rejette les mots de passe trop courants ou ne respectant pas la politique
-        de complexité (minuscule, majuscule, chiffre, pas d'espace).
-        """
-        if value.lower() in {"password123456", "azerty123456", "qwerty123456"}:
-            raise ValueError("Mot de passe trop courant")
-        if any(character.isspace() for character in value):
-            raise ValueError("Le mot de passe ne doit pas contenir d'espaces")
-        if not any(character.islower() for character in value):
-            raise ValueError("Le mot de passe doit contenir une minuscule")
-        if not any(character.isupper() for character in value):
-            raise ValueError("Le mot de passe doit contenir une majuscule")
-        if not any(character.isdigit() for character in value):
-            raise ValueError("Le mot de passe doit contenir un chiffre")
-        return value
+        """Rejette les mots de passe trop courants ou ne respectant pas la politique de complexité."""
+        return check_password_strength(value)
 
 
 class UserUpdate(BaseModel):
@@ -51,8 +67,14 @@ class UserUpdate(BaseModel):
     voir la logique du routeur)."""
 
     full_name: str | None = Field(default=None, max_length=150)
-    role: str | None = None
+    role: Role | None = None
     is_active: bool | None = None
+
+    @field_validator("full_name")
+    @classmethod
+    def normalize_name(cls, value: str | None) -> str | None:
+        """Même règle qu'à l'inscription : un nom vide ou d'une lettre est refusé."""
+        return normalize_full_name(value) if value is not None else None
 
 
 class UserRead(BaseModel):

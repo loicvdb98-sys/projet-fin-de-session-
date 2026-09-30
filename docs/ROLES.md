@@ -37,7 +37,8 @@ Rôle par défaut. Peut :
 - Sur la page **Statistiques**, consulter en plus son propre historique
   d'assiduité (module **Assiduité**), calculé sur ses participations aux
   séances passées.
-- Modifier son propre profil et mot de passe.
+- Modifier son propre profil et mot de passe (ce qui déconnecte ses autres appareils),
+  et se déconnecter de tous les appareils depuis Profil › Sécurité.
 
 Ne peut pas : créer/modifier/supprimer une séance, voir la liste des
 sportifs suivis, gérer les comptes, ni modifier son statut de présence (un

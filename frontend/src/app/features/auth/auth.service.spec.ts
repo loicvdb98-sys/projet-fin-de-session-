@@ -34,7 +34,9 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBe(true);
   });
 
-  it('sends password changes to the protected endpoint', () => {
+  it('sends password changes to the protected endpoint and keeps this device signed in', () => {
+    localStorage.setItem('access_token', 'old-access');
+    localStorage.setItem('refresh_token', 'old-refresh');
     service.changePassword('OldPassword2026!', 'NewPassword2026!').subscribe();
     const request = http.expectOne('http://localhost:8000/auth/change-password');
 
@@ -42,6 +44,24 @@ describe('AuthService', () => {
       current_password: 'OldPassword2026!',
       new_password: 'NewPassword2026!'
     });
-    request.flush(null);
+    // Le serveur ferme les autres sessions et renvoie une nouvelle paire de jetons pour celle-ci.
+    request.flush({ access_token: 'new-access', refresh_token: 'new-refresh', token_type: 'bearer' });
+
+    expect(localStorage.getItem('access_token')).toBe('new-access');
+    expect(localStorage.getItem('refresh_token')).toBe('new-refresh');
+  });
+
+  it('closes every session then signs this device out', () => {
+    localStorage.setItem('access_token', 'access');
+    localStorage.setItem('refresh_token', 'refresh');
+    service.isAuthenticated.set(true);
+    service.logoutEverywhere().subscribe();
+
+    http.expectOne('http://localhost:8000/auth/logout-all').flush(null, { status: 204, statusText: 'No Content' });
+    // logout() révoque aussi le refresh token local, sans attendre la réponse.
+    http.expectOne('http://localhost:8000/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(service.isAuthenticated()).toBe(false);
   });
 });

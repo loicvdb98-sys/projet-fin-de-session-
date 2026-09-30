@@ -177,7 +177,7 @@ Montrez la connexion, puis expliquez brièvement : mot de passe haché avec Argo
 | Pourquoi Angular ? | Structure par composants, routage et outillage adapté à une application riche. |
 | Pourquoi FastAPI ? | API REST rapide à développer, schémas de validation clairs et documentation automatique. |
 | Pourquoi séparer frontend et backend ? | Responsabilités distinctes, maintenance plus simple et API réutilisable. |
-| Comment protégez-vous les comptes ? | Hachage Argon2, JWT et protection des routes côté frontend et backend. |
+| Comment protégez-vous les comptes ? | Hachage Argon2 et mot de passe robuste obligatoire, JWT avec rotation du refresh token (un jeton volé et réutilisé ferme toutes les sessions), blocage d'un compte après 5 échecs de connexion, « se déconnecter de tous les appareils », et vérification des droits côté serveur (détail dans `docs/SECURITE.md`). |
 | Pourquoi SQLAlchemy ? | ORM : modèles Python cohérents avec la base, requêtes plus maintenables. |
 | Quelle difficulté avez-vous rencontrée ? | Préparez un exemple réel : authentification, relations de données, affichage des graphiques ou synchronisation frontend/API. Expliquez la solution apportée. |
 | Quelle serait la prochaine évolution ? | [Ex. partage avec un coach, rappels plus avancés, application mobile, export des statistiques.] |

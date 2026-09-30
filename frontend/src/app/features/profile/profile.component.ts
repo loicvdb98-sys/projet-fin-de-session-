@@ -106,13 +106,21 @@ type Section = 'info' | 'activity' | 'appearance' | 'security';
                 <span class="module-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
                 <div><p class="eyebrow">SÉCURITÉ</p><h2>Compte et sécurité</h2></div>
               </div>
-              <p class="text-secondary">Votre session est protégée par une authentification JWT. Déconnectez-vous toujours après avoir utilisé un appareil partagé.</p>
+              <p class="text-secondary">Votre session est protégée par une authentification JWT. Changer de mot de passe déconnecte vos autres appareils.</p>
               <form class="module-form" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-                <mat-form-field appearance="outline"><mat-label>Mot de passe actuel</mat-label><input matInput type="password" formControlName="current_password"></mat-form-field>
-                <mat-form-field appearance="outline"><mat-label>Nouveau mot de passe</mat-label><input matInput type="password" formControlName="new_password"><mat-hint>Minimum 12 caractères.</mat-hint></mat-form-field>
+                <mat-form-field appearance="outline"><mat-label>Mot de passe actuel</mat-label><input matInput type="password" autocomplete="current-password" formControlName="current_password"></mat-form-field>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nouveau mot de passe</mat-label><input matInput type="password" autocomplete="new-password" formControlName="new_password">
+                  <mat-hint>12 caractères minimum, avec une majuscule, une minuscule et un chiffre, sans espace.</mat-hint>
+                  @if (passwordForm.controls.new_password.hasError('pattern')) { <mat-error>Ajoutez une majuscule, une minuscule et un chiffre (sans espace).</mat-error> }
+                  @else if (passwordForm.controls.new_password.hasError('minlength')) { <mat-error>12 caractères minimum.</mat-error> }
+                </mat-form-field>
                 <div class="form-actions"><button mat-flat-button class="primary-action" type="submit" [disabled]="passwordForm.invalid">Modifier le mot de passe</button>@if (passwordMessage) { <span class="inline-message" [class]="passwordFailed ? 'error' : 'success-message'" role="status">{{ passwordMessage }}</span> }</div>
               </form>
               <div class="module-detail-actions">
+                <button type="button" class="action-chip danger" (click)="logoutEverywhere()" [disabled]="closingSessions">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                  Se déconnecter de tous les appareils
+                </button>
                 <a class="action-chip" routerLink="/login">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
                   Se connecter avec un autre compte
@@ -137,13 +145,15 @@ export class ProfileComponent {
   readonly user$ = this.service.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly stats$ = this.statistics.mine().pipe(catchError(() => of<Statistics | null>(null)), shareReplay({ bufferSize: 1, refCount: true }));
   readonly form = this.fb.nonNullable.group({ full_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]] });
-  readonly passwordForm = this.fb.nonNullable.group({ current_password: ['', [Validators.required, Validators.minLength(12)]], new_password: ['', [Validators.required, Validators.minLength(12)]] });
+  // Même politique que le serveur : au moins une minuscule, une majuscule et un chiffre, sans espace.
+  readonly passwordForm = this.fb.nonNullable.group({ current_password: ['', Validators.required], new_password: ['', [Validators.required, Validators.minLength(12), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)\S+$/)]] });
   section: Section = 'info';
   saving = false;
   message = '';
   passwordMessage = '';
   saveFailed = false;
   passwordFailed = false;
+  closingSessions = false;
   constructor() { this.user$.subscribe(user => this.form.patchValue({ full_name: user.full_name })); }
   initials(name: string): string { return name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join(''); }
   roleLabel(role: string): string { return role === 'coach' ? 'Coach' : role === 'admin' ? 'Administrateur' : 'Sportif'; }
@@ -163,14 +173,24 @@ export class ProfileComponent {
     if (this.passwordForm.invalid) return;
     const { current_password, new_password } = this.passwordForm.getRawValue();
     this.auth.changePassword(current_password, new_password).pipe(markForCheck(this.cd)).subscribe({
-      next: () => { this.passwordForm.reset(); this.passwordFailed = false; this.passwordMessage = 'Mot de passe modifié avec succès.'; },
+      next: () => { this.passwordForm.reset(); this.passwordFailed = false; this.passwordMessage = 'Mot de passe modifié. Vos autres appareils ont été déconnectés.'; },
       error: (error) => {
         this.passwordFailed = true;
         // detail est une chaîne pour les erreurs métier (ex. mot de passe actuel incorrect),
-        // une liste pour les erreurs de validation (422) : on n'affiche alors qu'un message générique.
+        // une liste pour les erreurs de validation (422) : on affiche alors le premier message.
         const detail = error?.error?.detail;
-        this.passwordMessage = typeof detail === 'string' ? detail : 'Impossible de modifier le mot de passe.';
+        const validation = Array.isArray(detail) ? String(detail[0]?.msg ?? '').replace(/^Value error, /, '') : '';
+        this.passwordMessage = typeof detail === 'string' ? detail : validation || 'Impossible de modifier le mot de passe.';
       }
+    });
+  }
+
+  /** Ferme toutes les sessions du compte (téléphone, ordinateur…) après confirmation. */
+  logoutEverywhere(): void {
+    if (!confirm('Se déconnecter de tous les appareils, y compris celui-ci ?')) return;
+    this.closingSessions = true;
+    this.auth.logoutEverywhere().pipe(markForCheck(this.cd)).subscribe({
+      error: () => { this.closingSessions = false; this.passwordFailed = true; this.passwordMessage = 'La déconnexion des appareils a échoué. Réessayez.'; }
     });
   }
 }
