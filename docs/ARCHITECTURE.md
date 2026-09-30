@@ -123,6 +123,9 @@ La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info
   connexion (le cache est vidé à la connexion et à la déconnexion, et mis à jour quand
   l'utilisateur modifie son profil). Un parcours de toutes les pages passe ainsi de 59
   à 48 appels à l'API.
+- **Notifications** : le compteur de non lues est vérifié toutes les minutes, seulement
+  quand l'onglet est visible (aucun appel pour un onglet en arrière-plan), et au retour
+  sur l'onglet ; le minuteur tourne hors de la zone Angular.
 - **Flux partagés** : quand une page lit la même donnée à deux endroits (graphique et
   liste des performances, par exemple), la requête est partagée avec `shareReplay`.
 

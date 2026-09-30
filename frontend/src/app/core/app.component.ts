@@ -2,7 +2,7 @@
  * Composant racine de l'application : affiche la coquille (rail de navigation,
  * bascule de thème, déconnexion) et l'`<router-outlet>` qui charge chaque écran.
  */
-import { Component, Injector, afterNextRender, effect, inject, signal } from '@angular/core';
+import { Component, Injector, NgZone, afterNextRender, effect, inject, signal } from '@angular/core';
 import { AsyncPipe, DOCUMENT } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, filter, forkJoin, merge, of, shareReplay, switchMap } from 'rxjs';
@@ -19,6 +19,8 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 /** Fenêtre avant le début d'une séance pendant laquelle un rappel est affiché. */
 const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
+/** Fréquence de vérification des nouvelles notifications (onglet visible uniquement). */
+const NOTIFICATION_POLL_MS = 60 * 1000;
 
 @Component({
   selector: 'app-root',
@@ -208,12 +210,13 @@ export class AppComponent {
         if (moveFocus) this.focusPageHeading();
       }, { injector: this.injector });
       if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
-      else this.notifications.unreadCount.set(0);
+      else this.notifications.reset();
     });
     // Rappels vérifiés une fois par connexion (pas à chaque modification du profil).
     this.currentUser$.pipe(distinctUntilChanged((previous, next) => previous?.id === next?.id)).subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
+    this.watchNotifications();
     // Version installable (PWA) : prévient quand une mise à jour de l'application est prête.
     const updates = inject(SwUpdate);
     if (updates.isEnabled) {
@@ -225,6 +228,26 @@ export class AppComponent {
     // Passage en affichage large (rotation d'une tablette, dépliage d'un pliable) : le menu
     // plein écran n'a plus lieu d'être, et <main> ne doit pas rester inerte.
     window.matchMedia('(min-width: 901px)').addEventListener('change', (query) => { if (query.matches) this.menuOpen.set(false); });
+  }
+
+  /**
+   * Vérifie les nouvelles notifications toutes les minutes tant que l'onglet est visible, et dès
+   * qu'on y revient : le compteur du menu reste à jour (place obtenue en liste d'attente, séance
+   * modifiée…) et un message signale chaque arrivée. Le minuteur tourne hors de la zone Angular
+   * pour ne pas empêcher l'application d'être « stable » (le service worker attend cet état).
+   */
+  private watchNotifications(): void {
+    const zone = inject(NgZone);
+    const check = () => {
+      if (this.document.visibilityState === 'visible' && this.auth.isAuthenticated()) zone.run(() => this.notifications.refreshUnreadCount());
+    };
+    zone.runOutsideAngular(() => {
+      setInterval(check, NOTIFICATION_POLL_MS);
+      this.document.addEventListener('visibilitychange', check);
+    });
+    this.notifications.arrived.subscribe((items) => this.toast.info(
+      items.length === 1 ? `Nouvelle notification : ${items[0].title}` : `${items.length} nouvelles notifications`
+    ));
   }
 
   /** Touche Échap : referme le menu mobile et rend le focus au bouton qui l'a ouvert. */

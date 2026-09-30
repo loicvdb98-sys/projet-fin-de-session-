@@ -39,6 +39,9 @@ Rôle par défaut. Peut :
 - Ajouter une séance à son agenda (bouton **Ajouter à l'agenda**, fichier `.ics`
   avec un rappel une heure avant), ou exporter d'un coup toutes les séances à venir
   où il est inscrit (bouton **Exporter mon agenda** de la page **Vos séances**).
+- Voir arriver ses notifications sans recharger la page : le compteur du menu est
+  vérifié toutes les minutes (onglet visible) et au retour sur l'onglet, et un
+  message signale chaque nouvelle notification (place obtenue, séance modifiée…).
 - Recevoir un rappel (toast), à l'ouverture de l'application, quand une séance
   à laquelle il est inscrit commence dans moins de 3h (voir
   `AppComponent.checkUpcomingReminders`).
