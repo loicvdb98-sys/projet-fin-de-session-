@@ -16,17 +16,22 @@ from ..models.session import Session as SportSession
 from ..models.user import User
 from ..schemas.session import SessionCreate, SessionDuplicate, SessionRead, SessionRepeat, SessionUpdate
 from ..services.ics import build_calendar
-from ..services.time import is_past
+from ..services.time import is_past, local_datetime_label
+from ..services.waitlist import fill_from_waitlist
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
-def _notify_participants(db: Session, session: SportSession, title: str, message: str, kind: str = "info") -> None:
-    """Crée une notification pour chaque inscrit à la séance (annulation ou modification).
-    Ajoutée à la session SQLAlchemy sans commit : l'appelant commit avec le reste de son opération.
+def _notify_participants(db: Session, session: SportSession, title: str, message: str, kind: str = "info", include_waitlist: bool = False) -> None:
+    """Crée une notification pour chaque inscrit à la séance (annulation ou modification), et
+    pour les sportifs en liste d'attente si demandé (annulation). Ajoutée à la session
+    SQLAlchemy sans commit : l'appelant commit avec le reste de son opération.
     """
-    for participation in session.participations:
-        db.add(Notification(user_id=participation.user_id, title=title, message=message, kind=kind))
+    recipients = [participation.user_id for participation in session.participations]
+    if include_waitlist:
+        recipients += [entry.user_id for entry in session.waitlist]
+    for user_id in recipients:
+        db.add(Notification(user_id=user_id, title=title[:120], message=message, kind=kind))
 
 
 @router.get("/", response_model=list[SessionRead])
@@ -36,7 +41,7 @@ def list_sessions(db: Session = Depends(get_db)):
     # au lieu d'une requête par séance.
     return db.scalars(
         select(SportSession)
-        .options(joinedload(SportSession.coach), selectinload(SportSession.participations))
+        .options(joinedload(SportSession.coach), selectinload(SportSession.participations), selectinload(SportSession.waitlist))
         .order_by(SportSession.starts_at)
     ).unique().all()
 
@@ -84,7 +89,7 @@ def get_session(session_id: int, db: Session = Depends(get_db)):
     """Récupère le détail d'une séance par son id (GET /sessions/{session_id})."""
     item = db.scalar(
         select(SportSession)
-        .options(joinedload(SportSession.coach), selectinload(SportSession.participations))
+        .options(joinedload(SportSession.coach), selectinload(SportSession.participations), selectinload(SportSession.waitlist))
         .where(SportSession.id == session_id)
     )
     if not item:
@@ -203,15 +208,19 @@ def update_session(session_id: int, data: SessionUpdate, db: Session = Depends(g
         raise HTTPException(400, "Une séance doit être planifiée dans le futur")
     changes = data.model_dump(exclude_unset=True)
     schedule_changed = "starts_at" in changes and changes["starts_at"] != item.starts_at
+    capacity_increased = "capacity" in changes and changes["capacity"] > item.capacity
     for key, value in changes.items():
         setattr(item, key, value)
     if changes:
         message = (
-            f"Nouvel horaire : {item.starts_at:%d/%m/%Y à %H:%M}."
+            f"Nouvel horaire : {local_datetime_label(item.starts_at)}."
             if schedule_changed
             else "Les informations de la séance ont été mises à jour."
         )
         _notify_participants(db, item, f"Séance modifiée : {item.title}", message, kind="warning" if schedule_changed else "info")
+    if capacity_increased:
+        # Nouvelles places : les premiers de la liste d'attente sont inscrits.
+        fill_from_waitlist(db, item)
     db.commit()
     db.refresh(item)
     return item
@@ -232,7 +241,7 @@ def delete_session(session_id: int, db: Session = Depends(get_db), user: User = 
         raise HTTPException(409, "Une séance passée ne peut pas être supprimée")
     _notify_participants(
         db, item, f"Séance annulée : {item.title}",
-        f"La séance prévue le {item.starts_at:%d/%m/%Y à %H:%M} a été annulée.", kind="warning"
+        f"La séance prévue le {local_datetime_label(item.starts_at)} a été annulée.", kind="warning", include_waitlist=True
     )
     db.delete(item)
     db.commit()

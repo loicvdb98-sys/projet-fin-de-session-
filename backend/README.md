@@ -61,6 +61,7 @@ Copier `.env.example` en `.env` et renseigner les valeurs (voir
 | `ALLOWED_ORIGINS` | Origines autorisées par le middleware CORS |
 | `ALLOWED_ORIGIN_REGEX` | Origines supplémentaires (expression régulière), ex. le réseau local pour un téléphone |
 | `EXPOSE_API_DOCS` | `true` par défaut ; `false` en production masque `/docs`, `/redoc` et `/openapi.json` |
+| `APP_TIMEZONE` | Fuseau des heures écrites dans les notifications (`Europe/Paris` par défaut ; paquet `tzdata` requis sous Windows) |
 
 Les protections de l'API (jetons, limitation des tentatives, en-têtes HTTP) sont
 décrites dans [docs/SECURITE.md](../docs/SECURITE.md).

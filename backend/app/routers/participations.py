@@ -11,8 +11,10 @@ from ..dependencies import get_current_user
 from ..models.participation import Participation
 from ..models.session import Session as SportSession
 from ..models.user import User
+from ..models.waitlist import WaitlistEntry
 from ..schemas.participation import ParticipationCreate, ParticipationRead, ParticipationUpdate
 from ..services.time import is_past
+from ..services.waitlist import fill_from_waitlist
 
 router = APIRouter(prefix="/participations", tags=["participations"])
 
@@ -53,11 +55,15 @@ def create_participation(data: ParticipationCreate, db: Session = Depends(get_db
         select(func.count(Participation.id)).where(Participation.session_id == data.session_id)
     ) or 0
     if registrations >= session.capacity:
-        raise HTTPException(409, "Cette séance est complète")
+        raise HTTPException(409, "Cette séance est complète : rejoignez la liste d'attente")
     if db.scalar(select(Participation).where(Participation.user_id == data.user_id, Participation.session_id == data.session_id)):
         raise HTTPException(409, "Participation déjà existante")
     item = Participation(**data.model_dump())
     db.add(item)
+    # Inscrit directement : il n'a plus rien à attendre dans la file de cette séance.
+    waiting = db.scalar(select(WaitlistEntry).where(WaitlistEntry.user_id == data.user_id, WaitlistEntry.session_id == data.session_id))
+    if waiting:
+        db.delete(waiting)
     try:
         db.commit()
     except IntegrityError:
@@ -101,5 +107,8 @@ def delete_participation(participation_id: int, db: Session = Depends(get_db), u
         raise HTTPException(409, "Désinscription impossible après le début de la séance")
     if user.role not in {"sportif", "admin"} and item.session.coach_id != user.id:
         raise HTTPException(403, "Seul le coach de la séance ou un admin peut supprimer cette participation")
+    session = item.session
     db.delete(item)
+    # La place libérée revient au premier de la liste d'attente.
+    fill_from_waitlist(db, session)
     db.commit()

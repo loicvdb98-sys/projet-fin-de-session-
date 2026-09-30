@@ -13,8 +13,8 @@ from .config import get_settings
 from .database import Base, SessionLocal, engine, ensure_indexes
 # Les modèles sont importés ici (même sans usage direct) pour que SQLAlchemy
 # les enregistre dans Base.metadata avant l'appel à create_all().
-from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WorkoutProgram  # noqa: F401
-from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users
+from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
+from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users, waitlist
 from .routers.auth import purge_expired_refresh_tokens
 
 
@@ -82,6 +82,7 @@ async def security_headers(request: Request, call_next):
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(sessions.router)
+app.include_router(waitlist.router)
 app.include_router(exercises.router)
 app.include_router(participations.router)
 app.include_router(performances.router)

@@ -160,7 +160,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
 
                   <div class="module-capacity">
                     <div class="module-mini-progress" aria-hidden="true"><span [style.width.%]="capacityPercent(session)"></span></div>
-                    <span class="text-secondary">{{ session.registered_count }}/{{ session.capacity }} inscrit(s)</span>
+                    <span class="text-secondary">{{ session.registered_count }}/{{ session.capacity }} inscrit(s){{ session.waitlist_count ? ' · ' + session.waitlist_count + ' en liste d’attente' : '' }}</span>
                   </div>
 
                   <div class="module-detail-actions">
@@ -216,7 +216,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M22 10v4M20 9v6M7 8v8M17 8v8M7 12h10"/></svg></span>
             <span class="module-rail-text">
               <span class="module-rail-label">{{ session.title }}</span>
-              <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}{{ myParticipation(session) ? ' · ' + statusLabel(myParticipation(session)!.status) : '' }}</small>
+              <small class="module-rail-sublabel">{{ session.starts_at | date:'dd/MM HH:mm' }}{{ myParticipation(session) ? ' · ' + statusLabel(myParticipation(session)!.status) : waitlistPosition(session) ? ' · En attente' : '' }}</small>
             </span>
             @if (!isPast(session) && remainingSpots(session) <= 0) { <span class="module-rail-dot" title="Complet"></span> }
           </button>
@@ -230,6 +230,17 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
                 Se désinscrire
               </button>
             }
+          } @else if (waitlistPosition(session); as position) {
+            <span class="waitlist-status" role="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9"/><path d="M17 3c0 5-5 6-5 9s5 4 5 9"/></svg>En liste d’attente · position {{ position }}</span>
+            <button type="button" class="action-chip danger" (click)="leaveWaitlist(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+              Quitter la liste d’attente
+            </button>
+          } @else if (canJoinWaitlist(session)) {
+            <button type="button" class="action-chip primary" (click)="joinWaitlist(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9"/><path d="M17 3c0 5-5 6-5 9s5 4 5 9"/></svg>
+              Rejoindre la liste d’attente
+            </button>
           } @else if (session.coach_id !== currentUserId) {
             <button type="button" class="action-chip primary" [disabled]="isPast(session) || remainingSpots(session) <= 0" (click)="register(session.id)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
@@ -388,6 +399,8 @@ export class SessionsComponent implements OnDestroy {
   attendanceLoading = false;
   /** Inscriptions de l'utilisateur connecté, par id de séance. */
   private myParticipations = new Map<number, Participation>();
+  /** Position de l'utilisateur connecté dans la liste d'attente, par id de séance. */
+  private myWaitlist = new Map<number, number>();
 
   // Le rôle n'est pas dans le token JWT décodable côté client : on le récupère via le profil
   // pour savoir si l'éditeur de création de séance et les actions de gestion doivent s'afficher.
@@ -397,6 +410,7 @@ export class SessionsComponent implements OnDestroy {
       this.isAdmin = user.role === 'admin';
       this.currentUserId = user.id;
       this.loadMyParticipations();
+      this.loadMyWaitlist();
     });
     this.refreshSessions();
   }
@@ -412,10 +426,27 @@ export class SessionsComponent implements OnDestroy {
 
   myParticipation(session: SportSession): Participation | undefined { return this.myParticipations.get(session.id); }
 
+  /** Charge les listes d'attente où figure l'utilisateur (position par séance). */
+  private loadMyWaitlist(): void {
+    this.service.myWaitlist().pipe(markForCheck(this.cd)).subscribe((items) => {
+      this.myWaitlist = new Map(items.map((item) => [item.session_id, item.position]));
+    });
+  }
+
+  /** Position de l'utilisateur dans la liste d'attente de la séance, ou undefined s'il n'y est pas. */
+  waitlistPosition(session: SportSession): number | undefined { return this.myWaitlist.get(session.id); }
+
+  /** Liste d'attente proposée sur une séance à venir et complète, ni animée ni déjà rejointe par l'utilisateur. */
+  canJoinWaitlist(session: SportSession): boolean {
+    return !this.isPast(session) && this.remainingSpots(session) <= 0 && session.coach_id !== this.currentUserId
+      && !this.myParticipation(session) && !this.myWaitlist.has(session.id);
+  }
+
   statusLabel(status: string): string { return ATTENDANCE_STATUSES.find((item) => item.value === status)?.label ?? status; }
 
-  refreshSessions(): void {
-    this.sessionsLoading = true;
+  /** Recharge la liste des séances ; `silent` évite l'écran « Chargement… » (mise à jour après une action). */
+  refreshSessions(silent = false): void {
+    if (!silent) this.sessionsLoading = true;
     this.sessionsLoadError = false;
     this.service.list().pipe(markForCheck(this.cd)).subscribe({
       next: (list) => { this.sessions = list; this.sessionsLoading = false; },
@@ -459,7 +490,7 @@ export class SessionsComponent implements OnDestroy {
     if (term && !normalizeText(`${session.title} ${session.coach_name} ${session.description ?? ''}`).includes(term)) return false;
     const startsAt = new Date(session.starts_at).getTime();
     switch (this.filter) {
-      case 'mine': return !!this.myParticipation(session) || session.coach_id === this.currentUserId;
+      case 'mine': return !!this.myParticipation(session) || this.myWaitlist.has(session.id) || session.coach_id === this.currentUserId;
       case 'available': return !this.isPast(session) && this.remainingSpots(session) > 0;
       case 'week': return startsAt > Date.now() && startsAt <= Date.now() + 7 * DAY_MS;
       default: return true;
@@ -553,11 +584,41 @@ export class SessionsComponent implements OnDestroy {
     this.participation.remove(mine.id).pipe(markForCheck(this.cd)).subscribe({
       next: () => {
         this.myParticipations.delete(mine.session_id);
-        this.adjustRegisteredCount(mine.session_id, -1);
+        // La place libérée a pu revenir au premier de la liste d'attente : on relit les compteurs du serveur.
+        const hadWaitlist = !!this.sessions.find((session) => session.id === mine.session_id)?.waitlist_count;
+        if (hadWaitlist) this.refreshSessions(true); else this.adjustRegisteredCount(mine.session_id, -1);
         this.toast.success('Vous êtes désinscrit de cette séance.');
       },
       error: (error) => this.toast.error(error?.error?.detail || 'Impossible de vous désinscrire de cette séance.')
     });
+  }
+
+  /** Rejoint la liste d'attente d'une séance complète. */
+  joinWaitlist(session: SportSession): void {
+    this.service.joinWaitlist(session.id).pipe(markForCheck(this.cd)).subscribe({
+      next: (entry) => {
+        this.myWaitlist.set(session.id, entry.position);
+        this.adjustWaitlistCount(session.id, 1);
+        this.toast.success(`Vous êtes en position ${entry.position} sur la liste d’attente : vous serez inscrit automatiquement si une place se libère.`);
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de rejoindre la liste d’attente.')
+    });
+  }
+
+  /** Quitte la liste d'attente d'une séance. */
+  leaveWaitlist(session: SportSession): void {
+    this.service.leaveWaitlist(session.id).pipe(markForCheck(this.cd)).subscribe({
+      next: () => {
+        this.myWaitlist.delete(session.id);
+        this.adjustWaitlistCount(session.id, -1);
+        this.toast.success('Vous avez quitté la liste d’attente.');
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de quitter la liste d’attente.')
+    });
+  }
+
+  private adjustWaitlistCount(sessionId: number, delta: number): void {
+    this.sessions = this.sessions.map((session) => (session.id === sessionId ? { ...session, waitlist_count: Math.max(0, (session.waitlist_count ?? 0) + delta) } : session));
   }
 
   /** Met à jour le nombre d'inscrits affiché sans recharger toute la liste des séances. */

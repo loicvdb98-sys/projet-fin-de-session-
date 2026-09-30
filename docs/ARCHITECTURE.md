@@ -38,6 +38,11 @@ les `models` via la session SQLAlchemy → il renvoie un `schema` de réponse.
 - **Index** sur toutes les clés étrangères (`user_id`, `session_id`, `coach_id`) et sur
   la date des séances, déclarés dans les modèles. `ensure_indexes` (`database.py`) les
   crée au démarrage s'ils manquent, même sur une base déjà remplie.
+- **Liste d'attente** : table `waitlist_entries` (une demande par sportif et par séance,
+  index unique `ux_waitlist_user_session`). `services/waitlist.py` (`fill_from_waitlist`)
+  inscrit les premiers en attente quand une place se libère ; il est appelé par la
+  désinscription (`DELETE /participations/{id}`) et par l'ajout de places
+  (`PATCH /sessions/{id}`).
 - **Unicité des inscriptions** : l'index unique `ux_participations_user_session` empêche
   deux inscriptions du même sportif à la même séance, même en cas de double clic simultané
   (l'API répond alors 409).

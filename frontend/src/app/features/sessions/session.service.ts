@@ -10,7 +10,12 @@ import { API_URL } from '@core/api.config';
 export interface SportSession {
   id: number; title: string; starts_at: string; coach_id: number; coach_name: string;
   duration_minutes: number; description?: string; capacity: number; registered_count: number;
+  /** Sportifs en liste d'attente (séance complète). */
+  waitlist_count?: number;
 }
+
+/** Place de l'utilisateur connecté dans la liste d'attente d'une séance (1 = premier servi). */
+export interface WaitlistPosition { session_id: number; position: number; created_at: string; }
 
 export interface Exercise {
   id: number; session_id: number; name: string; description?: string;
@@ -42,6 +47,12 @@ export class SessionService {
   duplicate(id: number, days?: number): Observable<SportSession> {
     return this.http.post<SportSession>(`${this.apiUrl}/${id}/duplicate`, days ? { days } : {});
   }
+  /** Listes d'attente où figure l'utilisateur connecté, avec sa position. */
+  myWaitlist(): Observable<WaitlistPosition[]> { return this.http.get<WaitlistPosition[]>(`${this.apiUrl}/waitlist/mine`); }
+  /** Rejoint la liste d'attente d'une séance complète. */
+  joinWaitlist(id: number): Observable<WaitlistPosition> { return this.http.post<WaitlistPosition>(`${this.apiUrl}/${id}/waitlist`, {}); }
+  /** Quitte la liste d'attente d'une séance. */
+  leaveWaitlist(id: number): Observable<void> { return this.http.delete<void>(`${this.apiUrl}/${id}/waitlist`); }
   /** Planifie la séance chaque semaine pendant `weeks` semaines (1 à 12) ; renvoie les séances créées. */
   repeat(id: number, weeks: number): Observable<SportSession[]> {
     return this.http.post<SportSession[]>(`${this.apiUrl}/${id}/repeat`, { weeks });

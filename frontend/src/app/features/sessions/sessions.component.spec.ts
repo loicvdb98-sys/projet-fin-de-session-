@@ -19,7 +19,7 @@ function setup(sessions: SportSession[], participations: Participation[] = [], e
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: SessionService, useValue: { list: () => of(sessions), ...extra } },
+      { provide: SessionService, useValue: { list: () => of(sessions), myWaitlist: () => of([]), ...extra } },
       { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Sportif', role: 'sportif', is_active: true }) } },
       { provide: ParticipationService, useValue: { list: () => of(participations) } },
     ]
@@ -91,6 +91,36 @@ describe('SessionsComponent', () => {
     component.repeatForm.setValue({ weeks: 13 });
 
     expect(component.repeatForm.invalid).toBe(true);
+  });
+
+  describe('waitlist', () => {
+    const full = (id: number, days: number): SportSession => ({ ...session(id, days), capacity: 3, registered_count: 3, waitlist_count: 1 });
+
+    it('offers the waitlist only on an upcoming full session', () => {
+      const component = setup([full(1, 2), full(2, -2), session(3, 2)]);
+
+      expect(component.canJoinWaitlist(full(1, 2))).toBe(true);
+      expect(component.canJoinWaitlist(full(2, -2))).toBe(false);
+      expect(component.canJoinWaitlist(session(3, 2))).toBe(false);
+    });
+
+    it('shows my position after joining and counts me in', () => {
+      const component = setup([full(1, 2)], [], { joinWaitlist: () => of({ session_id: 1, position: 2, created_at: '' }) });
+
+      component.joinWaitlist(full(1, 2));
+
+      expect(component.waitlistPosition(full(1, 2))).toBe(2);
+      expect(component.canJoinWaitlist(full(1, 2))).toBe(false);
+      expect(component.sessions[0].waitlist_count).toBe(2);
+    });
+
+    it('reads my existing positions and treats them as « mine »', () => {
+      const component = setup([full(1, 2), session(2, 3)], [], { myWaitlist: () => of([{ session_id: 1, position: 1, created_at: '' }]) });
+
+      component.filter = 'mine';
+
+      expect(component.upcomingSessions().map((item) => item.id)).toEqual([1]);
+    });
   });
 
   it('shows the duplicated session right away', () => {

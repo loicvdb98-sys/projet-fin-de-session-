@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Documentation interactive (/docs, /redoc, /openapi.json) : pratique en développement,
     # à désactiver en production (EXPOSE_API_DOCS=false) pour ne pas publier la carte de l'API.
     expose_api_docs: bool = True
+    # Fuseau des dates écrites dans les messages (notifications) ; l'API stocke tout en UTC.
+    app_timezone: str = "Europe/Paris"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

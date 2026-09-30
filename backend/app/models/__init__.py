@@ -13,5 +13,6 @@ from .journal import TrainingJournal
 from .refresh_token import RefreshToken
 from .session import Session
 from .user import User
+from .waitlist import WaitlistEntry
 
-__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal"]
+__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal", "WaitlistEntry"]

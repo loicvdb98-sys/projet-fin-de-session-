@@ -313,6 +313,9 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .attendance-banner-body { display: flex; flex-direction: column; gap: .1rem; flex: 1; min-width: 0; font-size: .88rem; }
 .attendance-alert-line { display: flex; align-items: center; gap: .5rem; margin: .8rem 0 0; font-size: .88rem; font-weight: 700; color: color-mix(in srgb, var(--color-warning-500) 45%, var(--text-primary)); }
 .attendance-alert-line svg { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }
+/* Page Séances : position dans la liste d'attente. */
+.waitlist-status { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .2rem; font-size: .82rem; font-weight: 700; color: var(--text-primary); }
+.waitlist-status svg { width: 1rem; height: 1rem; color: var(--accent-secondary); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .pattern-shell { display: flex; gap: .8rem; align-items: flex-start; margin-top: 1rem; }
 .pattern-rail { display: flex; flex-direction: column; gap: .2rem; flex: 0 0 7.4rem; }

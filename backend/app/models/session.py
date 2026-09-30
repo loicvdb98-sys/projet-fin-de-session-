@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .exercise import Exercise
     from .participation import Participation
     from .user import User
+    from .waitlist import WaitlistEntry
 
 
 class Session(Base):
@@ -30,6 +31,8 @@ class Session(Base):
     coach: Mapped["User"] = relationship(back_populates="sessions")
     exercises: Mapped[list["Exercise"]] = relationship(back_populates="session", cascade="all, delete-orphan")
     participations: Mapped[list["Participation"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+    # File d'attente dans l'ordre d'arrivée (id croissant).
+    waitlist: Mapped[list["WaitlistEntry"]] = relationship(back_populates="session", cascade="all, delete-orphan", order_by="WaitlistEntry.id")
 
     @property
     def coach_name(self) -> str:
@@ -40,3 +43,8 @@ class Session(Base):
     def registered_count(self) -> int:
         """Nombre d'inscriptions (toutes statuts confondus) à la séance, pour afficher les places restantes."""
         return len(self.participations)
+
+    @property
+    def waitlist_count(self) -> int:
+        """Nombre de sportifs en liste d'attente, affiché sur une séance complète."""
+        return len(self.waitlist)

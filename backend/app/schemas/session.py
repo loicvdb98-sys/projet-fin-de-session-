@@ -51,3 +51,4 @@ class SessionRead(SessionBase):
     coach_id: int
     coach_name: str
     registered_count: int
+    waitlist_count: int = 0

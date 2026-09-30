@@ -22,6 +22,11 @@ Rôle par défaut. Peut :
 - Consulter les séances disponibles et s'inscrire, tant qu'il reste des
   places (`registered_count < capacity`, affiché comme « X place(s) » ou
   « Complet » sur chaque séance).
+- Sur une séance complète, rejoindre la **liste d'attente** (sa position est
+  affichée) ou la quitter. Dès qu'une place se libère (désinscription, places
+  ajoutées par le coach), le premier en attente est inscrit automatiquement et
+  reçoit une notification « Place obtenue ». Si la séance est annulée, les
+  sportifs en attente sont prévenus comme les inscrits.
 - Rechercher une séance par titre, coach ou description (sans tenir compte des
   accents) et filtrer la liste : **Mes inscriptions**, **Places libres**,
   **7 prochains jours** (pour un coach, **Mes séances** inclut celles qu'il anime).
