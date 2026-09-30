@@ -7,8 +7,8 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { combineLatest, map, of, shareReplay } from 'rxjs';
-import { StatisticsService } from '@shared/services/statistics.service';
+import { Observable, combineLatest, map, of, shareReplay } from 'rxjs';
+import { Badges, StatisticsService } from '@shared/services/statistics.service';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
 import { SessionService, SportSession } from '@features/sessions/session.service';
@@ -226,6 +226,9 @@ const STATUS_LABELS: Record<string, string> = {
                 } @else { <p class="empty-state module-empty">Aucune participation récente. Inscrivez-vous à une séance pour la retrouver ici.</p> }
               }
               @if (module.key === 'performances' && (performances$ | async); as perfs) {
+                @if (badges$ | async; as badges) {
+                  <span class="module-stat-line text-secondary">{{ badges.earned_count }}/{{ badges.badges.length }} badges · série de {{ badges.current_streak_weeks }} semaine{{ badges.current_streak_weeks > 1 ? 's' : '' }}</span>
+                }
                 @if (perfs.length) {
                   <span class="module-stat-line text-secondary">Moyenne {{ avgScore(perfs) }} pts · Dernier {{ perfs[perfs.length - 1].score }} pts</span>
                   <span class="module-sparkline" aria-hidden="true">
@@ -294,7 +297,10 @@ const STATUS_LABELS: Record<string, string> = {
 /** Compose les flux réactifs de chaque module et pilote le module actuellement sélectionné. */
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
-  readonly stats$ = inject(StatisticsService).mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  private readonly statistics = inject(StatisticsService);
+  readonly stats$ = this.statistics.mine().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  /** Badges et série de semaines (sportif uniquement), affichés dans l'aperçu « Statistiques ». */
+  readonly badges$: Observable<Badges | null> = this.auth.isCoachOrAdmin() ? of(null) : this.statistics.badges().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly user$ = inject(UserService).me().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   readonly goals$ = inject(GoalService).goals().pipe(shareReplay({ bufferSize: 1, refCount: true }));

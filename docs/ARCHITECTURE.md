@@ -25,7 +25,7 @@ backend/app/
 ├── models/           Modèles SQLAlchemy (une classe = une table)
 ├── schemas/          Schémas Pydantic (validation des requêtes/réponses HTTP)
 ├── routers/           Endpoints REST regroupés par domaine métier, avec leurs règles métier
-└── services/          Utilitaires partagés indépendants de FastAPI (dates, agenda .ics, liste d'attente, emails)
+└── services/          Utilitaires partagés indépendants de FastAPI (dates, agenda .ics, liste d'attente, emails, badges)
 ```
 
 Flux typique d'une requête : `router` reçoit la requête → l'entrée est validée par

@@ -1,6 +1,6 @@
 """Fonctions utilitaires de manipulation des dates/heures."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
 from ..config import get_settings
@@ -31,3 +31,10 @@ def local_datetime_label(value: datetime) -> str:
     stockées en UTC, les écrire telles quelles décalerait l'heure affichée au sportif."""
     normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
     return normalized.astimezone(ZoneInfo(get_settings().app_timezone)).strftime("%d/%m/%Y à %H:%M")
+
+
+def local_date(value: datetime) -> date:
+    """Jour calendaire dans le fuseau de l'application (une séance du dimanche 23 h à Paris
+    reste un dimanche, même si elle est stockée le lundi en UTC)."""
+    normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return normalized.astimezone(ZoneInfo(get_settings().app_timezone)).date()

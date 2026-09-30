@@ -55,7 +55,7 @@ Le projet est une application web de gestion de séances sportives. Elle central
 - Création et consultation de séances d'entraînement (recherche et filtres), duplication d'une séance ou répétition chaque semaine pendant 1 à 12 semaines (coach).
 - Calendrier des séances et participations, liste d'attente avec inscription automatique quand une place se libère, export vers l'agenda du téléphone (fichier `.ics` avec rappel).
 - Suivi des performances et statistiques, avec graphiques, et export CSV (participations, performances, assiduité des sportifs).
-- Objectifs et records personnels.
+- Objectifs et records personnels, badges et série de semaines d'entraînement pour motiver le sportif.
 - Programmes d'entraînement, journal de suivi et notifications.
 - Gestion d'athlètes pour le coach, avec des alertes d'assiduité (sportifs à relancer).
 

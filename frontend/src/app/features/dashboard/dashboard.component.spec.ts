@@ -18,7 +18,7 @@ function setup(isCoachOrAdmin = false, sessions: unknown[] = [], participations:
     providers: [
       provideRouter([]),
       { provide: AuthService, useValue: { isCoachOrAdmin: () => isCoachOrAdmin } },
-      { provide: StatisticsService, useValue: { mine: () => of({ total_sessions: 0, upcoming_sessions: 2, total_participations: 5, attended_sessions: 4, total_performances: 8, average_score: 75 }) } },
+      { provide: StatisticsService, useValue: { mine: () => of({ total_sessions: 0, upcoming_sessions: 2, total_participations: 5, attended_sessions: 4, total_performances: 8, average_score: 75 }), badges: () => of({ current_streak_weeks: 2, best_streak_weeks: 4, earned_count: 3, badges: [] }) } },
       { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Martin', role, is_active: true }), athletes: () => of([]) } },
       { provide: SessionService, useValue: { list: () => of(sessions) } },
       { provide: PerformanceService, useValue: { list: () => of([]) } },
@@ -38,6 +38,17 @@ describe('DashboardComponent', () => {
 
     expect(component.modules.some((module) => module.key === 'athletes')).toBe(false);
     expect(component.modules.some((module) => module.key === 'sessions')).toBe(true);
+  });
+
+  it('loads badges for a sportif only', () => {
+    let athleteBadges: unknown;
+    let coachBadges: unknown = 'non chargé';
+    setup(false).badges$.subscribe((value) => (athleteBadges = value));
+    TestBed.resetTestingModule();
+    setup(true).badges$.subscribe((value) => (coachBadges = value));
+
+    expect(athleteBadges).toMatchObject({ earned_count: 3, current_streak_weeks: 2 });
+    expect(coachBadges).toBeNull();
   });
 
   it('adds the coaching modules for a coach or admin account', () => {

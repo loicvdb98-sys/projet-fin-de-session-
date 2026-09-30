@@ -10,15 +10,16 @@ import { combineLatest, map, of, shareReplay, switchMap, take } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { markForCheck } from '@core/mark-for-check.operator';
 import { csvDate, saveCsv } from '@shared/csv';
+import { StatisticsService } from '@shared/services/statistics.service';
 
 Chart.register(...registerables);
 
-type Section = 'overview' | 'history' | 'attendance';
+type Section = 'overview' | 'history' | 'attendance' | 'badges';
 interface AttendancePoint { title: string; date: string; rate: number; present: number; total: number; }
 interface EnrichedPerformance extends Performance { sessionTitle: string; athleteName: string | null; }
 
 /**
- * Écran des statistiques : trois modules dans le rail (comme les pages Séances
+ * Écran des statistiques : trois modules dans le rail (plus « Badges » pour un sportif) (comme les pages Séances
  * et Participations) - Vue d'ensemble (score moyen, meilleur score, graphique
  * de progression), Historique (détail des performances), et Assiduité (taux
  * de présence par séance passée). L'assiduité est calculée sur les séances
@@ -41,18 +42,24 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; athlet
 
       <div class="module-shell">
         <nav class="module-rail" aria-label="Sections statistiques">
-          <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'overview'" (click)="selectSection('overview')">
+          <button type="button" class="module-rail-item c-primary" [class.active]="selectedSection === 'overview'" [attr.aria-current]="selectedSection === 'overview' ? 'true' : null" (click)="selectSection('overview')">
             <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg></span>
             <span class="module-rail-label">Vue d'ensemble</span>
           </button>
-          <button type="button" class="module-rail-item c-info" [class.active]="selectedSection === 'history'" (click)="selectSection('history')">
+          <button type="button" class="module-rail-item c-info" [class.active]="selectedSection === 'history'" [attr.aria-current]="selectedSection === 'history' ? 'true' : null" (click)="selectSection('history')">
             <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
             <span class="module-rail-label">Historique</span>
           </button>
-          <button type="button" class="module-rail-item c-secondary" [class.active]="selectedSection === 'attendance'" (click)="selectSection('attendance')">
+          <button type="button" class="module-rail-item c-secondary" [class.active]="selectedSection === 'attendance'" [attr.aria-current]="selectedSection === 'attendance' ? 'true' : null" (click)="selectSection('attendance')">
             <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg></span>
             <span class="module-rail-label">Assiduité</span>
           </button>
+          @if (!isCoach) {
+            <button type="button" class="module-rail-item c-warning" [class.active]="selectedSection === 'badges'" [attr.aria-current]="selectedSection === 'badges' ? 'true' : null" (click)="selectSection('badges')">
+              <span class="module-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M8.5 9.5L6 3h4l2 4 2-4h4l-2.5 6.5"/><path d="M12 12.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/></svg></span>
+              <span class="module-rail-label">Badges</span>
+            </button>
+          }
         </nav>
 
         <div class="module-detail">
@@ -81,6 +88,42 @@ interface EnrichedPerformance extends Performance { sessionTitle: string; athlet
               } @else {
                 <mat-card class="empty-state-card"><h2>Pas encore de performance</h2><p class="text-secondary">{{ isCoach ? 'Aucune performance enregistrée par vos sportifs pour le moment.' : 'Enregistrez vos premiers résultats pour voir votre historique.' }}</p></mat-card>
               }
+            }
+          }
+
+          @if (selectedSection === 'badges') {
+            @if (badges$ | async; as data) {
+              <div class="cards">
+                <mat-card class="stat-card accent">
+                  <mat-card-title>Série en cours</mat-card-title>
+                  <strong class="stat-value">{{ data.current_streak_weeks }} sem.</strong>
+                  <p class="text-secondary">semaine(s) d’affilée avec au moins une séance · record : {{ data.best_streak_weeks }}</p>
+                </mat-card>
+                <mat-card class="stat-card">
+                  <mat-card-title>Badges obtenus</mat-card-title>
+                  <strong class="stat-value">{{ data.earned_count }}/{{ data.badges.length }}</strong>
+                  <p class="text-secondary">{{ data.earned_count === data.badges.length ? 'Collection complète !' : 'continuez pour débloquer les suivants' }}</p>
+                </mat-card>
+              </div>
+              <ul class="badge-grid" aria-label="Badges">
+                @for (badge of data.badges; track badge.code) {
+                  <li class="badge-card" [class.earned]="badge.earned">
+                    <span class="badge-medal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M8.5 9.5L6 3h4l2 4 2-4h4l-2.5 6.5"/><path d="M12 12.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/></svg></span>
+                    <span class="badge-body">
+                      <strong>{{ badge.title }}</strong>
+                      <small>{{ badge.description }}</small>
+                      @if (badge.earned) {
+                        <span class="badge-status">Obtenu{{ badge.earned_at ? ' le ' + (badge.earned_at | date:'dd/MM/yyyy') : '' }}</span>
+                      } @else {
+                        <span class="badge-progress" role="progressbar" [attr.aria-valuenow]="badge.progress" aria-valuemin="0" [attr.aria-valuemax]="badge.target" [attr.aria-label]="badge.title + ' : ' + badge.progress + ' sur ' + badge.target"><span [style.width.%]="(badge.progress / badge.target) * 100"></span></span>
+                        <span class="badge-status">{{ badge.progress }}/{{ badge.target }}</span>
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-secondary">Chargement des badges…</p>
             }
           }
 
@@ -125,6 +168,8 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   // Partagé : lu par le graphique (ngAfterViewInit) et par la liste enrichie, en une seule requête.
   readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+  /** Badges du sportif : chargés seulement quand la section « Badges » est ouverte. */
+  readonly badges$ = inject(StatisticsService).badges().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   // Partagé entre ngAfterViewInit (rôle/id courant) et enrichedPerformances$ (noms des sportifs) :
   // une seule requête /users/me même si les deux le consomment.
   private readonly me$ = this.users.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));

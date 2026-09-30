@@ -51,6 +51,10 @@ Rôle par défaut. Peut :
 - Sur la page **Statistiques**, consulter en plus son propre historique
   d'assiduité (module **Assiduité**), calculé sur ses participations aux
   séances passées.
+- Débloquer des **badges** (page **Statistiques**, section **Badges**) : première
+  séance, 10 et 25 présences, 5 présences de suite, 4 semaines d'affilée, objectif
+  atteint, record personnel, 5 bilans de journal ; la **série en cours** compte les
+  semaines consécutives avec au moins une présence (aussi rappelée sur le tableau de bord).
 - Exporter ses participations et ses performances au format CSV (bouton
   **Exporter (CSV)** des pages **Mes participations** et **Statistiques**),
   pour les ouvrir dans Excel.
