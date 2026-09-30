@@ -25,7 +25,7 @@ backend/app/
 ├── models/           Modèles SQLAlchemy (une classe = une table)
 ├── schemas/          Schémas Pydantic (validation des requêtes/réponses HTTP)
 ├── routers/           Endpoints REST regroupés par domaine métier, avec leurs règles métier
-└── services/          Utilitaires partagés indépendants de FastAPI (ex. comparaison de dates)
+└── services/          Utilitaires partagés indépendants de FastAPI (dates, fichiers agenda .ics)
 ```
 
 Flux typique d'une requête : `router` reçoit la requête → l'entrée est validée par
@@ -139,7 +139,8 @@ tous les appareils).
 - **Backend** (`backend/tests/`, Pytest) : tests unitaires (sécurité, schémas, dates)
   et tests d'API avec le `TestClient` de FastAPI. Les tests d'API tournent sur une base
   SQLite en mémoire recréée pour chaque test (`tests/conftest.py`), jamais sur la base
-  SQL Server : inscription, en-têtes HTTP et CORS, index et compression, sécurité de l'authentification (blocage après plusieurs
+  SQL Server : inscription, en-têtes HTTP et CORS, index et compression, export agenda
+  et duplication de séances, sécurité de l'authentification (blocage après plusieurs
   échecs, rotation et vol de refresh token, changement de mot de passe), permissions
   sur les comptes, séances et inscriptions, statistiques, objectifs, records et journal.
 - **Frontend** (`*.spec.ts`, Vitest) : services (authentification, thème, toasts) et

@@ -15,11 +15,11 @@ function session(id: number, daysFromNow: number): SportSession {
   };
 }
 
-function setup(sessions: SportSession[], participations: Participation[] = []): SessionsComponent {
+function setup(sessions: SportSession[], participations: Participation[] = [], extra: Partial<SessionService> = {}): SessionsComponent {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: SessionService, useValue: { list: () => of(sessions) } },
+      { provide: SessionService, useValue: { list: () => of(sessions), ...extra } },
       { provide: UserService, useValue: { me: () => of({ id: 1, email: 'a@a.com', full_name: 'Alex Sportif', role: 'sportif', is_active: true }) } },
       { provide: ParticipationService, useValue: { list: () => of(participations) } },
     ]
@@ -59,5 +59,25 @@ describe('SessionsComponent', () => {
     expect(component.myParticipation(session(1, 2))?.id).toBe(7);
     expect(component.myParticipation(session(2, 3))).toBeUndefined();
     expect(component.statusLabel('present')).toBe('Présent');
+  });
+
+  it('exports only the upcoming sessions where the user is expected', () => {
+    const component = setup([session(1, 2), session(2, 3), session(3, -2), session(4, 4)], [
+      { id: 7, user_id: 1, session_id: 1, status: 'inscrit' },
+      { id: 8, user_id: 1, session_id: 2, status: 'absent' },
+      { id: 9, user_id: 1, session_id: 3, status: 'present' },
+    ]);
+
+    expect(component.myUpcomingSessions().map((item) => item.id)).toEqual([1]);
+  });
+
+  it('shows the duplicated session right away', () => {
+    const copy = session(9, 8);
+    const component = setup([session(1, 1)], [], { duplicate: () => of(copy) });
+
+    component.duplicate(session(1, 1));
+
+    expect(component.sessions.map((item) => item.id)).toContain(9);
+    expect(component.selectedModuleSession?.id).toBe(9);
   });
 });

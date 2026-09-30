@@ -10,6 +10,7 @@ import { SessionService, SportSession, Exercise } from './session.service';
 import { UserService } from '@features/athletes/user.service';
 import { Participation, ParticipationService } from '@features/participations/participation.service';
 import { ToastService } from '@shared/services/toast.service';
+import { saveFile } from '@shared/download';
 import { forkJoin } from 'rxjs';
 import { markForCheck } from '@core/mark-for-check.operator';
 
@@ -45,7 +46,12 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
   imports: [DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page sessions-page">
-      <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez vos séances à venir et l’historique des séances passées.</p></div><a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a></div>
+      <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez vos séances à venir et l’historique des séances passées.</p></div>
+        <div class="page-heading-actions">
+          <button mat-stroked-button type="button" class="teal-outline" (click)="exportMyCalendar()">Exporter mon agenda</button>
+          @if (canManage) { <a mat-flat-button class="primary-action" routerLink="/workouts/new">+ Créer un entraînement</a> }
+        </div>
+      </div>
       @if (canManage) {
         <mat-card class="workout-builder" [class.collapsed]="!builderExpanded">
           <button type="button" class="builder-heading builder-toggle" (click)="builderExpanded = !builderExpanded" [attr.aria-expanded]="builderExpanded">
@@ -199,7 +205,17 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
             Exercices
           </button>
+          @if (!isPast(session)) {
+            <button type="button" class="action-chip" (click)="addToCalendar(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>
+              Ajouter à l’agenda
+            </button>
+          }
           @if (canManageSession(session)) {
+            <button type="button" class="action-chip" (click)="duplicate(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+              Dupliquer
+            </button>
             <button type="button" class="action-chip" [class.active]="attendanceSessionId === session.id" (click)="toggleAttendance(session)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.9-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M15.2 20c.2-2.4 1.9-4.5 4.8-4.5"/></svg>
               Présences
@@ -500,6 +516,42 @@ export class SessionsComponent implements OnDestroy {
         this.toast.success('Séance mise à jour.');
       },
       error: () => { this.editError = 'Impossible de modifier cette séance (déjà passée, ou droits insuffisants).'; }
+    });
+  }
+
+  /** Télécharge la séance au format agenda (.ics), à ouvrir avec l'agenda du téléphone ou de l'ordinateur. */
+  addToCalendar(session: SportSession): void {
+    // En cas d'échec, l'intercepteur affiche déjà un message (requête GET).
+    this.service.calendarFile(session.id).subscribe((file) => saveFile(file, `sportplan-seance-${session.id}.ics`));
+  }
+
+  /** Séances à venir où l'utilisateur est attendu : inscrit (hors absence) ou coach de la séance. */
+  myUpcomingSessions(): SportSession[] {
+    return this.upcomingSessions().filter((session) => {
+      const mine = this.myParticipation(session);
+      return mine ? mine.status !== 'absent' : session.coach_id === this.currentUserId;
+    });
+  }
+
+  /** Exporte toutes les séances à venir de l'utilisateur dans un seul fichier agenda. */
+  exportMyCalendar(): void {
+    const count = this.myUpcomingSessions().length;
+    if (!count) { this.toast.info('Aucune séance à venir à exporter : inscrivez-vous d’abord à une séance.'); return; }
+    this.service.calendarFile().subscribe((file) => {
+      saveFile(file, 'sportplan-mes-seances.ics');
+      this.toast.success(`${count} séance(s) exportée(s) : ouvrez le fichier pour les ajouter à votre agenda.`);
+    });
+  }
+
+  /** Duplique une séance (exercices compris, sans les inscrits) au même créneau la semaine suivante, puis l'affiche. */
+  duplicate(session: SportSession): void {
+    this.service.duplicate(session.id).pipe(markForCheck(this.cd)).subscribe({
+      next: (copy) => {
+        this.sessions = [...this.sessions, copy];
+        this.selectedModuleSessionId = copy.id;
+        this.toast.success(`Séance dupliquée : ${this.formatFullDate(copy.starts_at)}.`);
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de dupliquer cette séance.')
     });
   }
 

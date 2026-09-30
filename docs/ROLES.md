@@ -25,6 +25,9 @@ Rôle par défaut. Peut :
 - Voir ses participations passées/à venir et se désinscrire
   (page **Mes participations**), avec un résumé (à venir, terminées, taux
   de présence).
+- Ajouter une séance à son agenda (bouton **Ajouter à l'agenda**, fichier `.ics`
+  avec un rappel une heure avant), ou exporter d'un coup toutes les séances à venir
+  où il est inscrit (bouton **Exporter mon agenda** de la page **Vos séances**).
 - Recevoir un rappel (toast), à l'ouverture de l'application, quand une séance
   à laquelle il est inscrit commence dans moins de 3h (voir
   `AppComponent.checkUpcomingReminders`).
@@ -53,6 +56,10 @@ Tout ce qu'un sportif peut faire, plus :
   (`coach_id` doit être son propre id).
 - Modifier ou annuler (supprimer) les séances qu'il anime — un coach ne peut
   pas toucher aux séances d'un autre coach.
+- **Dupliquer** une de ses séances : la copie reprend le titre, la description,
+  la durée, les places et les exercices (sans les inscrits), au même créneau la
+  semaine suivante (ou la première semaine à venir si la séance est passée).
+- Son export d'agenda contient aussi les séances à venir qu'il anime.
 - Suivre les présences : depuis **Vos séances**, le bouton **Présences**
   liste les inscrits d'une séance et permet de les marquer
   Inscrit / Présent / Absent.

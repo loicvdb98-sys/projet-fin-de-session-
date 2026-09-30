@@ -38,4 +38,12 @@ export class SessionService {
     return this.http.post<Exercise>(`${this.apiUrl}/${sessionId}/exercises/`, data);
   }
   delete(id: number): Observable<void> { return this.http.delete<void>(`${this.apiUrl}/${id}`); }
+  /** Recrée la séance et ses exercices (sans les inscrits) ; par défaut la semaine suivante. */
+  duplicate(id: number, days?: number): Observable<SportSession> {
+    return this.http.post<SportSession>(`${this.apiUrl}/${id}/duplicate`, days ? { days } : {});
+  }
+  /** Fichier agenda (.ics) d'une séance, ou, sans id, de toutes les séances à venir de l'utilisateur. */
+  calendarFile(id?: number): Observable<Blob> {
+    return this.http.get(id === undefined ? `${this.apiUrl}/calendar.ics` : `${this.apiUrl}/${id}/calendar.ics`, { responseType: 'blob' });
+  }
 }

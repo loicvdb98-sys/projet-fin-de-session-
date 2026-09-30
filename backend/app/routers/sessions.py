@@ -1,15 +1,21 @@
-"""Routeur FastAPI exposant les endpoints CRUD pour les séances d'entraînement."""
+"""Routeur FastAPI exposant les endpoints CRUD pour les séances d'entraînement, leur
+duplication et leur export vers un agenda (fichier .ics)."""
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..database import get_db
 from ..dependencies import get_current_user, require_roles
+from ..models.exercise import Exercise
 from ..models.notification import Notification
+from ..models.participation import Participation
 from ..models.session import Session as SportSession
 from ..models.user import User
-from ..schemas.session import SessionCreate, SessionRead, SessionUpdate
+from ..schemas.session import SessionCreate, SessionDuplicate, SessionRead, SessionUpdate
+from ..services.ics import build_calendar
 from ..services.time import is_past
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -33,6 +39,26 @@ def list_sessions(db: Session = Depends(get_db)):
         .options(joinedload(SportSession.coach), selectinload(SportSession.participations))
         .order_by(SportSession.starts_at)
     ).unique().all()
+
+
+def _calendar_response(content: str, filename: str) -> Response:
+    """Réponse de téléchargement d'un fichier agenda (.ics)."""
+    return Response(content, media_type="text/calendar; charset=utf-8", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/calendar.ics", response_class=Response)
+def my_calendar(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Exporte les séances à venir de l'utilisateur connecté au format agenda
+    (GET /sessions/calendar.ics) : celles où il est inscrit (hors absences) et, pour un
+    coach, celles qu'il anime."""
+    registered = select(Participation.session_id).where(Participation.user_id == user.id, Participation.status != "absent")
+    sessions = db.scalars(
+        select(SportSession)
+        .options(joinedload(SportSession.coach))
+        .where(SportSession.starts_at > datetime.now(timezone.utc), or_(SportSession.id.in_(registered), SportSession.coach_id == user.id))
+        .order_by(SportSession.starts_at)
+    ).all()
+    return _calendar_response(build_calendar(sessions, "Mes séances SportPlan"), "sportplan-mes-seances.ics")
 
 
 @router.post("/", response_model=SessionRead, status_code=201)
@@ -64,6 +90,59 @@ def get_session(session_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(404, "Séance introuvable")
     return item
+
+
+@router.get("/{session_id}/calendar.ics", response_class=Response)
+def session_calendar(session_id: int, db: Session = Depends(get_db)):
+    """Exporte une séance au format agenda (GET /sessions/{session_id}/calendar.ics), avec
+    un rappel une heure avant. Comme le détail d'une séance, accessible sans authentification."""
+    item = db.scalar(select(SportSession).options(joinedload(SportSession.coach)).where(SportSession.id == session_id))
+    if not item:
+        raise HTTPException(404, "Séance introuvable")
+    return _calendar_response(build_calendar([item], item.title), f"sportplan-seance-{item.id}.ics")
+
+
+@router.post("/{session_id}/duplicate", response_model=SessionRead, status_code=201)
+def duplicate_session(
+    session_id: int,
+    data: SessionDuplicate | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles("coach", "admin")),
+):
+    """Duplique une séance et ses exercices (POST /sessions/{session_id}/duplicate), sans
+    les inscrits. Réservé au coach responsable ou à un admin. Par défaut, la copie a lieu
+    le même jour de la semaine, à la même heure, la première semaine à venir.
+    """
+    item = db.scalar(select(SportSession).options(selectinload(SportSession.exercises)).where(SportSession.id == session_id))
+    if not item:
+        raise HTTPException(404, "Séance introuvable")
+    if user.role == "coach" and item.coach_id != user.id:
+        raise HTTPException(403, "Vous ne gérez pas cette séance")
+    starts_at = item.starts_at if item.starts_at.tzinfo else item.starts_at.replace(tzinfo=timezone.utc)
+    if data and data.days:
+        new_start = starts_at + timedelta(days=data.days)
+        if is_past(new_start):
+            raise HTTPException(400, "Une séance doit être planifiée dans le futur")
+    else:
+        # Nombre de semaines pour tomber sur le premier créneau à venir (au moins une).
+        weeks = max(1, (datetime.now(timezone.utc) - starts_at) // timedelta(weeks=1) + 1)
+        new_start = starts_at + timedelta(weeks=weeks)
+    copy = SportSession(
+        title=item.title,
+        description=item.description,
+        starts_at=new_start,
+        duration_minutes=item.duration_minutes,
+        capacity=item.capacity,
+        coach_id=item.coach_id,
+        exercises=[
+            Exercise(name=exercise.name, description=exercise.description, sets=exercise.sets, repetitions=exercise.repetitions, rest_seconds=exercise.rest_seconds)
+            for exercise in item.exercises
+        ],
+    )
+    db.add(copy)
+    db.commit()
+    db.refresh(copy)
+    return copy
 
 
 @router.patch("/{session_id}", response_model=SessionRead)

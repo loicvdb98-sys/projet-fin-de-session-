@@ -71,6 +71,8 @@ main { flex: 1; min-width: 0; max-width: 1160px; margin: 0 auto; padding: clamp(
 .page { animation: page-enter .35s ease-out; }
 .page-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid color-mix(in srgb, var(--border-default) 72%, transparent); }
 .page-heading > a, .page-heading > button { flex: 0 0 auto; white-space: nowrap; }
+.page-heading-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.page-heading-actions > a, .page-heading-actions > button { white-space: nowrap; }
 .page h1 { margin: .2rem 0 .35rem; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -.05em; }
 .page h2 { letter-spacing: -.025em; }
 .eyebrow { color: var(--accent-secondary); font-size: .72rem; font-weight: 800; letter-spacing: .12em; margin: 0; }

@@ -30,6 +30,13 @@ class SessionUpdate(BaseModel):
     capacity: int | None = Field(default=None, gt=0)
 
 
+class SessionDuplicate(BaseModel):
+    """Décalage de la copie d'une séance, en jours. Sans valeur : même jour et même heure la
+    semaine suivante (ou la première semaine à venir, si la séance d'origine est passée)."""
+
+    days: int | None = Field(default=None, ge=1, le=365)
+
+
 class SessionRead(SessionBase):
     """Représentation complète d'une séance retournée par l'API."""
 
