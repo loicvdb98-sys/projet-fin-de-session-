@@ -18,6 +18,11 @@ import { GoalService } from '@features/goals/goal.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { ProgramService } from '@features/programs/program.service';
 import { JournalService } from '@features/journal/journal.service';
+import { AttendanceAlert, attendanceAlert } from '@features/athletes/attendance';
+import { User } from '@features/athletes/user.service';
+
+/** Sportif à relancer, tel qu'affiché dans le bandeau du tableau de bord coach. */
+interface AthleteAlert { athlete: User; alert: AttendanceAlert; }
 
 type ModuleColor = 'primary' | 'secondary' | 'success' | 'warning' | 'info';
 interface DashboardModule { key: string; title: string; description: string; link: string; color: ModuleColor; }
@@ -78,6 +83,19 @@ const STATUS_LABELS: Record<string, string> = {
           <span class="text-secondary">Aucune séance à venir pour le moment.</span>
           <a routerLink="/sessions" class="next-session-cta">Voir les séances →</a>
         </div>
+      }
+
+      @if (alerts$ | async; as alerts) {
+        @if (alerts.length) {
+          <a class="attendance-banner" routerLink="/athletes">
+            <span class="attendance-banner-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+            <span class="attendance-banner-body">
+              <strong>{{ alerts.length }} sportif{{ alerts.length > 1 ? 's' : '' }} à relancer</strong>
+              <span class="text-secondary">{{ alertSummary(alerts) }}</span>
+            </span>
+            <span class="next-session-cta">Voir →</span>
+          </a>
+        }
       }
 
       <div class="module-shell">
@@ -346,9 +364,19 @@ export class DashboardComponent {
   );
 
   // Réservé aux coachs/admins : le backend rejette /users/athletes (403) pour un sportif.
-  readonly athletes$ = this.auth.isCoachOrAdmin()
-    ? inject(UserService).athletes().pipe(map((athletes) => athletes.slice(0, 3)), shareReplay({ bufferSize: 1, refCount: true }))
+  private readonly allAthletes$ = this.auth.isCoachOrAdmin()
+    ? inject(UserService).athletes().pipe(shareReplay({ bufferSize: 1, refCount: true }))
     : of([]);
+  readonly athletes$ = this.allAthletes$.pipe(map((athletes) => athletes.slice(0, 3)));
+  /** Sportifs à relancer (coach/admin) : même règle que sur la page Mes sportifs. */
+  readonly alerts$ = combineLatest([this.allAthletes$, this.allParticipations$, this.allSessions$]).pipe(
+    map(([athletes, participations, sessions]) => athletes
+      .map((athlete): AthleteAlert | null => {
+        const alert = attendanceAlert(athlete.id, participations, sessions);
+        return alert ? { athlete, alert } : null;
+      })
+      .filter((item): item is AthleteAlert => item !== null))
+  );
 
   /** Prêt une fois que les données du module actuellement affiché ont eu le temps d'arriver au moins une fois. */
   readonly ready$ = combineLatest([
@@ -373,6 +401,13 @@ export class DashboardComponent {
 
   firstName(fullName: string): string {
     return fullName.split(' ')[0] || fullName;
+  }
+
+  /** Résumé du bandeau : les deux premiers sportifs à relancer avec leur raison, puis le nombre restant. */
+  alertSummary(alerts: AthleteAlert[]): string {
+    const shown = alerts.slice(0, 2).map(({ athlete, alert }) => `${athlete.full_name} (${alert.message.charAt(0).toLowerCase()}${alert.message.slice(1)})`);
+    const others = alerts.length - shown.length;
+    return shown.join(' · ') + (others > 0 ? ` et ${others} autre${others > 1 ? 's' : ''}` : '');
   }
 
   /** Places encore disponibles pour une séance (jamais négatif). */

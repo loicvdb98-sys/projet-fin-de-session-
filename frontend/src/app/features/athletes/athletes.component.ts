@@ -13,7 +13,7 @@ import { User, UserService } from './user.service';
 import { ParticipationService } from '@features/participations/participation.service';
 import { SessionService } from '@features/sessions/session.service';
 import { markForCheck } from '@core/mark-for-check.operator';
-import { summarizeAttendance } from './attendance';
+import { AttendanceAlert, attendanceAlert, summarizeAttendance } from './attendance';
 import { saveCsv } from '@shared/csv';
 
 interface AthleteSummary extends User {
@@ -24,6 +24,8 @@ interface AthleteSummary extends User {
   upcomingSessions: number;
   registrations: number;
   lastActivity: string | null;
+  /** Raison de relancer ce sportif, ou null si son assiduité ne pose pas de problème. */
+  alert: AttendanceAlert | null;
 }
 
 @Component({
@@ -59,9 +61,9 @@ interface AthleteSummary extends User {
             <p class="text-secondary">sur l’ensemble des sportifs</p>
           </mat-card>
           <mat-card class="stat-card">
-            <mat-card-title>Sans inscription</mat-card-title>
-            <strong class="stat-value">{{ withoutActivity }}</strong>
-            <p class="text-secondary">sportif(s) sans séance</p>
+            <mat-card-title>À relancer</mat-card-title>
+            <strong class="stat-value">{{ alertCount }}</strong>
+            <p class="text-secondary">sportif(s) à recontacter</p>
           </mat-card>
         </div>
 
@@ -75,6 +77,7 @@ interface AthleteSummary extends User {
                   <span class="module-rail-label">{{ athlete.full_name }}</span>
                   <small class="module-rail-sublabel">Présence {{ athlete.attendanceRate }} % · {{ athlete.sessionsAttended }}/{{ athlete.pastSessions }}</small>
                 </span>
+                @if (athlete.alert) { <span class="module-rail-dot" title="À relancer : {{ athlete.alert.message }}"></span><span class="visually-hidden">, à relancer</span> }
               </button>
             }
           </nav>
@@ -88,10 +91,16 @@ interface AthleteSummary extends User {
                     <p class="eyebrow">SPORTIF</p>
                     <h2>{{ athlete.full_name }}</h2>
                   </div>
-                  <span class="module-badge">{{ athlete.is_active ? 'Actif' : 'Désactivé' }}</span>
+                  <span class="module-badge">{{ athlete.alert ? 'À relancer' : athlete.is_active ? 'Actif' : 'Désactivé' }}</span>
                 </div>
 
                 <p class="text-secondary">{{ athlete.email }}</p>
+                @if (athlete.alert) {
+                  <p class="attendance-alert-line">
+                    <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+                    {{ athlete.alert.message }}
+                  </p>
+                }
 
                 <div class="goal-meter">
                   <div class="goal-meter-head">
@@ -138,7 +147,8 @@ export class AthletesComponent {
     return withHistory.length ? Math.round(withHistory.reduce((sum, athlete) => sum + athlete.attendanceRate, 0) / withHistory.length) : 0;
   }
 
-  get withoutActivity(): number { return this.athletes.filter((athlete) => athlete.registrations === 0).length; }
+  /** Sportifs dont l'assiduité mérite une relance (voir attendanceAlert). */
+  get alertCount(): number { return this.athletes.filter((athlete) => athlete.alert).length; }
 
   // Une participation ne porte que le statut ; on la croise avec les séances (voir
   // summarizeAttendance) pour ne compter que les séances passées dans le taux de présence.
@@ -161,6 +171,7 @@ export class AthletesComponent {
             sessionsAttended: summary.attended,
             attendanceRate: summary.rate,
             lastActivity: summary.lastActivity ? summary.lastActivity.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null,
+            alert: attendanceAlert(athlete.id, participations, sessions),
           };
         });
       }),

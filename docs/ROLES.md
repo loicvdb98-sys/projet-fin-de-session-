@@ -75,6 +75,11 @@ Tout ce qu'un sportif peut faire, plus :
 - Voir la liste des sportifs (page **Sportifs**) et leur suivi détaillé, et
   exporter leur assiduité en CSV (une ligne par sportif : présences, taux,
   séances à venir, dernière présence).
+- Repérer les sportifs **à relancer** : un bandeau sur le tableau de bord et une
+  pastille sur la page **Sportifs** signalent, par ordre de priorité, un sportif
+  absent aux deux dernières séances, présent à moins de 50 % sur au moins trois
+  séances, sans présence depuis 21 jours et sans séance à venir, ou jamais inscrit
+  (règle `attendanceAlert`, `features/athletes/attendance.ts`).
 - Ses exports **Participations** et **Statistiques** couvrent les inscriptions et
   performances de ses séances, avec le nom du sportif.
 - Lire les bilans de journal écrits après ses séances (avec le nom du
