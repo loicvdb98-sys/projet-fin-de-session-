@@ -167,6 +167,15 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
                     <ng-container *ngTemplateOutlet="actionsTpl; context: { session: session }"></ng-container>
                   </div>
 
+                  @if (repeatSessionId === session.id) {
+                    <form class="repeat-form" [formGroup]="repeatForm" (ngSubmit)="repeat(session)">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nombre de semaines</mat-label><input matInput type="number" min="1" max="12" formControlName="weeks"></mat-form-field>
+                      <button mat-flat-button class="primary-action" type="submit" [disabled]="repeatForm.invalid">Planifier</button>
+                      <button mat-button type="button" (click)="repeatSessionId = undefined">Fermer</button>
+                      <p class="text-secondary">Chaque semaine, même jour et même heure, à partir de la semaine prochaine (12 semaines au plus). Les exercices sont repris, pas les inscrits.</p>
+                    </form>
+                  }
+
                   @if (attendanceSessionId === session.id) {
                     <ng-container *ngTemplateOutlet="attendanceTpl"></ng-container>
                   }
@@ -238,6 +247,10 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
             </button>
           }
           @if (canManageSession(session)) {
+            <button type="button" class="action-chip" [class.active]="repeatSessionId === session.id" [attr.aria-expanded]="repeatSessionId === session.id" (click)="toggleRepeat(session)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>
+              Répéter
+            </button>
             <button type="button" class="action-chip" (click)="duplicate(session)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
               Dupliquer
@@ -351,6 +364,9 @@ export class SessionsComponent implements OnDestroy {
     duration_minutes: [60, [Validators.required, Validators.min(1)]],
     capacity: [20, [Validators.required, Validators.min(1)]],
   });
+  /** Formulaire « Répéter chaque semaine » ouvert sur cette séance. */
+  repeatSessionId?: number;
+  readonly repeatForm = this.fb.nonNullable.group({ weeks: [4, [Validators.required, Validators.min(1), Validators.max(12)]] });
   canManage = false;
   builderExpanded = false;
   isAdmin = false;
@@ -623,6 +639,25 @@ export class SessionsComponent implements OnDestroy {
         this.toast.success(`Séance dupliquée : ${this.formatFullDate(copy.starts_at)}.`);
       },
       error: (error) => this.toast.error(error?.error?.detail || 'Impossible de dupliquer cette séance.')
+    });
+  }
+
+  /** Ouvre ou referme le formulaire de répétition hebdomadaire d'une séance. */
+  toggleRepeat(session: SportSession): void {
+    this.repeatSessionId = this.repeatSessionId === session.id ? undefined : session.id;
+  }
+
+  /** Planifie la séance chaque semaine pendant le nombre de semaines choisi. */
+  repeat(session: SportSession): void {
+    if (this.repeatForm.invalid) return;
+    this.service.repeat(session.id, this.repeatForm.getRawValue().weeks).pipe(markForCheck(this.cd)).subscribe({
+      next: (copies) => {
+        this.sessions = [...this.sessions, ...copies];
+        this.repeatSessionId = undefined;
+        const last = copies[copies.length - 1];
+        this.toast.success(`${copies.length} séance(s) planifiée(s), jusqu'au ${this.formatFullDate(last.starts_at).toLowerCase()}.`);
+      },
+      error: (error) => this.toast.error(error?.error?.detail || 'Impossible de planifier ces séances.')
     });
   }
 

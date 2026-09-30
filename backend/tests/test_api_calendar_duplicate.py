@@ -114,3 +114,43 @@ def test_only_the_session_coach_or_an_admin_can_duplicate(client, db_factory, pe
 
     assert client.post(f"/sessions/{source_id}/duplicate", headers=auth_headers("autre.coach@example.com")).status_code == 403
     assert client.post(f"/sessions/{source_id}/duplicate", headers=auth_headers("sportif@example.com")).status_code == 403
+
+
+# --- Séances récurrentes -------------------------------------------------------
+
+def test_coach_repeats_a_session_every_week(client, db_factory, people, auth_headers):
+    source_id = add_session(db_factory, people["coach"].id, 2, exercises=2)
+    source_start = datetime.fromisoformat(client.get(f"/sessions/{source_id}").json()["starts_at"])
+
+    response = client.post(f"/sessions/{source_id}/repeat", json={"weeks": 4}, headers=auth_headers("coach@example.com"))
+
+    assert response.status_code == 201
+    starts = [datetime.fromisoformat(item["starts_at"]) for item in response.json()]
+    assert [start - source_start for start in starts] == [timedelta(weeks=week) for week in range(1, 5)]
+    assert all(len(client.get(f"/sessions/{item['id']}/exercises/").json()) == 2 for item in response.json())
+    assert len(client.get("/sessions/").json()) == 5
+
+
+def test_repeating_a_past_session_starts_with_the_next_upcoming_week(client, db_factory, people, auth_headers):
+    source_id = add_session(db_factory, people["coach"].id, -10)
+
+    copies = client.post(f"/sessions/{source_id}/repeat", json={"weeks": 2}, headers=auth_headers("coach@example.com")).json()
+
+    first = datetime.fromisoformat(copies[0]["starts_at"])
+    first = first if first.tzinfo else first.replace(tzinfo=timezone.utc)
+    assert timedelta(0) < first - datetime.now(timezone.utc) <= timedelta(weeks=1)
+
+
+@pytest.mark.parametrize("weeks", [0, 13])
+def test_repeat_is_limited_to_twelve_weeks(client, db_factory, people, auth_headers, weeks):
+    source_id = add_session(db_factory, people["coach"].id, 2)
+
+    response = client.post(f"/sessions/{source_id}/repeat", json={"weeks": weeks}, headers=auth_headers("coach@example.com"))
+
+    assert response.status_code == 422
+
+
+def test_only_the_session_coach_or_an_admin_can_repeat(client, db_factory, people, auth_headers):
+    source_id = add_session(db_factory, people["coach"].id, 2)
+
+    assert client.post(f"/sessions/{source_id}/repeat", json={"weeks": 2}, headers=auth_headers("autre.coach@example.com")).status_code == 403

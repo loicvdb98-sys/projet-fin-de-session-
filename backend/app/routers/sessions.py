@@ -14,7 +14,7 @@ from ..models.notification import Notification
 from ..models.participation import Participation
 from ..models.session import Session as SportSession
 from ..models.user import User
-from ..schemas.session import SessionCreate, SessionDuplicate, SessionRead, SessionUpdate
+from ..schemas.session import SessionCreate, SessionDuplicate, SessionRead, SessionRepeat, SessionUpdate
 from ..services.ics import build_calendar
 from ..services.time import is_past
 
@@ -102,6 +102,44 @@ def session_calendar(session_id: int, db: Session = Depends(get_db)):
     return _calendar_response(build_calendar([item], item.title), f"sportplan-seance-{item.id}.ics")
 
 
+def _managed_session(session_id: int, db: Session, user: User) -> SportSession:
+    """Charge une séance (avec ses exercices) que l'utilisateur a le droit de gérer :
+    404 si elle n'existe pas, 403 si un coach n'en est pas l'animateur."""
+    item = db.scalar(select(SportSession).options(selectinload(SportSession.exercises)).where(SportSession.id == session_id))
+    if not item:
+        raise HTTPException(404, "Séance introuvable")
+    if user.role == "coach" and item.coach_id != user.id:
+        raise HTTPException(403, "Vous ne gérez pas cette séance")
+    return item
+
+
+def _as_utc(value: datetime) -> datetime:
+    """Date avec fuseau : une valeur lue sans fuseau (SQL Server) est en UTC."""
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _next_weekly_start(starts_at: datetime) -> datetime:
+    """Même jour de la semaine et même heure, à la première semaine à venir (au moins une semaine après)."""
+    weeks = max(1, (datetime.now(timezone.utc) - starts_at) // timedelta(weeks=1) + 1)
+    return starts_at + timedelta(weeks=weeks)
+
+
+def _copy_session(item: SportSession, starts_at: datetime) -> SportSession:
+    """Nouvelle séance identique (titre, description, durée, places, exercices), sans les inscrits."""
+    return SportSession(
+        title=item.title,
+        description=item.description,
+        starts_at=starts_at,
+        duration_minutes=item.duration_minutes,
+        capacity=item.capacity,
+        coach_id=item.coach_id,
+        exercises=[
+            Exercise(name=exercise.name, description=exercise.description, sets=exercise.sets, repetitions=exercise.repetitions, rest_seconds=exercise.rest_seconds)
+            for exercise in item.exercises
+        ],
+    )
+
+
 @router.post("/{session_id}/duplicate", response_model=SessionRead, status_code=201)
 def duplicate_session(
     session_id: int,
@@ -113,36 +151,40 @@ def duplicate_session(
     les inscrits. Réservé au coach responsable ou à un admin. Par défaut, la copie a lieu
     le même jour de la semaine, à la même heure, la première semaine à venir.
     """
-    item = db.scalar(select(SportSession).options(selectinload(SportSession.exercises)).where(SportSession.id == session_id))
-    if not item:
-        raise HTTPException(404, "Séance introuvable")
-    if user.role == "coach" and item.coach_id != user.id:
-        raise HTTPException(403, "Vous ne gérez pas cette séance")
-    starts_at = item.starts_at if item.starts_at.tzinfo else item.starts_at.replace(tzinfo=timezone.utc)
+    item = _managed_session(session_id, db, user)
+    starts_at = _as_utc(item.starts_at)
     if data and data.days:
         new_start = starts_at + timedelta(days=data.days)
         if is_past(new_start):
             raise HTTPException(400, "Une séance doit être planifiée dans le futur")
     else:
-        # Nombre de semaines pour tomber sur le premier créneau à venir (au moins une).
-        weeks = max(1, (datetime.now(timezone.utc) - starts_at) // timedelta(weeks=1) + 1)
-        new_start = starts_at + timedelta(weeks=weeks)
-    copy = SportSession(
-        title=item.title,
-        description=item.description,
-        starts_at=new_start,
-        duration_minutes=item.duration_minutes,
-        capacity=item.capacity,
-        coach_id=item.coach_id,
-        exercises=[
-            Exercise(name=exercise.name, description=exercise.description, sets=exercise.sets, repetitions=exercise.repetitions, rest_seconds=exercise.rest_seconds)
-            for exercise in item.exercises
-        ],
-    )
+        new_start = _next_weekly_start(starts_at)
+    copy = _copy_session(item, new_start)
     db.add(copy)
     db.commit()
     db.refresh(copy)
     return copy
+
+
+@router.post("/{session_id}/repeat", response_model=list[SessionRead], status_code=201)
+def repeat_session(
+    session_id: int,
+    data: SessionRepeat,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles("coach", "admin")),
+):
+    """Planifie une séance chaque semaine pendant `weeks` semaines (POST /sessions/{session_id}/repeat),
+    au même jour et à la même heure, à partir de la première semaine à venir. Chaque copie reprend
+    les exercices, sans les inscrits. Réservé au coach responsable ou à un admin.
+    """
+    item = _managed_session(session_id, db, user)
+    first = _next_weekly_start(_as_utc(item.starts_at))
+    copies = [_copy_session(item, first + timedelta(weeks=week)) for week in range(data.weeks)]
+    db.add_all(copies)
+    db.commit()
+    for copy in copies:
+        db.refresh(copy)
+    return copies
 
 
 @router.patch("/{session_id}", response_model=SessionRead)

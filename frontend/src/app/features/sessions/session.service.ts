@@ -42,6 +42,10 @@ export class SessionService {
   duplicate(id: number, days?: number): Observable<SportSession> {
     return this.http.post<SportSession>(`${this.apiUrl}/${id}/duplicate`, days ? { days } : {});
   }
+  /** Planifie la séance chaque semaine pendant `weeks` semaines (1 à 12) ; renvoie les séances créées. */
+  repeat(id: number, weeks: number): Observable<SportSession[]> {
+    return this.http.post<SportSession[]>(`${this.apiUrl}/${id}/repeat`, { weeks });
+  }
   /** Fichier agenda (.ics) d'une séance, ou, sans id, de toutes les séances à venir de l'utilisateur. */
   calendarFile(id?: number): Observable<Blob> {
     return this.http.get(id === undefined ? `${this.apiUrl}/calendar.ics` : `${this.apiUrl}/${id}/calendar.ics`, { responseType: 'blob' });

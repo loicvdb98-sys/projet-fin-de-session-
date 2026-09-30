@@ -62,6 +62,9 @@ Tout ce qu'un sportif peut faire, plus :
 - **Dupliquer** une de ses séances : la copie reprend le titre, la description,
   la durée, les places et les exercices (sans les inscrits), au même créneau la
   semaine suivante (ou la première semaine à venir si la séance est passée).
+- **Répéter** une séance chaque semaine (1 à 12 semaines) pour planifier un cycle
+  en une fois, depuis sa fiche ou dès la création (champ « Répéter chaque semaine »
+  de la page **Créer une séance**).
 - Son export d'agenda contient aussi les séances à venir qu'il anime.
 - Suivre les présences : depuis **Vos séances**, le bouton **Présences**
   liste les inscrits d'une séance et permet de les marquer

@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { SessionService } from '@features/sessions/session.service';
 import { UserService } from '@features/athletes/user.service';
 import { markForCheck } from '@core/mark-for-check.operator';
@@ -56,6 +57,11 @@ const MUSCLE_ORDER: MuscleGroup[] = ['legs', 'glutesHams', 'back', 'chest', 'sho
               <mat-form-field appearance="outline"><mat-label>Durée (min)</mat-label><input matInput type="number" formControlName="duration_minutes"></mat-form-field>
               <mat-form-field appearance="outline"><mat-label>Places</mat-label><input matInput type="number" formControlName="capacity"></mat-form-field>
             </div>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="repeat-field">
+              <mat-label>Répéter chaque semaine</mat-label>
+              <input matInput type="number" min="0" max="12" formControlName="repeat_weeks">
+              <mat-hint>Nombre de semaines suivantes : 0 pour une séance unique, 12 au plus.</mat-hint>
+            </mat-form-field>
 
             <h2 class="section-title">Exercices sélectionnés <span class="status-badge info">{{ exercises.length }}</span></h2>
             <div class="exercise-list" formArrayName="exercises">
@@ -170,6 +176,7 @@ export class WorkoutCreateComponent {
     starts_at: ['', Validators.required],
     duration_minutes: [60, [Validators.required, Validators.min(1)]],
     capacity: [20, [Validators.required, Validators.min(1)]],
+    repeat_weeks: [0, [Validators.min(0), Validators.max(12)]],
     exercises: this.fb.array<FormGroup<WorkoutExerciseForm>>([])
   });
   readonly exercises = this.form.controls.exercises;
@@ -291,9 +298,9 @@ export class WorkoutCreateComponent {
   }
 
   /**
-   * Crée la séance (avec l'utilisateur courant comme coach) puis enregistre
-   * chaque exercice individuellement ; redirige vers /sessions une fois tous
-   * les exercices confirmés par le serveur.
+   * Crée la séance (avec l'utilisateur courant comme coach), enregistre ses exercices,
+   * puis, si demandé, la planifie les semaines suivantes (copies avec les mêmes
+   * exercices) ; redirige vers /sessions une fois tout confirmé par le serveur.
    */
   save(): void {
     this.error = '';
@@ -317,14 +324,20 @@ export class WorkoutCreateComponent {
                 rest_seconds: exercise.rest_seconds
               })
             );
-            let completed = 0;
-            requests.forEach((request) => request.pipe(markForCheck(this.cd)).subscribe({
-              next: () => {
-                completed++;
-                if (completed === requests.length) void this.router.navigate(['/sessions']);
-              },
-              error: () => { this.error = 'La séance a été créée, mais un exercice n’a pas pu être enregistré.'; }
-            }));
+            const weeks = value.repeat_weeks || 0;
+            let exercisesSaved = false;
+            // Les copies hebdomadaires reprennent les exercices : elles sont créées après eux.
+            (requests.length ? forkJoin(requests) : of([])).pipe(
+              switchMap(() => { exercisesSaved = true; return weeks > 0 ? this.sessions.repeat(session.id, weeks) : of([]); }),
+              markForCheck(this.cd)
+            ).subscribe({
+              next: () => void this.router.navigate(['/sessions']),
+              error: () => {
+                this.error = exercisesSaved
+                  ? 'La séance a été créée, mais les semaines suivantes n’ont pas pu être planifiées.'
+                  : 'La séance a été créée, mais un exercice n’a pas pu être enregistré.';
+              }
+            });
           },
           error: () => { this.error = 'Impossible de créer cette séance. Vérifiez vos droits et les informations saisies.'; }
         });

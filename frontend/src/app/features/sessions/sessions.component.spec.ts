@@ -71,6 +71,28 @@ describe('SessionsComponent', () => {
     expect(component.myUpcomingSessions().map((item) => item.id)).toEqual([1]);
   });
 
+  it('adds every weekly copy after repeating a session', () => {
+    const copies = [session(10, 8), session(11, 15), session(12, 22)];
+    let requested: [number, number] | undefined;
+    const component = setup([session(1, 1)], [], { repeat: (id: number, weeks: number) => { requested = [id, weeks]; return of(copies); } });
+    component.toggleRepeat(session(1, 1));
+    component.repeatForm.setValue({ weeks: 3 });
+
+    component.repeat(session(1, 1));
+
+    expect(requested).toEqual([1, 3]);
+    expect(component.sessions.map((item) => item.id)).toEqual([1, 10, 11, 12]);
+    expect(component.repeatSessionId).toBeUndefined();
+  });
+
+  it('refuses more than twelve weeks', () => {
+    const component = setup([session(1, 1)]);
+
+    component.repeatForm.setValue({ weeks: 13 });
+
+    expect(component.repeatForm.invalid).toBe(true);
+  });
+
   it('shows the duplicated session right away', () => {
     const copy = session(9, 8);
     const component = setup([session(1, 1)], [], { duplicate: () => of(copy) });

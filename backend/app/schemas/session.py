@@ -37,6 +37,12 @@ class SessionDuplicate(BaseModel):
     days: int | None = Field(default=None, ge=1, le=365)
 
 
+class SessionRepeat(BaseModel):
+    """Nombre de semaines suivantes à planifier (1 à 12), au même jour et à la même heure."""
+
+    weeks: int = Field(ge=1, le=12)
+
+
 class SessionRead(SessionBase):
     """Représentation complète d'une séance retournée par l'API."""
 

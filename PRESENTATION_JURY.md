@@ -52,7 +52,7 @@ Le projet est une application web de gestion de séances sportives. Elle central
 ### Fonctionnalités principales
 
 - Authentification et profil utilisateur.
-- Création et consultation de séances d'entraînement, duplication d'une séance à la semaine suivante (coach).
+- Création et consultation de séances d'entraînement (recherche et filtres), duplication d'une séance ou répétition chaque semaine pendant 1 à 12 semaines (coach).
 - Calendrier des séances et participations, export vers l'agenda du téléphone (fichier `.ics` avec rappel).
 - Suivi des performances et statistiques, avec graphiques.
 - Objectifs et records personnels.

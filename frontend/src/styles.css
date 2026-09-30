@@ -298,6 +298,11 @@ html[data-theme='dark'] mat-card { box-shadow: 0 12px 30px rgb(0 0 0 / 28%) !imp
 .filter-chip:hover { border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-default)); color: var(--text-primary); }
 .filter-chip.active { background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface)); border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-default)); color: var(--accent-primary); }
 .session-count { margin-left: auto; font-size: .8rem; font-weight: 600; }
+/* Formulaire « Répéter chaque semaine » (fiche d'une séance, page de création). */
+.repeat-form { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: 1rem; }
+.repeat-form mat-form-field { flex: 0 1 12rem; }
+.repeat-form p { flex: 1 1 100%; margin: 0; font-size: .82rem; }
+.repeat-field { width: min(100%, 22rem); margin-top: .25rem; }
 .pattern-shell { display: flex; gap: .8rem; align-items: flex-start; margin-top: 1rem; }
 .pattern-rail { display: flex; flex-direction: column; gap: .2rem; flex: 0 0 7.4rem; }
 .pattern-rail-item { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .4rem .45rem; background: transparent; border: none; border-radius: .6rem; color: var(--text-secondary); font: inherit; font-weight: 700; font-size: .74rem; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
