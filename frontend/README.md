@@ -28,7 +28,9 @@ en plein écran, raccourcis Séances / Calendrier / Statistiques) :
 
 Le service worker n'existe que dans le build de production : `ng serve` ne l'active pas.
 Pour l'essayer, lancer `npm run start:pwa` (petit serveur sans dépendance,
-`scripts/serve-pwa.mjs`, qui renvoie `index.html` pour les routes Angular).
+`scripts/serve-pwa.mjs`, qui renvoie `index.html` pour les routes Angular et ajoute les
+en-têtes de sécurité, dont une politique de contenu stricte : voir
+[docs/SECURITE.md](../docs/SECURITE.md)).
 
 Les navigateurs n'installent une PWA que sur une origine sécurisée : **HTTPS** ou
 `localhost`. Sur le PC, ouvrir `http://localhost:4300` puis « Installer SportPlan » dans

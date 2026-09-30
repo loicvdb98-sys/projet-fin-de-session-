@@ -119,6 +119,20 @@ Chaque réponse de l'API porte des en-têtes de protection (`backend/app/main.py
 - **Documentation** : `/docs`, `/redoc` et `/openapi.json` se désactivent en production
   avec `EXPOSE_API_DOCS=false`.
 
+## Politique de sécurité du contenu (frontend)
+
+La version de production (`npm run start:pwa`, `frontend/scripts/serve-pwa.mjs`) est servie
+avec une **CSP** stricte : seuls les scripts du build peuvent s'exécuter (`script-src 'self'`,
+aucun script en ligne), et les requêtes ne peuvent partir que vers le site lui-même et l'API
+(`connect-src 'self' http://<hôte>:8000`). Même si un script malveillant parvenait à être
+injecté dans la page, il ne pourrait ni s'exécuter ni envoyer les jetons ailleurs. S'y
+ajoutent `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` et `Permissions-Policy`.
+
+Pour que cette politique fonctionne, l'intégration du CSS « critique » d'Angular est désactivée
+(`inlineCritical: false` dans `angular.json`) : elle ajoutait un gestionnaire `onload` en ligne,
+que la CSP aurait bloqué (la page serait restée sans style). Les styles en ligne restent
+autorisés, car Angular et Material en injectent.
+
 ## Application installable (PWA)
 
 Le service worker ne met en cache que les fichiers de l'application (HTML, JavaScript, CSS,
