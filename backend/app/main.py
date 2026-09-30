@@ -3,6 +3,7 @@ configuration du CORS, enregistrement des routeurs et création automatique des 
 au démarrage.
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -13,9 +14,14 @@ from .config import get_settings
 from .database import Base, SessionLocal, engine, ensure_indexes
 # Les modèles sont importés ici (même sans usage direct) pour que SQLAlchemy
 # les enregistre dans Base.metadata avant l'appel à create_all().
-from .models import Exercise, Goal, Notification, Participation, Performance, PersonalRecord, Session, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
-from .routers import auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users, waitlist
+from .models import AuditEvent, Exercise, Goal, Notification, Participation, PasswordResetToken, Performance, PersonalRecord, Session, TrainingJournal, User, WaitlistEntry, WorkoutProgram  # noqa: F401
+from .routers import admin, auth, exercises, goals, journal, notifications, participations, performances, programs, sessions, statistics, users, waitlist
 from .routers.auth import purge_expired_refresh_tokens, purge_expired_reset_tokens
+from .services.audit import purge_old_events
+
+# Messages de l'application (connexions, sécurité, maintenance) affichés dans la console avec
+# l'heure et le niveau ; sans cela, seuls les avertissements apparaissaient.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s : %(message)s")
 
 
 @asynccontextmanager
@@ -28,6 +34,7 @@ async def lifespan(_: FastAPI):
     with SessionLocal() as db:
         purge_expired_refresh_tokens(db)
         purge_expired_reset_tokens(db)
+        purge_old_events(db)
         db.commit()
     yield
 
@@ -93,6 +100,7 @@ app.include_router(goals.router)
 app.include_router(programs.router)
 app.include_router(notifications.router)
 app.include_router(journal.router)
+app.include_router(admin.router)
 
 
 @app.get("/health", tags=["health"])

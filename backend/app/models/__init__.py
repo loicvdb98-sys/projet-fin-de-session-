@@ -2,6 +2,7 @@
 (ex: `from app.models import User`) et pour garantir qu'ils sont tous enregistrés auprès de Base.
 """
 
+from .audit import AuditEvent
 from .exercise import Exercise
 from .participation import Participation
 from .performance import Performance
@@ -16,4 +17,4 @@ from .session import Session
 from .user import User
 from .waitlist import WaitlistEntry
 
-__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal", "WaitlistEntry", "PasswordResetToken"]
+__all__ = ["User", "Session", "Exercise", "Participation", "Performance", "RefreshToken", "Goal", "PersonalRecord", "WorkoutProgram", "Notification", "TrainingJournal", "WaitlistEntry", "PasswordResetToken", "AuditEvent"]

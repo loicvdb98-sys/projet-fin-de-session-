@@ -33,6 +33,7 @@ export const routes: Routes = [
   { path: 'athletes/:id', title: 'Suivi individuel', loadComponent: () => import('@features/athletes/athlete-detail.component').then((m) => m.AthleteDetailComponent), canActivate: [coachGuard] },
   { path: 'journal', title: 'Journal d’entraînement', loadComponent: () => import('@features/journal/journal.component').then((m) => m.JournalComponent), canActivate: [authGuard] },
   { path: 'admin/users', title: 'Gestion des comptes', loadComponent: () => import('@features/admin/admin-users.component').then((m) => m.AdminUsersComponent), canActivate: [adminGuard] },
+  { path: 'admin/audit', title: 'Journal d’activité', loadComponent: () => import('@features/admin/audit-log.component').then((m) => m.AuditLogComponent), canActivate: [adminGuard] },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
 ];

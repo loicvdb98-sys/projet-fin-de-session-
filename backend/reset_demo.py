@@ -13,6 +13,7 @@ from sqlalchemy import delete, select
 
 from app.database import SessionLocal
 from app.models import (
+    AuditEvent,
     Exercise,
     Goal,
     Notification,
@@ -63,6 +64,9 @@ def run_reset() -> None:
         db.execute(delete(Exercise).where(Exercise.session_id.in_(demo_session_ids)))
         db.execute(delete(SportSession).where(SportSession.id.in_(demo_session_ids)))
         db.execute(delete(RefreshToken).where(RefreshToken.user_id.in_(demo_user_ids)))
+        db.execute(delete(AuditEvent).where(
+            AuditEvent.actor_id.in_(demo_user_ids) | AuditEvent.target_user_id.in_(demo_user_ids)
+        ))
         db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id.in_(demo_user_ids)))
         db.execute(delete(User).where(User.id.in_(demo_user_ids)))
         db.commit()

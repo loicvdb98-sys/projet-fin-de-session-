@@ -124,6 +124,10 @@ const REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
                   <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/></svg></span>
                   <span class="app-rail-label">Comptes</span>
                 </a>
+                <a class="app-rail-item" title="Journal" routerLink="/admin/audit" routerLinkActive="active">
+                  <span class="app-rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                  <span class="app-rail-label">Journal</span>
+                </a>
               }
             }
 

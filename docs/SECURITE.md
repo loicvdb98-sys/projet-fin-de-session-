@@ -82,6 +82,24 @@ Limites en mémoire (`backend/app/rate_limit.py`), réponse `429 Too Many Reques
 - Ces compteurs vivent dans le processus de l'API : ils repartent de zéro à chaque
   redémarrage et ne sont pas partagés entre plusieurs instances.
 
+## Journal d'activité (traçabilité)
+
+Les événements de sécurité sont enregistrés dans la table `audit_events`
+(`backend/app/services/audit.py`) et consultables par un admin sur la page
+**Journal d'activité** (`GET /admin/audit`, réservé au rôle admin) :
+
+| Catégorie | Événements |
+| --- | --- |
+| Connexions | connexion réussie, nouveau compte, déconnexion de tous les appareils |
+| Échecs et blocages | connexion refusée (email saisi, adresse IP), compte bloqué 15 minutes |
+| Comptes | rôle modifié (ancien → nouveau rôle, par quel admin), compte désactivé ou réactivé |
+| Mots de passe | mot de passe changé, lien de réinitialisation demandé, mot de passe réinitialisé |
+| Alertes | compte bloqué, vol de jeton détecté, compte désactivé |
+
+Chaque événement est aussi écrit dans la console de l'API (avec l'heure). Les événements de
+plus de 180 jours sont supprimés au démarrage. L'adresse IP est celle de la connexion : derrière
+un proxy, il faudrait lire l'en-tête `X-Forwarded-For` d'un proxy de confiance.
+
 ## En-têtes HTTP et CORS
 
 Chaque réponse de l'API porte des en-têtes de protection (`backend/app/main.py`) :

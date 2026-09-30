@@ -68,9 +68,13 @@ def ensure_account_not_locked(email: str) -> None:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Trop de tentatives sur ce compte. Réessayez dans quelques minutes.")
 
 
-def record_login_failure(email: str) -> None:
-    """Comptabilise un échec de connexion pour ce compte."""
-    _attempts[f"compte:{email}"].append(datetime.now(timezone.utc))
+def record_login_failure(email: str) -> bool:
+    """Comptabilise un échec de connexion pour ce compte ; retourne True si cet échec vient
+    de bloquer le compte (limite atteinte)."""
+    now = datetime.now(timezone.utc)
+    attempts = _recent(f"compte:{email}", ACCOUNT_WINDOW, now)
+    attempts.append(now)
+    return len(attempts) == ACCOUNT_LIMIT
 
 
 def reset_login_failures(email: str) -> None:

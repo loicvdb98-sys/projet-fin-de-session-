@@ -1,6 +1,6 @@
 """Routeur FastAPI exposant les endpoints de consultation et de gestion des comptes utilisateurs."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from ..database import get_db
 from ..dependencies import get_current_user, require_roles
 from ..models.user import User
 from ..schemas.user import UserRead, UserUpdate
+from ..services.audit import client_ip, record
 from .auth import revoke_all_refresh_tokens
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -33,7 +34,7 @@ def list_athletes(db: Session = Depends(get_db)):
 
 
 @router.patch("/{user_id}", response_model=UserRead)
-def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+def update_user(user_id: int, data: UserUpdate, request: Request, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     """Met à jour un compte utilisateur (PATCH /users/{user_id}). Un utilisateur peut
     modifier son propre profil ; seul un admin peut modifier un autre compte, changer
     un rôle, ou activer/désactiver un compte. Personne ne peut changer son propre rôle
@@ -51,6 +52,11 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), c
         raise HTTPException(403, "Seul un admin peut activer ou désactiver un compte")
     if user.id == current.id and ((data.role and data.role != user.role) or data.is_active is False):
         raise HTTPException(403, "Vous ne pouvez pas modifier votre propre rôle ni désactiver votre propre compte")
+    ip = client_ip(request)
+    if data.role and data.role != user.role:
+        record(db, "role_modifie", actor_id=current.id, target_user_id=user.id, details=f"{user.role} → {data.role}", ip=ip)
+    if data.is_active is not None and data.is_active != user.is_active:
+        record(db, "compte_reactive" if data.is_active else "compte_desactive", actor_id=current.id, target_user_id=user.id, ip=ip)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(user, key, value)
     if data.is_active is False:

@@ -6,6 +6,7 @@
  * compte depuis cet écran, pour éviter de se retirer ses propres droits par erreur.
  */
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,7 +25,7 @@ const ROLES: { value: string; label: string; group: string; tint: string }[] = [
 
 @Component({
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatSelectModule, MatSlideToggleModule],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule, MatSelectModule, MatSlideToggleModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -33,6 +34,7 @@ const ROLES: { value: string; label: string; group: string; tint: string }[] = [
           <h1>Gestion des comptes</h1>
           <p class="text-secondary">Changez le rôle d'un utilisateur ou activez/désactivez son compte.</p>
         </div>
+        <a mat-stroked-button class="teal-outline" routerLink="/admin/audit">Journal d’activité</a>
       </div>
 
       @if (loading) {

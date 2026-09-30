@@ -113,6 +113,9 @@ restriction de propriété :
 - Modifier ou annuler **n'importe quelle** séance, quel que soit le coach qui
   l'a créée.
 - Marquer les présences sur n'importe quelle séance.
+- **Journal d'activité** (`/admin/audit`) : connexions réussies et refusées (avec
+  l'adresse IP), comptes bloqués, rôles modifiés, comptes désactivés, mots de passe
+  changés ou réinitialisés, vols de jeton détectés (voir [SECURITE.md](SECURITE.md)).
 - **Gestion des comptes** (`/admin/users`, page réservée via `adminGuard`) :
   liste tous les comptes, change leur rôle (sportif/coach/admin) et
   active/désactive un compte. L'admin ne peut pas modifier son propre rôle ni
