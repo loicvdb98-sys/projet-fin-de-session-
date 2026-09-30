@@ -120,7 +120,8 @@ export class PerformancesComponent implements AfterViewInit, OnDestroy {
   private readonly sessionService = inject(SessionService);
   private readonly participationService = inject(ParticipationService);
   private readonly cd = inject(ChangeDetectorRef);
-  readonly performances$ = inject(PerformanceService).list();
+  // Partagé : lu par le graphique (ngAfterViewInit) et par la liste enrichie, en une seule requête.
+  readonly performances$ = inject(PerformanceService).list().pipe(shareReplay({ bufferSize: 1, refCount: true }));
   // Partagé entre ngAfterViewInit (rôle/id courant) et enrichedPerformances$ (noms des sportifs) :
   // une seule requête /users/me même si les deux le consomment.
   private readonly me$ = this.users.me().pipe(shareReplay({ bufferSize: 1, refCount: true }));

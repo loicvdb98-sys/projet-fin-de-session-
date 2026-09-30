@@ -40,6 +40,8 @@ export class AuthService {
       tap((response) => {
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('refresh_token', response.refresh_token);
+        // Le profil gardé en mémoire pouvait être celui d'un autre compte.
+        this.userService.clearCache();
         this.isAuthenticated.set(true);
       }),
       // Le rôle vient toujours du profil renvoyé par le serveur, jamais d'une supposition côté client.
@@ -106,6 +108,7 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_role');
+    this.userService.clearCache();
     this.isAuthenticated.set(false);
     void this.router.navigate(['/login']);
   }

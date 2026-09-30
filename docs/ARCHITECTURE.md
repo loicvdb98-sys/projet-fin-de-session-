@@ -98,6 +98,18 @@ La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info
 `module-page` tient sur un seul écran (le rail et la fiche défilent en interne) ; sous
 900 px, la navigation passe dans un menu burger et le rail devient une bande horizontale.
 
+### Performances du frontend
+
+- **Chargement à la demande** : chaque page est déclarée avec `loadComponent`
+  (`core/app.routes.ts`) ; le navigateur ne télécharge au démarrage que le socle de
+  l'application (environ 530 Ko), puis le code d'une page la première fois qu'on l'ouvre.
+- **Profil en mémoire** : `UserService.me()` n'interroge `/users/me` qu'une fois par
+  connexion (le cache est vidé à la connexion et à la déconnexion, et mis à jour quand
+  l'utilisateur modifie son profil). Un parcours de toutes les pages passe ainsi de 59
+  à 48 appels à l'API.
+- **Flux partagés** : quand une page lit la même donnée à deux endroits (graphique et
+  liste des performances, par exemple), la requête est partagée avec `shareReplay`.
+
 ### Alias d'imports
 
 Le `tsconfig.json` définit trois alias pour éviter les chaînes d'imports

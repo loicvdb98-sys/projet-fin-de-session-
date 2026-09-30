@@ -5,7 +5,7 @@
 import { Component, Injector, afterNextRender, effect, inject, signal } from '@angular/core';
 import { AsyncPipe, DOCUMENT } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { filter, forkJoin, of, shareReplay, switchMap } from 'rxjs';
+import { distinctUntilChanged, filter, forkJoin, merge, of, shareReplay, switchMap } from 'rxjs';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '@features/auth/auth.service';
 import { UserService } from '@features/athletes/user.service';
@@ -183,12 +183,12 @@ export class AppComponent {
   /** Faux jusqu'à la première navigation : le focus n'est pas déplacé au chargement initial. */
   private hasNavigated = false;
 
-  // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois).
-  // shareReplay évite un second appel à /users/me pour la vérification des rappels ci-dessous.
-  readonly currentUser$ = toObservable(this.auth.isAuthenticated).pipe(
-    switchMap((isAuthenticated) => (isAuthenticated ? this.users.me() : of(null))),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
+  // Recharge le profil à chaque bascule de connexion/déconnexion (le shell n'est monté qu'une fois),
+  // et le met à jour quand l'utilisateur modifie son profil (nom affiché dans le menu).
+  readonly currentUser$ = merge(
+    toObservable(this.auth.isAuthenticated).pipe(switchMap((isAuthenticated) => (isAuthenticated ? this.users.me() : of(null)))),
+    this.users.currentUserChanged$
+  ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
   constructor() {
     // Referme le menu mobile après chaque navigation, et rafraîchit le compteur de
@@ -205,7 +205,8 @@ export class AppComponent {
       if (this.auth.isAuthenticated()) this.notifications.refreshUnreadCount();
       else this.notifications.unreadCount.set(0);
     });
-    this.currentUser$.subscribe((user) => {
+    // Rappels vérifiés une fois par connexion (pas à chaque modification du profil).
+    this.currentUser$.pipe(distinctUntilChanged((previous, next) => previous?.id === next?.id)).subscribe((user) => {
       if (user?.role === 'sportif') this.checkUpcomingReminders(user.id);
     });
     // Menu ouvert : la page en dessous ne défile plus (classe posée sur <html>).
