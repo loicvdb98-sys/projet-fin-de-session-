@@ -12,6 +12,7 @@ import { SessionService } from '@features/sessions/session.service';
 import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 /** Élément affiché dans le détail : un objectif, un record, ou l'un des deux formulaires de création. */
 type Selection = { kind: 'goal' | 'record'; id: number } | { kind: 'new-goal' | 'new-record' };
@@ -24,7 +25,7 @@ type Selection = { kind: 'goal' | 'record'; id: number } | { kind: 'new-goal' | 
  */
 @Component({
   standalone: true,
-  imports: [DatePipe, DecimalPipe, NgTemplateOutlet, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
+  imports: [ModuleSkeletonComponent, DatePipe, DecimalPipe, NgTemplateOutlet, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -36,7 +37,7 @@ type Selection = { kind: 'goal' | 'record'; id: number } | { kind: 'new-goal' | 
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des objectifs…</p>
+        <app-module-skeleton label="Chargement des objectifs…" [cards]="3" [rows]="6" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger vos objectifs. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else {

@@ -8,6 +8,7 @@ import { ProgramService, WorkoutProgram } from './program.service';
 import { AuthService } from '@features/auth/auth.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 /**
  * Écran des programmes d'entraînement, au même style « module » que les autres
@@ -16,7 +17,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
  */
 @Component({
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [ModuleSkeletonComponent, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -28,7 +29,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des programmes…</p>
+        <app-module-skeleton label="Chargement des programmes…" [rows]="4" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger vos programmes. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else {

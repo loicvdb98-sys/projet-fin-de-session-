@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AppNotification, NotificationService } from './notification.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 /**
  * Centre de notifications, au même style « module » que les autres pages : un
@@ -12,7 +13,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
  */
 @Component({
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, MatButtonModule],
+  imports: [ModuleSkeletonComponent, DatePipe, NgTemplateOutlet, MatButtonModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -30,7 +31,7 @@ import { markForCheck } from '@core/mark-for-check.operator';
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des notifications…</p>
+        <app-module-skeleton label="Chargement des notifications…" [rows]="4" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger vos notifications. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else if (!notifications.length) {

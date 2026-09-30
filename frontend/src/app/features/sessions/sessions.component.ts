@@ -13,6 +13,7 @@ import { ToastService } from '@shared/services/toast.service';
 import { saveFile } from '@shared/download';
 import { forkJoin } from 'rxjs';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 /**
  * Écran des séances : liste des séances disponibles, inscription, consultation
@@ -53,7 +54,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
 
 @Component({
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [ModuleSkeletonComponent, DatePipe, NgTemplateOutlet, RouterLink, ReactiveFormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <section class="page sessions-page">
       <div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Vos séances</h1><p class="text-secondary">Retrouvez vos séances à venir et l’historique des séances passées.</p></div>
@@ -102,7 +103,7 @@ const ATTENDANCE_STATUSES: { value: string; label: string }[] = [
         <mat-card class="timer-card"><div><p class="eyebrow">CHRONOMÈTRE DE REPOS</p><h2>{{ timerExercise.name }}</h2><p class="text-secondary">Récupérez avant votre prochaine série.</p></div><strong class="timer-value">{{ formattedTimer }}</strong><div class="timer-actions"><button mat-flat-button class="primary-action" (click)="toggleTimer()">{{ timerRunning ? 'Pause' : 'Démarrer' }}</button><button mat-stroked-button (click)="resetTimer()">Réinitialiser</button><button mat-button (click)="timerExercise = undefined">Fermer</button></div></mat-card>
       }
       @if (sessionsLoading) {
-        <p class="text-secondary">Chargement des séances…</p>
+        <app-module-skeleton label="Chargement des séances…" [rows]="6" />
       } @else if (sessionsLoadError) {
         <p class="empty-state">Impossible de charger les séances. <button mat-button class="teal-action" (click)="refreshSessions()">Réessayer</button></p>
       } @else if (sessions.length) {

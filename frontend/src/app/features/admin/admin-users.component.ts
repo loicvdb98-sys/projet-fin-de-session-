@@ -16,6 +16,7 @@ import { switchMap, tap } from 'rxjs';
 import { User, UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 const ROLES: { value: string; label: string; group: string; tint: string }[] = [
   { value: 'admin', label: 'Administrateur', group: 'Administrateurs', tint: 'c-primary' },
@@ -25,7 +26,7 @@ const ROLES: { value: string; label: string; group: string; tint: string }[] = [
 
 @Component({
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule, MatSelectModule, MatSlideToggleModule],
+  imports: [ModuleSkeletonComponent, RouterLink, MatButtonModule, MatCardModule, MatFormFieldModule, MatSelectModule, MatSlideToggleModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -38,7 +39,7 @@ const ROLES: { value: string; label: string; group: string; tint: string }[] = [
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des comptes…</p>
+        <app-module-skeleton label="Chargement des comptes…" [cards]="3" [rows]="6" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger les comptes. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else if (!users.length) {

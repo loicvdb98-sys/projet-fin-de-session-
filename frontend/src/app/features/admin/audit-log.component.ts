@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { AuditEvent, AuditService } from './audit.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 type Severity = 'info' | 'success' | 'warning' | 'danger';
 
@@ -43,7 +44,7 @@ const HOUR_MS = 60 * 60 * 1000;
 
 @Component({
   standalone: true,
-  imports: [DatePipe, RouterLink, MatButtonModule, MatCardModule],
+  imports: [ModuleSkeletonComponent, DatePipe, RouterLink, MatButtonModule, MatCardModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -56,7 +57,7 @@ const HOUR_MS = 60 * 60 * 1000;
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement du journal…</p>
+        <app-module-skeleton label="Chargement du journal…" [cards]="3" [rows]="6" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger le journal. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else {

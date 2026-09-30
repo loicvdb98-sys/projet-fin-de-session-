@@ -121,6 +121,9 @@ La couleur d'un élément vient d'une classe `c-primary`, `c-secondary`, `c-info
   (`core/app.routes.ts`) ; le navigateur ne télécharge au démarrage que le socle de
   l'application (540 Ko, soit 125 Ko transférés une fois compressés), puis le code d'une
   page la première fois qu'on l'ouvre.
+- **Chargement** : les pages en style « module » affichent un squelette (cartes, rail et fiche
+  en blocs gris animés, `shared/components/module-skeleton.component.ts`) à la forme exacte du
+  contenu attendu, sans saut de mise en page à l'arrivée des données.
 - **Hors ligne** : un bandeau prévient quand la connexion est perdue (les données affichées
   peuvent dater) ; au retour du réseau, un message le signale et les notifications sont
   relues. Une adresse inconnue affiche une page « Page introuvable » (404).

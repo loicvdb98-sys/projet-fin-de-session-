@@ -15,6 +15,7 @@ import { SessionService } from '@features/sessions/session.service';
 import { markForCheck } from '@core/mark-for-check.operator';
 import { AttendanceAlert, attendanceAlert, summarizeAttendance } from './attendance';
 import { saveCsv } from '@shared/csv';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 interface AthleteSummary extends User {
   attendanceRate: number;
@@ -30,7 +31,7 @@ interface AthleteSummary extends User {
 
 @Component({
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, RouterLink],
+  imports: [ModuleSkeletonComponent, MatButtonModule, MatCardModule, RouterLink],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -43,7 +44,7 @@ interface AthleteSummary extends User {
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des sportifs…</p>
+        <app-module-skeleton label="Chargement des sportifs…" [cards]="3" [rows]="4" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger les sportifs. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else if (!athletes.length) {

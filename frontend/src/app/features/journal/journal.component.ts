@@ -12,6 +12,7 @@ import { SessionService, SportSession } from '@features/sessions/session.service
 import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 const MOOD_LABELS: Record<string, string> = { excellent: 'Excellente', bien: 'Bonne', moyen: 'Moyenne', difficile: 'Difficile' };
 
@@ -27,7 +28,7 @@ const MOOD_LABELS: Record<string, string> = { excellent: 'Excellente', bien: 'Bo
  */
 @Component({
   standalone: true,
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [ModuleSkeletonComponent, DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <section class="page module-page">
       <div class="page-heading">
@@ -39,7 +40,7 @@ const MOOD_LABELS: Record<string, string> = { excellent: 'Excellente', bien: 'Bo
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement du journal…</p>
+        <app-module-skeleton label="Chargement du journal…" [cards]="3" [rows]="4" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger votre journal. <button mat-button class="teal-action" (click)="load()">Réessayer</button></p>
       } @else {

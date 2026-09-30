@@ -9,6 +9,7 @@ import { UserService } from '@features/athletes/user.service';
 import { ToastService } from '@shared/services/toast.service';
 import { markForCheck } from '@core/mark-for-check.operator';
 import { csvDate, csvTime, saveCsv } from '@shared/csv';
+import { ModuleSkeletonComponent } from '@shared/components/module-skeleton.component';
 
 /**
  * Écran "Participations" : croise les inscriptions avec les détails de séance
@@ -36,7 +37,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
 
 @Component({
   standalone: true,
-  imports: [DatePipe, NgTemplateOutlet, MatButtonModule, MatCardModule],
+  imports: [ModuleSkeletonComponent, DatePipe, NgTemplateOutlet, MatButtonModule, MatCardModule],
   template: `
     <section class="page participations-page">
       <div class="page-heading">
@@ -49,7 +50,7 @@ const STATUS_META: Record<ParticipationStatus, { label: string; badge: 'info' | 
       </div>
 
       @if (loading) {
-        <p class="text-secondary">Chargement des participations…</p>
+        <app-module-skeleton label="Chargement des participations…" [cards]="3" [rows]="6" />
       } @else if (loadError) {
         <p class="empty-state">Impossible de charger les participations. <button mat-button class="teal-action" (click)="refresh()">Réessayer</button></p>
       } @else if (!items.length) {
